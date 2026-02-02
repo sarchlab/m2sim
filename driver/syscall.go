@@ -21,16 +21,8 @@ const (
 	EIO    = 5  // I/O error
 )
 
-// SyscallResult represents the result of a syscall execution.
-type SyscallResult struct {
-	// Exited is true if the syscall caused program termination.
-	Exited bool
-
-	// ExitCode is the exit status if Exited is true.
-	ExitCode int64
-}
-
 // SyscallHandler handles ARM64 Linux syscalls.
+// It implements the emu.SyscallHandler interface.
 type SyscallHandler struct {
 	regFile *emu.RegFile
 	memory  *emu.Memory
@@ -80,7 +72,7 @@ func NewSyscallHandler(
 //   - Syscall number in X8
 //   - Arguments in X0-X5
 //   - Return value in X0
-func (h *SyscallHandler) Handle() SyscallResult {
+func (h *SyscallHandler) Handle() emu.SyscallResult {
 	syscallNum := h.regFile.ReadReg(8)
 
 	switch syscallNum {
@@ -96,9 +88,9 @@ func (h *SyscallHandler) Handle() SyscallResult {
 // handleExit handles the exit syscall (93).
 // void exit(int status)
 //   - X0: exit status
-func (h *SyscallHandler) handleExit() SyscallResult {
+func (h *SyscallHandler) handleExit() emu.SyscallResult {
 	exitCode := int64(h.regFile.ReadReg(0))
-	return SyscallResult{
+	return emu.SyscallResult{
 		Exited:   true,
 		ExitCode: exitCode,
 	}
@@ -110,7 +102,7 @@ func (h *SyscallHandler) handleExit() SyscallResult {
 //   - X1: buffer pointer
 //   - X2: byte count
 //   - Returns: bytes written (or negative error code)
-func (h *SyscallHandler) handleWrite() SyscallResult {
+func (h *SyscallHandler) handleWrite() emu.SyscallResult {
 	fd := h.regFile.ReadReg(0)
 	bufPtr := h.regFile.ReadReg(1)
 	count := h.regFile.ReadReg(2)
@@ -125,7 +117,7 @@ func (h *SyscallHandler) handleWrite() SyscallResult {
 	default:
 		// Invalid file descriptor
 		h.setError(EBADF)
-		return SyscallResult{}
+		return emu.SyscallResult{}
 	}
 
 	// Read buffer from memory
@@ -138,18 +130,18 @@ func (h *SyscallHandler) handleWrite() SyscallResult {
 	n, err := writer.Write(buf)
 	if err != nil {
 		h.setError(EIO)
-		return SyscallResult{}
+		return emu.SyscallResult{}
 	}
 
 	// Return bytes written
 	h.regFile.WriteReg(0, uint64(n))
-	return SyscallResult{}
+	return emu.SyscallResult{}
 }
 
 // handleUnknown handles unrecognized syscalls.
-func (h *SyscallHandler) handleUnknown() SyscallResult {
+func (h *SyscallHandler) handleUnknown() emu.SyscallResult {
 	h.setError(ENOSYS)
-	return SyscallResult{}
+	return emu.SyscallResult{}
 }
 
 // setError sets X0 to -errno (as two's complement).
