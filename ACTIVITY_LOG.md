@@ -58,6 +58,8 @@
 - Set up Ginkgo test suites (6 suites, all passing)
 - Added `main.go` entry point
 - Added `insts/SUPPORTED.md` for tracking ARM64 instruction support
+- `go build ./...` ✅
+- `ginkgo -r` ✅
 
 **Labels Added:** `ready-for-review`
 **Linked Issue:** #1
