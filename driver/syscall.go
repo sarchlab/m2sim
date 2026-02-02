@@ -8,18 +8,21 @@ import (
 	"github.com/sarchlab/m2sim/emu"
 )
 
-// ARM64 Linux syscall numbers.
+// Re-export syscall constants from emu for backward compatibility.
 const (
-	SyscallWrite uint64 = 64 // write(fd, buf, count)
-	SyscallExit  uint64 = 93 // exit(status)
+	SyscallWrite = emu.SyscallWrite
+	SyscallExit  = emu.SyscallExit
 )
 
-// Linux error codes.
+// Re-export error codes from emu for backward compatibility.
 const (
-	EBADF  = 9  // Bad file descriptor
-	ENOSYS = 38 // Function not implemented
-	EIO    = 5  // I/O error
+	EBADF  = emu.EBADF
+	ENOSYS = emu.ENOSYS
+	EIO    = emu.EIO
 )
+
+// SyscallResult is an alias to emu.SyscallResult for backward compatibility.
+type SyscallResult = emu.SyscallResult
 
 // SyscallHandler handles ARM64 Linux syscalls.
 // It implements the emu.SyscallHandler interface.
