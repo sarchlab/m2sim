@@ -5,7 +5,7 @@
 ## Action Count: 13
 
 ## Current Phase
-M1: Foundation - Merging PR #6, closing issue #4.
+M1: Foundation - PR #6 merged, issue #4 closed. Basic ALU instructions complete.
 
 ## Milestones
 - [ ] M1: Foundation (MVP) - Basic execution
