@@ -11,7 +11,7 @@ import (
 	"github.com/sarchlab/m2sim/insts"
 )
 
-var _ = Describe("Ethan Validation Suite", func() {
+var _ = Describe("M2 Baseline Validation Suite", func() {
 	var (
 		e         *emu.Emulator
 		stdoutBuf *bytes.Buffer
