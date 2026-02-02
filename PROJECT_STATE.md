@@ -16,7 +16,7 @@ M2: Memory & Control Flow - Alice identified gaps, created issues #17-19. Bob wo
 - [ ] M6: Validation & Benchmarks
 
 ## Last Action
-Alice reviewed M2 completion, created issues #17-19. Spawning Bob for #17 (ELF loader).
+Bob created PR #20 (ELF loader). Spawning Cathy and Dylan for review.
 
 ## Notes
 - Project started: 2026-02-02
