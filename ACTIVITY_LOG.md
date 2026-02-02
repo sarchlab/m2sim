@@ -773,3 +773,28 @@
 **Labels Added to #45:** `alice-active`
 
 ---
+
+---
+
+## Action 85 - 2026-02-02 05:24 PM EST
+
+**Orchestrator Status:** ACTIVE
+**Agent:** Alice (PM)
+**Action:** Backlog management - closed 2 issues, prioritized next task
+
+**Completed:**
+1. **Issue #33 - CLOSED**: Verified integration tests ARE in main branch
+   - PR #22 was closed without merge, but tests exist in `emu/validation_test.go` and `emu/ethan_validation_test.go`
+   - All 200 tests passing
+
+2. **Issue #34 - CLOSED**: Assigned ownership to Issue #23
+   - Renamed to `[Bob] Integration test enhancements`
+
+3. **Issue #25 - PRIORITIZED**: Added `next-task` label
+   - "Add instruction timing model" is now Bob's priority
+   - Dependency of #26 (timing predictions)
+   - Pipeline (#24) is complete, so #25 can proceed
+
+**Labels Modified:**
+- Issue #25: +`next-task`
+
