@@ -1,20 +1,14 @@
-// Package pipeline provides a 5-stage pipeline model for cycle-accurate timing simulation.
 package pipeline
 
-// HazardUnit detects data hazards and controls forwarding/stalling.
-type HazardUnit struct{}
+// ForwardSource indicates where a forwarded value should come from.
+type ForwardSource int
 
-// NewHazardUnit creates a new hazard detection unit.
-func NewHazardUnit() *HazardUnit {
-	return &HazardUnit{}
-}
-
-// ForwardingSource indicates where to forward data from.
-type ForwardingSource uint8
+// ForwardingSource is an alias for ForwardSource for API compatibility.
+type ForwardingSource = ForwardSource
 
 const (
-	// ForwardNone means no forwarding, use register file value.
-	ForwardNone ForwardingSource = iota
+	// ForwardNone means no forwarding needed - use register file value.
+	ForwardNone ForwardSource = iota
 	// ForwardFromEXMEM means forward from EX/MEM pipeline register.
 	ForwardFromEXMEM
 	// ForwardFromMEMWB means forward from MEM/WB pipeline register.
@@ -23,13 +17,42 @@ const (
 
 // ForwardingResult contains forwarding decisions for both source operands.
 type ForwardingResult struct {
-	ForwardRn ForwardingSource
-	ForwardRm ForwardingSource
+	// ForwardRn specifies the forwarding source for the Rn operand.
+	ForwardRn ForwardSource
+	// ForwardRm specifies the forwarding source for the Rm operand.
+	ForwardRm ForwardSource
 }
 
-// DetectForwarding determines if forwarding is needed for the instruction in ID/EX.
-// This implements the forwarding logic to resolve RAW hazards when possible.
-func (h *HazardUnit) DetectForwarding(idex *IDEXRegister, exmem *EXMEMRegister, memwb *MEMWBRegister) ForwardingResult {
+// StallResult contains stall and flush control signals.
+type StallResult struct {
+	// StallIF indicates the IF stage should stall (hold current instruction).
+	StallIF bool
+	// StallID indicates the ID stage should stall.
+	StallID bool
+	// InsertBubbleEX indicates a bubble (NOP) should be inserted in EX stage.
+	InsertBubbleEX bool
+	// FlushIF indicates the IF stage should be flushed (for branch).
+	FlushIF bool
+	// FlushID indicates the ID stage should be flushed (for branch).
+	FlushID bool
+}
+
+// HazardUnit detects data hazards and determines forwarding/stall signals.
+type HazardUnit struct{}
+
+// NewHazardUnit creates a new hazard detection unit.
+func NewHazardUnit() *HazardUnit {
+	return &HazardUnit{}
+}
+
+// DetectForwarding determines if forwarding is needed for the ID/EX stage.
+// It checks if the source registers (Rn, Rm) match the destination register
+// of instructions in later pipeline stages.
+func (h *HazardUnit) DetectForwarding(
+	idex *IDEXRegister,
+	exmem *EXMEMRegister,
+	memwb *MEMWBRegister,
+) ForwardingResult {
 	result := ForwardingResult{
 		ForwardRn: ForwardNone,
 		ForwardRm: ForwardNone,
@@ -39,74 +62,115 @@ func (h *HazardUnit) DetectForwarding(idex *IDEXRegister, exmem *EXMEMRegister, 
 		return result
 	}
 
-	// Check if Rn needs forwarding
-	if idex.Rn != 31 { // XZR doesn't need forwarding
-		// EX/MEM has priority (more recent result)
-		if exmem.Valid && exmem.RegWrite && exmem.Rd == idex.Rn && exmem.Rd != 31 {
-			result.ForwardRn = ForwardFromEXMEM
-		} else if memwb.Valid && memwb.RegWrite && memwb.Rd == idex.Rn && memwb.Rd != 31 {
-			result.ForwardRn = ForwardFromMEMWB
-		}
+	// Check forwarding for Rn operand
+	result.ForwardRn = h.detectForwardForReg(idex.Rn, exmem, memwb)
+
+	// Check forwarding for Rm operand
+	result.ForwardRm = h.detectForwardForReg(idex.Rm, exmem, memwb)
+
+	return result
+}
+
+// detectForwardForReg checks if a specific register needs forwarding.
+func (h *HazardUnit) detectForwardForReg(
+	reg uint8,
+	exmem *EXMEMRegister,
+	memwb *MEMWBRegister,
+) ForwardSource {
+	// XZR (register 31) always reads as 0, no need to forward
+	if reg == 31 {
+		return ForwardNone
 	}
 
-	// Check if Rm needs forwarding
-	if idex.Rm != 31 { // XZR doesn't need forwarding
-		// EX/MEM has priority (more recent result)
-		if exmem.Valid && exmem.RegWrite && exmem.Rd == idex.Rm && exmem.Rd != 31 {
-			result.ForwardRm = ForwardFromEXMEM
-		} else if memwb.Valid && memwb.RegWrite && memwb.Rd == idex.Rm && memwb.Rd != 31 {
-			result.ForwardRm = ForwardFromMEMWB
-		}
+	// Priority: EX/MEM has precedence over MEM/WB (more recent value)
+	// Check EX/MEM forwarding
+	if exmem.Valid && exmem.RegWrite && exmem.Rd == reg {
+		return ForwardFromEXMEM
+	}
+
+	// Check MEM/WB forwarding
+	if memwb.Valid && memwb.RegWrite && memwb.Rd == reg {
+		return ForwardFromMEMWB
+	}
+
+	return ForwardNone
+}
+
+// DetectLoadUseHazard detects load-use hazards where a load instruction
+// is immediately followed by an instruction using the loaded value.
+// This requires a stall because the value isn't available until MEM stage.
+func (h *HazardUnit) DetectLoadUseHazard(idex *IDEXRegister, nextRn, nextRm uint8) bool {
+	// Only load instructions cause load-use hazards
+	if !idex.Valid || !idex.MemRead {
+		return false
+	}
+
+	// XZR doesn't cause hazards
+	if idex.Rd == 31 {
+		return false
+	}
+
+	// Check if next instruction uses the load destination
+	return idex.Rd == nextRn || idex.Rd == nextRm
+}
+
+// DetectLoadUseHazardDecoded detects load-use hazard using decoded register info.
+// loadRd is the destination of the load instruction in ID/EX.
+// nextRn, nextRm are the source registers of the next instruction.
+// usesRn, usesRm indicate if the instruction actually uses these operands.
+func (h *HazardUnit) DetectLoadUseHazardDecoded(
+	loadRd uint8,
+	nextRn, nextRm uint8,
+	usesRn, usesRm bool,
+) bool {
+	// XZR doesn't cause hazards
+	if loadRd == 31 {
+		return false
+	}
+
+	// Check if next instruction uses the load destination as a source
+	if usesRn && loadRd == nextRn {
+		return true
+	}
+	if usesRm && loadRd == nextRm {
+		return true
+	}
+
+	return false
+}
+
+// ComputeStalls computes stall and flush signals based on hazard conditions.
+func (h *HazardUnit) ComputeStalls(loadUseHazard bool, branchTaken bool) StallResult {
+	result := StallResult{}
+
+	// Load-use hazard: stall IF and ID, insert bubble in EX
+	if loadUseHazard {
+		result.StallIF = true
+		result.StallID = true
+		result.InsertBubbleEX = true
+	}
+
+	// Branch taken: flush IF and ID (kill fetched/decoded instructions)
+	if branchTaken {
+		result.FlushIF = true
+		result.FlushID = true
 	}
 
 	return result
 }
 
-// DetectLoadUseHazard checks for load-use hazards that require stalling.
-// A load-use hazard occurs when a LDR is followed immediately by an instruction
-// that uses the loaded value. Forwarding alone cannot resolve this because the
-// data isn't available until after the MEM stage.
-func (h *HazardUnit) DetectLoadUseHazard(ifid *IFIDRegister, idex *IDEXRegister) bool {
-	// If ID/EX contains a load (MemRead) and the instruction in IF/ID
-	// uses the destination register, we must stall.
-	if !idex.Valid || !idex.MemRead {
-		return false
-	}
-
-	if !ifid.Valid {
-		return false
-	}
-
-	// Check if the load destination matches either source of the next instruction.
-	// We need to decode the instruction to know its source registers.
-	// For simplicity, we'll check in the decode stage after decoding.
-	// This function is called with already-decoded info.
-	return false
-}
-
-// DetectLoadUseHazardDecoded checks for load-use hazard with decoded instruction info.
-func (h *HazardUnit) DetectLoadUseHazardDecoded(loadRd uint8, nextRn uint8, nextRm uint8, nextUsesRn bool, nextUsesRm bool) bool {
-	if loadRd == 31 {
-		return false // XZR
-	}
-
-	if nextUsesRn && nextRn == loadRd {
-		return true
-	}
-
-	if nextUsesRm && nextRm == loadRd {
-		return true
-	}
-
-	return false
-}
-
-// GetForwardedValue returns the value to use based on forwarding source.
-func (h *HazardUnit) GetForwardedValue(source ForwardingSource, originalValue uint64, exmem *EXMEMRegister, memwb *MEMWBRegister) uint64 {
-	switch source {
+// GetForwardedValue returns the value to use based on forwarding decision.
+func (h *HazardUnit) GetForwardedValue(
+	forward ForwardSource,
+	originalValue uint64,
+	exmem *EXMEMRegister,
+	memwb *MEMWBRegister,
+) uint64 {
+	switch forward {
 	case ForwardFromEXMEM:
 		return exmem.ALUResult
 	case ForwardFromMEMWB:
+		// For load instructions, use memory data; otherwise use ALU result
 		if memwb.MemToReg {
 			return memwb.MemData
 		}
@@ -114,37 +178,4 @@ func (h *HazardUnit) GetForwardedValue(source ForwardingSource, originalValue ui
 	default:
 		return originalValue
 	}
-}
-
-// StallResult indicates what pipeline actions are needed.
-type StallResult struct {
-	// StallIF means the IF stage should not advance (refetch same instruction).
-	StallIF bool
-	// StallID means the ID stage should not advance.
-	StallID bool
-	// InsertBubbleEX means insert a NOP/bubble into the EX stage.
-	InsertBubbleEX bool
-	// FlushIF means flush the IF/ID register (for branches).
-	FlushIF bool
-	// FlushID means flush the ID/EX register (for branches).
-	FlushID bool
-}
-
-// ComputeStalls determines stalling and flushing actions.
-func (h *HazardUnit) ComputeStalls(loadUseHazard bool, branchTaken bool) StallResult {
-	result := StallResult{}
-
-	if loadUseHazard {
-		result.StallIF = true
-		result.StallID = true
-		result.InsertBubbleEX = true
-	}
-
-	if branchTaken {
-		// Flush the pipeline stages before the branch
-		result.FlushIF = true
-		result.FlushID = true
-	}
-
-	return result
 }

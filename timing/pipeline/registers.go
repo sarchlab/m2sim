@@ -1,113 +1,56 @@
-// Package pipeline provides a 5-stage pipeline model for cycle-accurate timing simulation.
+// Package pipeline provides the 5-stage pipeline implementation for timing simulation.
 package pipeline
 
-import (
-	"github.com/sarchlab/m2sim/insts"
-)
+import "github.com/sarchlab/m2sim/insts"
 
 // IFIDRegister holds state between Fetch and Decode stages.
 type IFIDRegister struct {
-	// Valid indicates this register contains valid data.
+	// Valid indicates if this pipeline register contains valid data.
 	Valid bool
 
-	// PC of the fetched instruction.
+	// PC is the program counter of the fetched instruction.
 	PC uint64
 
-	// Instruction word fetched from memory.
+	// InstructionWord is the raw 32-bit instruction word.
 	InstructionWord uint32
 }
 
-// IDEXRegister holds state between Decode and Execute stages.
-type IDEXRegister struct {
-	// Valid indicates this register contains valid data.
-	Valid bool
-
-	// PC of this instruction.
-	PC uint64
-
-	// Decoded instruction.
-	Inst *insts.Instruction
-
-	// Register values read during decode.
-	RnValue uint64
-	RmValue uint64
-
-	// Destination register (for forwarding detection).
-	Rd uint8
-
-	// Source registers (for hazard detection).
-	Rn uint8
-	Rm uint8
-
-	// Control signals.
-	MemRead    bool // LDR
-	MemWrite   bool // STR
-	RegWrite   bool // Will write to Rd
-	MemToReg   bool // Result comes from memory (LDR)
-	IsBranch   bool // Branch instruction
-	IsSyscall  bool // SVC instruction
-}
-
-// EXMEMRegister holds state between Execute and Memory stages.
-type EXMEMRegister struct {
-	// Valid indicates this register contains valid data.
-	Valid bool
-
-	// PC of this instruction.
-	PC uint64
-
-	// Instruction (for debugging/tracing).
-	Inst *insts.Instruction
-
-	// ALU result or computed address.
-	ALUResult uint64
-
-	// Value to store (for STR).
-	StoreValue uint64
-
-	// Destination register.
-	Rd uint8
-
-	// Control signals.
-	MemRead  bool
-	MemWrite bool
-	RegWrite bool
-	MemToReg bool
-}
-
-// MEMWBRegister holds state between Memory and Writeback stages.
-type MEMWBRegister struct {
-	// Valid indicates this register contains valid data.
-	Valid bool
-
-	// PC of this instruction.
-	PC uint64
-
-	// Instruction (for debugging/tracing).
-	Inst *insts.Instruction
-
-	// ALU result (for non-memory instructions).
-	ALUResult uint64
-
-	// Memory read result (for LDR).
-	MemData uint64
-
-	// Destination register.
-	Rd uint8
-
-	// Control signals.
-	RegWrite bool
-	MemToReg bool
-}
-
-// Clear resets the IFID register.
+// Clear resets the IF/ID register to empty state.
 func (r *IFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
 }
 
-// Clear resets the IDEX register.
+// IDEXRegister holds state between Decode and Execute stages.
+type IDEXRegister struct {
+	// Valid indicates if this pipeline register contains valid data.
+	Valid bool
+
+	// PC is the program counter of the instruction.
+	PC uint64
+
+	// Inst is the decoded instruction.
+	Inst *insts.Instruction
+
+	// Register values read from the register file.
+	RnValue uint64
+	RmValue uint64
+
+	// Register numbers for hazard detection.
+	Rd uint8
+	Rn uint8
+	Rm uint8
+
+	// Control signals.
+	MemRead  bool // True for load instructions
+	MemWrite bool // True for store instructions
+	RegWrite bool // True if instruction writes to register
+	MemToReg bool // True if result comes from memory (load)
+	IsBranch bool // True for branch instructions
+}
+
+// Clear resets the ID/EX register to empty state.
 func (r *IDEXRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
@@ -122,10 +65,36 @@ func (r *IDEXRegister) Clear() {
 	r.RegWrite = false
 	r.MemToReg = false
 	r.IsBranch = false
-	r.IsSyscall = false
 }
 
-// Clear resets the EXMEM register.
+// EXMEMRegister holds state between Execute and Memory stages.
+type EXMEMRegister struct {
+	// Valid indicates if this pipeline register contains valid data.
+	Valid bool
+
+	// PC is the program counter of the instruction.
+	PC uint64
+
+	// Inst is the decoded instruction.
+	Inst *insts.Instruction
+
+	// ALU result (address for load/store, result for ALU ops).
+	ALUResult uint64
+
+	// Value to store for store instructions.
+	StoreValue uint64
+
+	// Destination register number.
+	Rd uint8
+
+	// Control signals (propagated from ID/EX).
+	MemRead  bool
+	MemWrite bool
+	RegWrite bool
+	MemToReg bool
+}
+
+// Clear resets the EX/MEM register to empty state.
 func (r *EXMEMRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
@@ -139,7 +108,32 @@ func (r *EXMEMRegister) Clear() {
 	r.MemToReg = false
 }
 
-// Clear resets the MEMWB register.
+// MEMWBRegister holds state between Memory and Writeback stages.
+type MEMWBRegister struct {
+	// Valid indicates if this pipeline register contains valid data.
+	Valid bool
+
+	// PC is the program counter of the instruction.
+	PC uint64
+
+	// Inst is the decoded instruction.
+	Inst *insts.Instruction
+
+	// ALU result (for ALU instructions).
+	ALUResult uint64
+
+	// Data read from memory (for load instructions).
+	MemData uint64
+
+	// Destination register number.
+	Rd uint8
+
+	// Control signals.
+	RegWrite bool
+	MemToReg bool // True if result comes from memory
+}
+
+// Clear resets the MEM/WB register to empty state.
 func (r *MEMWBRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
