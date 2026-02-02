@@ -21,6 +21,9 @@ const (
 	OpLDR
 	OpSTR
 	OpSVC
+	OpMOVZ // Move wide with zero
+	OpMOVK // Move wide with keep
+	OpMOVN // Move wide with NOT
 )
 
 // Format represents an instruction encoding format.
@@ -36,6 +39,7 @@ const (
 	FormatBranchReg         // Branch to Register
 	FormatLoadStore         // Load/Store (Immediate)
 	FormatException         // Exception Generation (SVC, HVC, SMC, BRK)
+	FormatMoveWide          // Move Wide Immediate (MOVZ, MOVK, MOVN)
 )
 
 // Cond represents an ARM64 condition code.
