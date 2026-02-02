@@ -2,10 +2,10 @@
 
 ## Status: ACTIVE
 
-## Action Count: 28
+## Action Count: 29
 
 ## Current Phase
-M2: Memory & Control Flow - Issue #9 (Branch instructions) ready for Bob.
+M2: Memory & Control Flow - PR #13 (Branch instructions) ready for review.
 
 ## Milestones
 - [x] M1: Foundation (MVP) - Basic execution ✅ (2026-02-02)
@@ -16,7 +16,7 @@ M2: Memory & Control Flow - Issue #9 (Branch instructions) ready for Bob.
 - [ ] M6: Validation & Benchmarks
 
 ## Last Action
-PR #12 merged, issue #8 closed. Spawning Bob for issue #9.
+Bob created PR #13 implementing Branch instructions.
 
 ## Notes
 - Project started: 2026-02-02
