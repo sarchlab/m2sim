@@ -25,6 +25,24 @@ func (m *Memory) Write8(addr uint64, value byte) {
 	m.data[addr] = value
 }
 
+// Read16 reads a 16-bit little-endian value from memory.
+func (m *Memory) Read16(addr uint64) uint16 {
+	var buf [2]byte
+	for i := uint64(0); i < 2; i++ {
+		buf[i] = m.data[addr+i]
+	}
+	return binary.LittleEndian.Uint16(buf[:])
+}
+
+// Write16 writes a 16-bit little-endian value to memory.
+func (m *Memory) Write16(addr uint64, value uint16) {
+	var buf [2]byte
+	binary.LittleEndian.PutUint16(buf[:], value)
+	for i := uint64(0); i < 2; i++ {
+		m.data[addr+i] = buf[i]
+	}
+}
+
 // Read32 reads a 32-bit little-endian value from memory.
 func (m *Memory) Read32(addr uint64) uint32 {
 	var buf [4]byte
@@ -58,5 +76,12 @@ func (m *Memory) Write64(addr uint64, value uint64) {
 	binary.LittleEndian.PutUint64(buf[:], value)
 	for i := uint64(0); i < 8; i++ {
 		m.data[addr+i] = buf[i]
+	}
+}
+
+// LoadProgram loads a binary program into memory at the specified address.
+func (m *Memory) LoadProgram(addr uint64, program []byte) {
+	for i, b := range program {
+		m.data[addr+uint64(i)] = b
 	}
 }
