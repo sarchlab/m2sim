@@ -45,41 +45,35 @@ This document captures the validation state of M2Sim before M3 (Timing Model) ch
 2. No shifted register operands for ALU instructions
 3. No SIMD/floating-point support
 
-## Validation Test Programs
+## Validation Test Programs (benchmarks/validation_test.go)
 
-### 1. Simple Exit (benchmarks/simple_exit.s)
-- **Purpose**: Verify basic program flow and exit syscall
-- **Expected**: Exit code 42
+14 programmatic test cases covering all supported functionality:
 
-### 2. Arithmetic Test (benchmarks/arithmetic.s)
-- **Purpose**: Verify ALU operations
-- **Expected**: Exit code 15 (10 + 5)
-
-### 3. Loop Test (benchmarks/loop.s)
-- **Purpose**: Verify conditional branches and loops
-- **Expected**: Exit code 0 (count down from 3)
-
-### 4. Hello World (benchmarks/hello.s)
-- **Purpose**: Verify write syscall and output
-- **Expected**: Output "Hello\n", exit code 0
-
-### 5. Factorial (benchmarks/factorial.s)
-- **Purpose**: Verify complex control flow and BL/RET
-- **Expected**: Exit code 120 (5!)
+| Test | Description | Expected |
+|------|-------------|----------|
+| Simple Exit | Basic exit(42) | Exit 42 |
+| Arithmetic | 10 + 5 | Exit 15 |
+| Subtraction | 100 - 58 | Exit 42 |
+| Loop | Count down 3→0 | Exit 0, 9 instructions |
+| Hello World | write(1, "Hello\n", 6) | Exit 0, stdout="Hello\n" |
+| Iterative Sum | 5+4+3+2+1 | Exit 15 |
+| Bitwise AND | 0xFF & 0x0F | Exit 0x0F |
+| Bitwise ORR | 0xF0 \| 0x0F | Exit 0xFF |
+| Bitwise EOR | 0xFF ^ 0xF0 | Exit 0x0F |
+| Load/Store | STR then LDR 64-bit | Exit 123 |
+| Branch with Link | BL/RET subroutine | Exit 15 |
+| Conditional EQ | Branch when equal | Exit 5 (not 99) |
+| Conditional GT | Branch when greater | Exit 10 (not 99) |
+| Conditional Not Taken | No branch on false | Exit 42 |
 
 ## Regression Baseline
 
-The following test programs establish the regression baseline:
+Run validation tests:
+```bash
+go test ./benchmarks/... -v
+```
 
-```
-Program          | Instructions | Exit Code | Output
------------------|--------------|-----------|--------
-simple_exit      | 3            | 42        | -
-arithmetic       | 5            | 15        | -
-loop             | 11           | 0         | -
-hello            | 7            | 0         | "Hello\n"
-factorial        | ~30          | 120       | -
-```
+Expected: **14 specs, all passing**
 
 ## Ethan Validation Checklist
 
