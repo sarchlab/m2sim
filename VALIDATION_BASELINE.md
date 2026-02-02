@@ -3,12 +3,12 @@
 This document captures the validation state of M2Sim before M3 (Timing Model) changes.
 
 ## Validation Date
-2026-02-02
+2026-02-02 (Updated by Ethan validation - Issue #35)
 
 ## Milestone Status
 - **M1: Foundation (MVP)** ✅ Complete
 - **M2: Memory & Control Flow** ✅ Complete
-- **M3: Timing Model** 🚧 Not started (pending this validation)
+- **M3: Timing Model** 🚧 Pending this validation
 
 ## Test Suite Results
 
@@ -16,99 +16,125 @@ This document captures the validation state of M2Sim before M3 (Timing Model) ch
 
 | Package | Tests | Status |
 |---------|-------|--------|
-| emu | 188 | ✅ PASS |
+| emu | 200 | ✅ PASS |
 | driver | 17 | ✅ PASS |
 | insts | 46 | ✅ PASS |
 | loader | 17 | ✅ PASS |
-| timing/cache | 8 | ✅ PASS |
-| timing/mem | 6 | ✅ PASS |
-| timing/core | - | ⚠️ Build failed (WIP for M3) |
-| timing/pipeline | - | ⚠️ Build failed (WIP for M3) |
+| benchmarks | 14 | ✅ PASS |
+| timing/cache | - | ✅ PASS |
+| timing/mem | - | ✅ PASS |
+| timing/core | - | ⚠️ Build failed (WIP - M3) |
+| timing/pipeline | 94/99 | ⚠️ WIP (M3 timing work) |
 
-**Total: 282 tests passing** (excluding timing WIP)
+**Total Functional Emulator Tests: 294 passing**
 
-### Functional Emulator Capabilities
+### Ethan Validation Suite Results
 
-#### Supported Instructions
+The following validation programs have been verified:
+
+| Program | Description | Exit Code | Output | Instructions | Status |
+|---------|-------------|-----------|--------|--------------|--------|
+| simple_exit | Basic program termination | 42 | - | 3 | ✅ PASS |
+| arithmetic | ADD operations (10+5) | 15 | - | 5 | ✅ PASS |
+| subtraction | SUB operations (100-58) | 42 | - | 4 | ✅ PASS |
+| loop | Conditional branch loop (3→0) | 0 | - | 9 | ✅ PASS |
+| loop_sum | Sum 1+2+3+4+5 | 15 | - | 20 | ✅ PASS |
+| hello | Write syscall | 0 | "Hello\n" | 8 | ✅ PASS |
+| function_call | BL/RET subroutine | 15 | - | 6 | ✅ PASS |
+| nested_calls | Nested BL/RET | 25 | - | 12 | ✅ PASS |
+| logical_ops | AND/ORR/EOR | 255 | - | 7 | ✅ PASS |
+| memory_ops | LDR/STR | 77 | - | 7 | ✅ PASS |
+| cond_branch_eq | B.EQ condition | 5 | - | 5 | ✅ PASS |
+| cond_branch_gt | B.GT condition | 10 | - | 5 | ✅ PASS |
+
+**All 12 Ethan validation programs PASSED**
+
+## Functional Emulator Capabilities
+
+### Supported Instructions
 - **ALU (Immediate)**: ADD, ADDS, SUB, SUBS
 - **ALU (Register)**: ADD, ADDS, SUB, SUBS, AND, ANDS, ORR, EOR
 - **Branch**: B, BL, B.cond (all conditions), BR, BLR, RET
 - **Load/Store**: LDR (32/64-bit), STR (32/64-bit)
 - **System**: SVC (syscall)
 
-#### Supported Syscalls
+### Supported Syscalls
 - **exit (93)**: Program termination with exit code
 - **write (64)**: Write to file descriptor (stdout/stderr)
 
-#### Known Limitations
+### Known Limitations
 1. N-bit not handled in logical register instructions (BIC, ORN, EON)
 2. No shifted register operands for ALU instructions
 3. No SIMD/floating-point support
-4. Nested function calls require manual stack management (no automatic LR save)
-
-## Ethan Validation Test Suite
-
-The validation test suite is implemented in `emu/validation_test.go` and includes 11 test programs.
-
-### Test Programs and Results
-
-| Program | Description | Exit Code | Instructions | Status |
-|---------|-------------|-----------|--------------|--------|
-| simple_exit | exit(42) | 42 | 3 | ✅ PASS |
-| arithmetic | 10 + 5 | 15 | 5 | ✅ PASS |
-| subtraction | 100 - 58 | 42 | 4 | ✅ PASS |
-| loop | count down 3→0 | 0 | 9 | ✅ PASS |
-| loop_sum | 1+2+3+4+5 | 15 | 19 | ✅ PASS |
-| hello | write "Hello\n" | 0 | 7 | ✅ PASS |
-| function_call | BL/RET | 15 | 6 | ✅ PASS |
-| factorial | 5! (placeholder) | 120 | 3 | ✅ PASS |
-| logical_ops | AND/ORR/EOR | 240 | 8 | ✅ PASS |
-| memory_ops | LDR/STR | 77 | 3 | ✅ PASS |
-| chained_calls | sequential BL/RET | 35 | 9 | ✅ PASS |
-
-### Running the Validation Suite
-
-```bash
-# Run all emu tests (includes validation suite)
-go test ./emu/... -v
-
-# Run only validation tests
-go test ./emu/... -v -run "Ethan"
-
-# Run full test suite (functional emulator only)
-go test ./emu/... ./driver/... ./insts/... ./loader/... -v
-```
+4. Pre-index/post-index addressing modes limited
 
 ## Regression Baseline
 
-The following represents the expected behavior that MUST be preserved when M3 timing changes are integrated:
+This baseline establishes the expected behavior before M3 timing changes:
 
-### Exit Codes
-All test programs must produce identical exit codes.
+```
+=====================================
+M2Sim Regression Baseline v1.0
+Validated: 2026-02-02
+=====================================
 
-### Output
-Programs with write syscalls must produce identical output.
+Packages:
+  emu:        200 tests PASS
+  driver:      17 tests PASS
+  insts:       46 tests PASS
+  loader:      17 tests PASS
+  benchmarks:  14 tests PASS
+  ---------------------------------
+  Total:      294 tests PASS
 
-### Instruction Semantics
-The functional behavior (register values, memory state) must remain unchanged.
+Validation Programs:
+  simple_exit:    exit(42)           → 42
+  arithmetic:     10 + 5             → 15
+  subtraction:    100 - 58           → 42
+  loop:           count down 3→0     → 0
+  loop_sum:       1+2+3+4+5          → 15
+  hello:          write 'Hello\n'    → 0
+  function_call:  BL/RET             → 15
+  nested_calls:   nested BL/RET      → 25
+  logical_ops:    AND/ORR/EOR        → 255
+  memory_ops:     LDR/STR            → 77
+  cond_branch_eq: B.EQ               → 5
+  cond_branch_gt: B.GT               → 10
 
-### Instruction Count
-While timing may change, instruction counts for a given program should remain the same
-(the emulator executes the same instructions, just with timing information added).
+=====================================
+```
 
 ## Notes for Timing Model Integration
 
 When M3 timing changes are integrated:
-1. All existing unit tests must continue to pass
-2. All validation test programs must produce identical results
-3. New timing-specific tests should be added
+1. **All existing unit tests must continue to pass**
+2. **All validation programs must produce identical results**
+3. **New timing-specific tests should be added**
 4. Performance metrics can differ (that's expected)
-5. The timing/core and timing/pipeline packages need to be completed
+
+### Commands to Verify Baseline
+
+```bash
+# Run all functional emulator tests
+go test ./emu/... ./driver/... ./insts/... ./loader/... ./benchmarks/...
+
+# Run only Ethan validation suite
+go test ./emu/... -v 2>&1 | grep -A20 "Ethan Validation"
+```
 
 ## Sign-off
 
-- [x] **Bob**: Validation infrastructure created (2026-02-02)
-  - Created `emu/validation_test.go` with 11 test programs
-  - All 282 tests passing in functional emulator packages
-- [ ] **Ethan**: Full test validation (pending Ethan review)
+- [x] **Bob**: Validation infrastructure created (Issue #35)
+- [x] **Ethan**: Test programs validated
 - [ ] **Alice**: Approved for M3 timing work
+
+## Validation Test File
+
+The Ethan validation suite is implemented in:
+- `emu/ethan_validation_test.go` - Comprehensive validation tests with result tracking
+
+To run the validation suite:
+```bash
+cd ~/dev/src/github.com/sarchlab/m2sim
+go test ./emu/... -v 2>&1 | tail -50
+```
