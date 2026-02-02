@@ -2,10 +2,10 @@
 
 ## Status: ACTIVE
 
-## Action Count: 14
+## Action Count: 15
 
 ## Current Phase
-M1: Foundation - Need to label/review remaining issues.
+M1: Foundation - Issue #2 (decoder) ready for Bob. Issue #3 closed.
 
 ## Milestones
 - [ ] M1: Foundation (MVP) - Basic execution
@@ -16,7 +16,7 @@ M1: Foundation - Need to label/review remaining issues.
 - [ ] M6: Validation & Benchmarks
 
 ## Last Action
-PR #6 merged, checking remaining issues #2 and #3.
+Alice closed #3 (already implemented), labeled #2 ready-for-bob.
 
 ## Notes
 - Project started: 2026-02-02
