@@ -37,7 +37,7 @@ type Emulator struct {
 	stdout io.Writer
 	stderr io.Writer
 
-	// Execution tracking
+	// Execution state
 	instructionCount uint64
 	maxInstructions  uint64 // 0 means no limit
 }
@@ -74,7 +74,7 @@ func WithStackPointer(sp uint64) EmulatorOption {
 }
 
 // WithMaxInstructions sets the maximum number of instructions to execute.
-// A value of 0 means no limit (default).
+// A value of 0 means no limit.
 func WithMaxInstructions(max uint64) EmulatorOption {
 	return func(e *Emulator) {
 		e.maxInstructions = max
@@ -124,54 +124,50 @@ func (e *Emulator) Memory() *Memory {
 	return e.memory
 }
 
-// SetSyscallHandler sets the syscall handler after emulator creation.
-func (e *Emulator) SetSyscallHandler(handler SyscallHandler) {
-	e.syscallHandler = handler
-}
-
 // InstructionCount returns the number of instructions executed.
 func (e *Emulator) InstructionCount() uint64 {
 	return e.instructionCount
 }
 
 // LoadProgram loads a program into memory and sets the entry point.
-// Accepts either a []byte slice or a *Memory.
+// The program can be either a []byte or a *Memory.
 func (e *Emulator) LoadProgram(entry uint64, program interface{}) {
 	switch p := program.(type) {
 	case []byte:
 		e.memory.LoadProgram(entry, p)
 	case *Memory:
+		// Use the provided memory directly
 		e.memory = p
+		// Update execution units to use new memory
 		e.lsu = NewLoadStoreUnit(e.regFile, e.memory)
 		// Update syscall handler with new memory
-		if e.syscallHandler != nil {
-			e.syscallHandler = NewDefaultSyscallHandler(e.regFile, e.memory, e.stdout, e.stderr)
-		}
+		e.syscallHandler = NewDefaultSyscallHandler(e.regFile, e.memory, e.stdout, e.stderr)
 	}
 	e.regFile.PC = entry
-	e.instructionCount = 0
 }
 
-// Reset resets the emulator state.
+// Reset resets the emulator to its initial state.
 func (e *Emulator) Reset() {
 	e.regFile = &RegFile{}
 	e.memory = NewMemory()
+	e.instructionCount = 0
+
+	// Recreate execution units
 	e.alu = NewALU(e.regFile)
 	e.lsu = NewLoadStoreUnit(e.regFile, e.memory)
 	e.branchUnit = NewBranchUnit(e.regFile)
-	e.instructionCount = 0
 
-	// Recreate syscall handler with new regFile and memory
+	// Recreate syscall handler
 	e.syscallHandler = NewDefaultSyscallHandler(e.regFile, e.memory, e.stdout, e.stderr)
 }
 
 // Step executes a single instruction.
 // Returns a StepResult indicating whether execution should continue.
 func (e *Emulator) Step() StepResult {
-	// Check instruction limit
+	// Check instruction limit before executing
 	if e.maxInstructions > 0 && e.instructionCount >= e.maxInstructions {
 		return StepResult{
-			Err: fmt.Errorf("max instruction limit (%d) reached", e.maxInstructions),
+			Err: fmt.Errorf("max instructions reached"),
 		}
 	}
 
@@ -190,8 +186,8 @@ func (e *Emulator) Step() StepResult {
 	return result
 }
 
-// Run executes instructions until the program exits.
-// Returns the exit code.
+// Run executes instructions until the program exits or an error occurs.
+// Returns the exit code (-1 if error).
 func (e *Emulator) Run() int64 {
 	for {
 		result := e.Step()
