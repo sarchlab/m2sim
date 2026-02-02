@@ -191,6 +191,100 @@ var _ = Describe("ELF Loader", func() {
 			Expect(hasExecutable).To(BeTrue())
 		})
 	})
+
+	Describe("Multi-segment ELFs", func() {
+		It("should load multiple PT_LOAD segments", func() {
+			elfPath := filepath.Join(tempDir, "multi-segment.elf")
+			codeData := []byte{0x40, 0x05, 0x80, 0xd2, 0xc0, 0x03, 0x5f, 0xd6}
+			dataData := []byte{0x01, 0x02, 0x03, 0x04}
+			createMultiSegmentARM64ELF(elfPath, 0x400000, 0x400000, codeData, 0x600000, dataData)
+
+			prog, err := loader.Load(elfPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(prog.Segments).To(HaveLen(2))
+
+			// Find code segment
+			var codeSeg, dataSeg *loader.Segment
+			for i := range prog.Segments {
+				if prog.Segments[i].VirtAddr == 0x400000 {
+					codeSeg = &prog.Segments[i]
+				}
+				if prog.Segments[i].VirtAddr == 0x600000 {
+					dataSeg = &prog.Segments[i]
+				}
+			}
+
+			Expect(codeSeg).NotTo(BeNil())
+			Expect(codeSeg.Data).To(Equal(codeData))
+			Expect(codeSeg.Flags & loader.SegmentFlagExecute).NotTo(BeZero())
+
+			Expect(dataSeg).NotTo(BeNil())
+			Expect(dataSeg.Data).To(Equal(dataData))
+			Expect(dataSeg.Flags & loader.SegmentFlagWrite).NotTo(BeZero())
+		})
+	})
+
+	Describe("BSS segments", func() {
+		It("should handle BSS segments where Memsz > Filesz", func() {
+			elfPath := filepath.Join(tempDir, "bss.elf")
+			initialData := []byte{0x01, 0x02, 0x03, 0x04}
+			memSize := uint64(1024) // Much larger than file data
+			createBSSSegmentELF(elfPath, 0x600000, 0x400000, initialData, memSize)
+
+			prog, err := loader.Load(elfPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find the BSS segment
+			var bssSeg *loader.Segment
+			for i := range prog.Segments {
+				if prog.Segments[i].VirtAddr == 0x600000 {
+					bssSeg = &prog.Segments[i]
+					break
+				}
+			}
+
+			Expect(bssSeg).NotTo(BeNil())
+			Expect(bssSeg.Data).To(Equal(initialData))
+			Expect(bssSeg.MemSize).To(Equal(memSize))
+			Expect(bssSeg.MemSize).To(BeNumerically(">", uint64(len(bssSeg.Data))))
+		})
+	})
+
+	Describe("Zero Filesz segments", func() {
+		It("should handle segments with zero file size", func() {
+			elfPath := filepath.Join(tempDir, "zero-filesz.elf")
+			memSize := uint64(4096)
+			createZeroFileszELF(elfPath, 0x700000, 0x400000, memSize)
+
+			prog, err := loader.Load(elfPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Find the zero-filesz segment
+			var zeroSeg *loader.Segment
+			for i := range prog.Segments {
+				if prog.Segments[i].VirtAddr == 0x700000 {
+					zeroSeg = &prog.Segments[i]
+					break
+				}
+			}
+
+			Expect(zeroSeg).NotTo(BeNil())
+			Expect(zeroSeg.Data).To(HaveLen(0))
+			Expect(zeroSeg.MemSize).To(Equal(memSize))
+		})
+	})
+
+	Describe("ELFs with no loadable segments", func() {
+		It("should return empty segments list for ELF with no PT_LOAD", func() {
+			elfPath := filepath.Join(tempDir, "no-load.elf")
+			createNoLoadableSegmentsELF(elfPath, 0x400000)
+
+			prog, err := loader.Load(elfPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(prog.Segments).To(BeEmpty())
+			Expect(prog.EntryPoint).To(Equal(uint64(0x400000)))
+		})
+	})
 })
 
 // createMinimalARM64ELF creates a minimal valid ARM64 ELF64 binary.
@@ -300,4 +394,155 @@ func createMinimal32BitELF(path string) {
 	file, _ := os.Create(path)
 	defer file.Close()
 	file.Write(elfHeader)
+}
+
+// createMultiSegmentARM64ELF creates an ARM64 ELF with two PT_LOAD segments:
+// a code segment (RX) and a data segment (RW).
+func createMultiSegmentARM64ELF(path string, codeAddr, entryPoint uint64, code []byte, dataAddr uint64, data []byte) {
+	// ELF Header (64 bytes)
+	elfHeader := make([]byte, 64)
+
+	copy(elfHeader[0:4], []byte{0x7f, 'E', 'L', 'F'})
+	elfHeader[4] = 2 // 64-bit
+	elfHeader[5] = 1 // little endian
+	elfHeader[6] = 1 // version
+	binary.LittleEndian.PutUint16(elfHeader[16:18], 2)   // executable
+	binary.LittleEndian.PutUint16(elfHeader[18:20], 183) // AArch64
+	binary.LittleEndian.PutUint32(elfHeader[20:24], 1)   // version
+	binary.LittleEndian.PutUint64(elfHeader[24:32], entryPoint)
+	binary.LittleEndian.PutUint64(elfHeader[32:40], 64) // phoff
+	binary.LittleEndian.PutUint16(elfHeader[52:54], 64) // ehsize
+	binary.LittleEndian.PutUint16(elfHeader[54:56], 56) // phentsize
+	binary.LittleEndian.PutUint16(elfHeader[56:58], 2)  // phnum (2 segments)
+
+	// Program Header 1: Code segment (RX)
+	progHeader1 := make([]byte, 56)
+	binary.LittleEndian.PutUint32(progHeader1[0:4], 1)                   // PT_LOAD
+	binary.LittleEndian.PutUint32(progHeader1[4:8], 0x5)                 // PF_R | PF_X
+	binary.LittleEndian.PutUint64(progHeader1[8:16], 64+56*2)            // offset
+	binary.LittleEndian.PutUint64(progHeader1[16:24], codeAddr)          // vaddr
+	binary.LittleEndian.PutUint64(progHeader1[24:32], codeAddr)          // paddr
+	binary.LittleEndian.PutUint64(progHeader1[32:40], uint64(len(code))) // filesz
+	binary.LittleEndian.PutUint64(progHeader1[40:48], uint64(len(code))) // memsz
+	binary.LittleEndian.PutUint64(progHeader1[48:56], 0x1000)            // align
+
+	// Program Header 2: Data segment (RW)
+	progHeader2 := make([]byte, 56)
+	binary.LittleEndian.PutUint32(progHeader2[0:4], 1)                          // PT_LOAD
+	binary.LittleEndian.PutUint32(progHeader2[4:8], 0x6)                        // PF_R | PF_W
+	binary.LittleEndian.PutUint64(progHeader2[8:16], 64+56*2+uint64(len(code))) // offset
+	binary.LittleEndian.PutUint64(progHeader2[16:24], dataAddr)                 // vaddr
+	binary.LittleEndian.PutUint64(progHeader2[24:32], dataAddr)                 // paddr
+	binary.LittleEndian.PutUint64(progHeader2[32:40], uint64(len(data)))        // filesz
+	binary.LittleEndian.PutUint64(progHeader2[40:48], uint64(len(data)))        // memsz
+	binary.LittleEndian.PutUint64(progHeader2[48:56], 0x1000)                   // align
+
+	file, _ := os.Create(path)
+	defer file.Close()
+	file.Write(elfHeader)
+	file.Write(progHeader1)
+	file.Write(progHeader2)
+	file.Write(code)
+	file.Write(data)
+}
+
+// createBSSSegmentELF creates an ARM64 ELF with a BSS-like segment where Memsz > Filesz.
+func createBSSSegmentELF(path string, segAddr, entryPoint uint64, data []byte, memSize uint64) {
+	elfHeader := make([]byte, 64)
+
+	copy(elfHeader[0:4], []byte{0x7f, 'E', 'L', 'F'})
+	elfHeader[4] = 2 // 64-bit
+	elfHeader[5] = 1 // little endian
+	elfHeader[6] = 1 // version
+	binary.LittleEndian.PutUint16(elfHeader[16:18], 2)   // executable
+	binary.LittleEndian.PutUint16(elfHeader[18:20], 183) // AArch64
+	binary.LittleEndian.PutUint32(elfHeader[20:24], 1)   // version
+	binary.LittleEndian.PutUint64(elfHeader[24:32], entryPoint)
+	binary.LittleEndian.PutUint64(elfHeader[32:40], 64) // phoff
+	binary.LittleEndian.PutUint16(elfHeader[52:54], 64) // ehsize
+	binary.LittleEndian.PutUint16(elfHeader[54:56], 56) // phentsize
+	binary.LittleEndian.PutUint16(elfHeader[56:58], 1)  // phnum
+
+	progHeader := make([]byte, 56)
+	binary.LittleEndian.PutUint32(progHeader[0:4], 1)                   // PT_LOAD
+	binary.LittleEndian.PutUint32(progHeader[4:8], 0x6)                 // PF_R | PF_W
+	binary.LittleEndian.PutUint64(progHeader[8:16], 120)                // offset
+	binary.LittleEndian.PutUint64(progHeader[16:24], segAddr)           // vaddr
+	binary.LittleEndian.PutUint64(progHeader[24:32], segAddr)           // paddr
+	binary.LittleEndian.PutUint64(progHeader[32:40], uint64(len(data))) // filesz
+	binary.LittleEndian.PutUint64(progHeader[40:48], memSize)           // memsz > filesz
+	binary.LittleEndian.PutUint64(progHeader[48:56], 0x1000)            // align
+
+	file, _ := os.Create(path)
+	defer file.Close()
+	file.Write(elfHeader)
+	file.Write(progHeader)
+	file.Write(data)
+}
+
+// createZeroFileszELF creates an ARM64 ELF with a segment that has zero Filesz but non-zero Memsz.
+func createZeroFileszELF(path string, segAddr, entryPoint uint64, memSize uint64) {
+	elfHeader := make([]byte, 64)
+
+	copy(elfHeader[0:4], []byte{0x7f, 'E', 'L', 'F'})
+	elfHeader[4] = 2 // 64-bit
+	elfHeader[5] = 1 // little endian
+	elfHeader[6] = 1 // version
+	binary.LittleEndian.PutUint16(elfHeader[16:18], 2)   // executable
+	binary.LittleEndian.PutUint16(elfHeader[18:20], 183) // AArch64
+	binary.LittleEndian.PutUint32(elfHeader[20:24], 1)   // version
+	binary.LittleEndian.PutUint64(elfHeader[24:32], entryPoint)
+	binary.LittleEndian.PutUint64(elfHeader[32:40], 64) // phoff
+	binary.LittleEndian.PutUint16(elfHeader[52:54], 64) // ehsize
+	binary.LittleEndian.PutUint16(elfHeader[54:56], 56) // phentsize
+	binary.LittleEndian.PutUint16(elfHeader[56:58], 1)  // phnum
+
+	progHeader := make([]byte, 56)
+	binary.LittleEndian.PutUint32(progHeader[0:4], 1)         // PT_LOAD
+	binary.LittleEndian.PutUint32(progHeader[4:8], 0x6)       // PF_R | PF_W
+	binary.LittleEndian.PutUint64(progHeader[8:16], 120)      // offset
+	binary.LittleEndian.PutUint64(progHeader[16:24], segAddr) // vaddr
+	binary.LittleEndian.PutUint64(progHeader[24:32], segAddr) // paddr
+	binary.LittleEndian.PutUint64(progHeader[32:40], 0)       // filesz = 0
+	binary.LittleEndian.PutUint64(progHeader[40:48], memSize) // memsz > 0
+	binary.LittleEndian.PutUint64(progHeader[48:56], 0x1000)  // align
+
+	file, _ := os.Create(path)
+	defer file.Close()
+	file.Write(elfHeader)
+	file.Write(progHeader)
+}
+
+// createNoLoadableSegmentsELF creates an ARM64 ELF with no PT_LOAD segments (only PT_NOTE).
+func createNoLoadableSegmentsELF(path string, entryPoint uint64) {
+	elfHeader := make([]byte, 64)
+
+	copy(elfHeader[0:4], []byte{0x7f, 'E', 'L', 'F'})
+	elfHeader[4] = 2 // 64-bit
+	elfHeader[5] = 1 // little endian
+	elfHeader[6] = 1 // version
+	binary.LittleEndian.PutUint16(elfHeader[16:18], 2)   // executable
+	binary.LittleEndian.PutUint16(elfHeader[18:20], 183) // AArch64
+	binary.LittleEndian.PutUint32(elfHeader[20:24], 1)   // version
+	binary.LittleEndian.PutUint64(elfHeader[24:32], entryPoint)
+	binary.LittleEndian.PutUint64(elfHeader[32:40], 64) // phoff
+	binary.LittleEndian.PutUint16(elfHeader[52:54], 64) // ehsize
+	binary.LittleEndian.PutUint16(elfHeader[54:56], 56) // phentsize
+	binary.LittleEndian.PutUint16(elfHeader[56:58], 1)  // phnum (1 non-load segment)
+
+	// PT_NOTE segment (type = 4), not PT_LOAD
+	progHeader := make([]byte, 56)
+	binary.LittleEndian.PutUint32(progHeader[0:4], 4)    // PT_NOTE (not PT_LOAD)
+	binary.LittleEndian.PutUint32(progHeader[4:8], 0x4)  // PF_R
+	binary.LittleEndian.PutUint64(progHeader[8:16], 120) // offset
+	binary.LittleEndian.PutUint64(progHeader[16:24], 0)  // vaddr
+	binary.LittleEndian.PutUint64(progHeader[24:32], 0)  // paddr
+	binary.LittleEndian.PutUint64(progHeader[32:40], 0)  // filesz
+	binary.LittleEndian.PutUint64(progHeader[40:48], 0)  // memsz
+	binary.LittleEndian.PutUint64(progHeader[48:56], 4)  // align
+
+	file, _ := os.Create(path)
+	defer file.Close()
+	file.Write(elfHeader)
+	file.Write(progHeader)
 }

@@ -4,6 +4,7 @@ package loader
 import (
 	"debug/elf"
 	"fmt"
+	"io"
 )
 
 // SegmentFlags represents memory protection flags for a segment.
@@ -83,8 +84,12 @@ func Load(path string) (*Program, error) {
 		data := make([]byte, phdr.Filesz)
 		if phdr.Filesz > 0 {
 			n, err := phdr.ReadAt(data, 0)
-			if err != nil && uint64(n) != phdr.Filesz {
+			if err != nil && err != io.EOF {
 				return nil, fmt.Errorf("failed to read segment at 0x%x: %w", phdr.Vaddr, err)
+			}
+			if uint64(n) != phdr.Filesz {
+				return nil, fmt.Errorf("short read for segment at 0x%x: got %d bytes, expected %d",
+					phdr.Vaddr, n, phdr.Filesz)
 			}
 		}
 
