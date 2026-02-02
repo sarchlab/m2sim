@@ -2,10 +2,10 @@
 
 ## Status: ACTIVE
 
-## Action Count: 33
+## Action Count: 35
 
 ## Current Phase
-M2: Memory & Control Flow - Issue #10 (syscall emulation) ready for Bob.
+M2: Memory & Control Flow - PR #15 (syscall emulation) under review.
 
 ## Milestones
 - [x] M1: Foundation (MVP) - Basic execution ✅ (2026-02-02)
@@ -16,7 +16,7 @@ M2: Memory & Control Flow - Issue #10 (syscall emulation) ready for Bob.
 - [ ] M6: Validation & Benchmarks
 
 ## Last Action
-PR #13 merged, issue #9 closed. Spawning Bob for issue #10.
+Re-dispatched Cathy and Dylan to review PR #15 (syscall emulation).
 
 ## Notes
 - Project started: 2026-02-02
