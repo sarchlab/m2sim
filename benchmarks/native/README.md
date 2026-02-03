@@ -6,6 +6,8 @@ Native ARM64 assembly programs for calibrating M2Sim's timing model against real
 
 These benchmarks are 1:1 translations of the microbenchmarks in `benchmarks/microbenchmarks.go`. They allow direct comparison between simulator and real hardware performance.
 
+### Short Benchmarks (~20 instructions)
+
 | Benchmark | Description | Expected Exit Code |
 |-----------|-------------|-------------------|
 | `arithmetic_sequential` | 20 independent ADDs (ALU throughput) | 4 |
@@ -14,6 +16,20 @@ These benchmarks are 1:1 translations of the microbenchmarks in `benchmarks/micr
 | `function_calls` | 5 BL/RET pairs (call overhead) | 5 |
 | `branch_taken` | 5 unconditional branches | 5 |
 | `mixed_operations` | Mix of ALU, memory, calls | 100 |
+
+### Long-Running Benchmarks (10M iterations)
+
+These benchmarks run 10 million iterations to produce execution times that significantly exceed process startup overhead (~18ms). This enables meaningful timing comparisons.
+
+| Benchmark | Description | Expected Exit Code |
+|-----------|-------------|-------------------|
+| `arithmetic_sequential_long` | 10M × 20 independent ADDs | 0 |
+| `dependency_chain_long` | 10M × 20 dependent ADDs (RAW chain) | 0 |
+| `memory_sequential_long` | 10M × store/load cycles | 128 |
+| `branch_taken_long` | 10M × predictable branches | 128 |
+| `mixed_operations_long` | 10M × mixed instruction types | 128 |
+
+**Why long benchmarks?** The calibration report (docs/calibration-report.md) identified that short benchmarks are dominated by ~18ms process startup overhead. The long benchmarks produce measurable execution times (30-80ms) allowing timing-based calibration.
 
 ## Requirements
 
@@ -30,11 +46,20 @@ make
 ## Running
 
 ```bash
-# Run all benchmarks (shows exit codes)
+# Run all short benchmarks (shows exit codes)
 make run
 
-# Verify exit codes match expectations
+# Verify short benchmark exit codes match expectations
 make verify
+
+# Build long-running benchmarks
+make long
+
+# Run long benchmarks with timing
+make run-long
+
+# Verify long benchmark exit codes
+make verify-long
 ```
 
 ## Benchmark Runner Scripts
@@ -224,10 +249,19 @@ benchmarks/native/
 ├── run_benchmarks.sh             # Timing-based benchmark runner
 ├── run_benchmarks_xctrace.sh     # xctrace-based cycle counter
 ├── compare_with_simulator.sh     # Native vs simulator comparison
+│
+│   # Short benchmarks (~20 instructions)
 ├── arithmetic_sequential.s       # ALU throughput test
 ├── dependency_chain.s            # RAW hazard test  
 ├── memory_sequential.s           # Cache/memory test
 ├── function_calls.s              # BL/RET overhead test
 ├── branch_taken.s                # Branch overhead test
-└── mixed_operations.s            # Realistic workload test
+├── mixed_operations.s            # Realistic workload test
+│
+│   # Long-running benchmarks (10M iterations)
+├── arithmetic_sequential_long.s  # 10M × independent ADDs
+├── dependency_chain_long.s       # 10M × dependent ADDs (RAW chain)
+├── memory_sequential_long.s      # 10M × memory operations
+├── branch_taken_long.s           # 10M × predictable branches
+└── mixed_operations_long.s       # 10M × mixed instruction types
 ```
