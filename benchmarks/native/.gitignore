@@ -8,6 +8,13 @@ branch_taken
 mixed_operations
 measure
 
+# Long-running benchmark binaries
+arithmetic_sequential_long
+dependency_chain_long
+memory_sequential_long
+branch_taken_long
+mixed_operations_long
+
 # Trace files
 *.trace
 *.trace/
