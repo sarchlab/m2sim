@@ -319,8 +319,8 @@ func loopSimulation() Benchmark {
 		// Result: 0 + 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 = 45
 		Program: BuildProgram(
 			// Iteration 0: sum += 0, i++
-			EncodeADDReg(0, 0, 1, false),  // sum += i
-			EncodeADDImm(1, 1, 1, false),  // i++
+			EncodeADDReg(0, 0, 1, false), // sum += i
+			EncodeADDImm(1, 1, 1, false), // i++
 
 			// Iteration 1: sum += 1, i++
 			EncodeADDReg(0, 0, 1, false),
