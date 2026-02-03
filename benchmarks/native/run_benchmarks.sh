@@ -218,7 +218,7 @@ if [ "$OUTPUT_JSON" = "true" ]; then
     echo '  "benchmarks": ['
     
     first=true
-    echo "$results" | while IFS='|' read name avg_ns min_ns max_ns stddev cycles instr cpi exit_code; do
+    while IFS='|' read name avg_ns min_ns max_ns stddev cycles instr cpi exit_code; do
         [ -z "$name" ] && continue
         
         if [ "$first" = "true" ]; then
@@ -247,7 +247,7 @@ if [ "$OUTPUT_JSON" = "true" ]; then
       "expected_exit": $expected
     }
 EOF
-    done
+    done <<< "$results"
     
     echo ""
     echo "  ]"
