@@ -47,6 +47,34 @@ func DefaultL1DConfig() Config {
 	}
 }
 
+// DefaultL2Config returns default configuration for unified L2 cache.
+// Based on Apple M2 specifications:
+// - 16MB shared L2 (per-cluster)
+// - 16-way set associative
+// - 128B cache line
+// - ~12-14 cycle latency
+func DefaultL2Config() Config {
+	return Config{
+		Size:          16 * 1024 * 1024, // 16MB
+		Associativity: 16,               // 16-way
+		BlockSize:     128,              // 128B cache line
+		HitLatency:    12,               // ~12 cycles
+		MissLatency:   200,              // ~200 cycles to main memory
+	}
+}
+
+// DefaultL2PerCoreConfig returns L2 configuration for per-core L2 setups.
+// Useful for simulating systems with private L2 per core.
+func DefaultL2PerCoreConfig() Config {
+	return Config{
+		Size:          512 * 1024, // 512KB per core
+		Associativity: 8,          // 8-way
+		BlockSize:     128,        // 128B cache line
+		HitLatency:    12,         // ~12 cycles
+		MissLatency:   200,        // ~200 cycles to main memory
+	}
+}
+
 // AccessResult contains the result of a cache access.
 type AccessResult struct {
 	// Hit indicates whether the access was a cache hit.
