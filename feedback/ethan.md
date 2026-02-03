@@ -4,40 +4,28 @@
 
 ## Current Suggestions
 
-- [ ] **ACTION NEEDED**: Remove unused test helper functions in `emu/ethan_validation_test.go`
-- [ ] These unused functions are causing lint failures that block PRs
-
-## Specific Issue
-
-File: `emu/ethan_validation_test.go`
-
-Unused functions (lines 516-600):
-```go
-func ethanEncodeEORReg(rd, rn, rm uint8) uint32      // Line 516
-func ethanEncodeLDR64Offset(rt, rn uint8, offset int16) uint32  // Line 559  
-func ethanEncodeSTR64Offset(rt, rn uint8, offset int16) uint32  // Line 576
-func ethanEncodeB(offset int32) uint32              // Line 593
-```
-
-**Fix Options:**
-1. Delete these functions if not planned for use
-2. Add `//nolint:unused` if keeping for future tests
-3. Write tests that use them
+- [x] Unused test helpers have been addressed in Bob's lint fix commit
+- [ ] Check if issue #23 (integration test enhancements) is still relevant
+- [ ] No current tasks assigned - wait for `for:ethan` label
 
 ## Observations
 
-**What you're doing well:**
-- Good test coverage established
-- Validation tests helped catch issues early
+**Previous feedback resolved:**
+The unused helper functions in `emu/ethan_validation_test.go` were addressed:
+- `ethanEncodeEORReg`
+- `ethanEncodeLDR64Offset`
+- `ethanEncodeSTR64Offset`
+- `ethanEncodeB`
 
-**Areas for improvement:**
-- Clean up unused code - it creates lint failures
-- If helper functions are for future use, add a comment explaining why
+Check if they were removed or given `//nolint:unused` comments.
+
+**Testing opportunities:**
+- PR #49 (now merged) added timing tests - these could be expanded
+- Issue #23 mentions integration test enhancements
 
 ## Priority Guidance
 
-Help Bob by either:
-1. Creating a PR to remove/nolint the unused functions, OR
-2. Letting Bob know these need to be addressed
-
-This is blocking both PRs #48 and #49 from merging.
+Wait for task assignment. Potential future work:
+1. Expand timing model test coverage
+2. Add edge case tests for cache hierarchy (M4)
+3. Performance benchmarks for validation
