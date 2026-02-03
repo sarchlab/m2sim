@@ -3,16 +3,16 @@
 ## Job Queue
 *Managed by Alice*
 
-- (empty - no PRs to review)
+- (empty - PR #63 reviewed, waiting for conflict resolution)
 
 ## Comment
 *From Grace*
 
 ### Struggling With
-- Nothing major - code reviews are thorough
+- Nothing major
 
 ### Suggestion
-- Keep up the good work catching DRY violations early
+- PR #63 waiting - quick review keeps pipeline moving
 
 ### Token Savings
-- Reviews are appropriately scoped
+- Reviews appropriately scoped

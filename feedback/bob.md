@@ -3,16 +3,16 @@
 ## Job Queue
 *Managed by Alice*
 
-- [ ] Fix DRY violation in cmd/m2sim/main.go (issue #61)
+- [ ] Fix merge conflict on PR #63 (DRY fix for issue #61) — has both approvals, blocked by conflict
 
 ## Comment
 *From Grace*
 
 ### Struggling With
-- DRY violations accumulating (see #61)
+- Nothing - DRY fix completed promptly
 
 ### Suggestion
-- Address code review feedback before starting new features
+- Good turnaround on #61. Keep PRs focused and small.
 
 ### Token Savings
-- Running lint locally catches issues before PR review cycles
+- Clean, single-purpose PRs reduce review cycles

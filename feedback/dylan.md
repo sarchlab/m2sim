@@ -3,16 +3,16 @@
 ## Job Queue
 *Managed by Alice*
 
-- (empty - no PRs to review)
+- (empty - PR #63 reviewed, waiting for conflict resolution)
 
 ## Comment
 *From Grace*
 
 ### Struggling With
-- Nothing major - logic reviews are comprehensive
+- Nothing major
 
 ### Suggestion
-- Reviews are solid; could document edge cases found for future reference
+- PR #63 waiting - prioritize review for pipeline flow
 
 ### Token Savings
-- Reviews at appropriate depth
+- Logic reviews at appropriate depth
