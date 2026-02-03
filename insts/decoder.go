@@ -21,6 +21,16 @@ const (
 	OpLDR
 	OpSTR
 	OpSVC
+	// SIMD opcodes
+	OpVADD  // Vector ADD
+	OpVSUB  // Vector SUB
+	OpVMUL  // Vector MUL
+	OpLDRQ  // Load Q register (128-bit)
+	OpSTRQ  // Store Q register (128-bit)
+	OpVMOV  // Vector MOV
+	OpVFADD // Vector floating-point ADD
+	OpVFSUB // Vector floating-point SUB
+	OpVFMUL // Vector floating-point MUL
 )
 
 // Format represents an instruction encoding format.
@@ -28,14 +38,16 @@ type Format uint8
 
 // Instruction formats.
 const (
-	FormatUnknown    Format = iota
-	FormatDPImm             // Data Processing (Immediate)
-	FormatDPReg             // Data Processing (Register)
-	FormatBranch            // Unconditional Branch (Immediate)
-	FormatBranchCond        // Conditional Branch
-	FormatBranchReg         // Branch to Register
-	FormatLoadStore         // Load/Store (Immediate)
-	FormatException         // Exception Generation (SVC, HVC, SMC, BRK)
+	FormatUnknown       Format = iota
+	FormatDPImm                // Data Processing (Immediate)
+	FormatDPReg                // Data Processing (Register)
+	FormatBranch               // Unconditional Branch (Immediate)
+	FormatBranchCond           // Conditional Branch
+	FormatBranchReg            // Branch to Register
+	FormatLoadStore            // Load/Store (Immediate)
+	FormatException            // Exception Generation (SVC, HVC, SMC, BRK)
+	FormatSIMDReg              // SIMD Data Processing (Register)
+	FormatSIMDLoadStore        // SIMD Load/Store
 )
 
 // Cond represents an ARM64 condition code.
@@ -72,6 +84,20 @@ const (
 	ShiftROR ShiftType = 0b11 // Rotate right
 )
 
+// SIMDArrangement represents the SIMD vector arrangement specifier.
+type SIMDArrangement uint8
+
+// SIMD arrangement specifiers.
+const (
+	Arr8B  SIMDArrangement = iota // 8 bytes (64-bit, D register)
+	Arr16B                        // 16 bytes (128-bit, Q register)
+	Arr4H                         // 4 halfwords (64-bit)
+	Arr8H                         // 8 halfwords (128-bit)
+	Arr2S                         // 2 singles (64-bit)
+	Arr4S                         // 4 singles (128-bit)
+	Arr2D                         // 2 doubles (128-bit)
+)
+
 // Instruction represents a decoded ARM64 instruction.
 type Instruction struct {
 	Op     Op     // Operation code
@@ -95,6 +121,11 @@ type Instruction struct {
 	// Shift for register operand
 	ShiftType   ShiftType // Type of shift applied to Rm
 	ShiftAmount uint8     // Shift amount for Rm
+
+	// SIMD fields
+	IsSIMD      bool            // true if this is a SIMD instruction
+	Arrangement SIMDArrangement // Vector arrangement (8B, 16B, 4H, etc.)
+	IsFloat     bool            // true for floating-point SIMD ops
 }
 
 // Decoder decodes ARM64 machine code into instructions.
@@ -115,6 +146,10 @@ func (d *Decoder) Decode(word uint32) *Instruction {
 	op0 := (word >> 25) & 0xF // bits [28:25]
 
 	switch {
+	case d.isSIMDLoadStore(word):
+		d.decodeSIMDLoadStore(word, inst)
+	case d.isSIMDThreeSame(word):
+		d.decodeSIMDThreeSame(word, inst)
 	case d.isLoadStoreImm(word):
 		d.decodeLoadStoreImm(word, inst)
 	case d.isDataProcessingImm(word):
@@ -410,4 +445,153 @@ func (d *Decoder) decodeException(word uint32, inst *Instruction) {
 	// Extract imm16 (bits [20:5])
 	imm16 := (word >> 5) & 0xFFFF
 	inst.Imm = uint64(imm16)
+}
+
+// isSIMDLoadStore checks for SIMD/FP Load/Store with unsigned immediate offset.
+// LDR/STR (SIMD&FP, unsigned immediate): bits [31:30] = size, bits [29:26] = 0b1111
+// Q register (128-bit): size=00, opc=11 for LDR, opc=10 for STR
+func (d *Decoder) isSIMDLoadStore(word uint32) bool {
+	// Check pattern: xx 1111 xx (bits 29:26 = 0b1111)
+	// This indicates SIMD&FP load/store with unsigned immediate
+	op := (word >> 26) & 0xF // bits [29:26]
+	return op == 0b1111
+}
+
+// decodeSIMDLoadStore decodes SIMD LDR and STR with unsigned immediate offset.
+// Format: size | 111 | 1 | 01 | opc | imm12 | Rn | Rt
+// For Q register (128-bit): size=00, opc[1]=1
+func (d *Decoder) decodeSIMDLoadStore(word uint32, inst *Instruction) {
+	inst.Format = FormatSIMDLoadStore
+	inst.IsSIMD = true
+
+	size := (word >> 30) & 0x3    // bits [31:30]
+	opc := (word >> 22) & 0x3     // bits [23:22]
+	imm12 := (word >> 10) & 0xFFF // bits [21:10]
+	rn := (word >> 5) & 0x1F      // bits [9:5]
+	rt := word & 0x1F             // bits [4:0]
+
+	inst.Rn = uint8(rn)
+	inst.Rd = uint8(rt) // Rt uses Rd field (this is the SIMD register index)
+
+	// Determine size and scale
+	// For Q register (128-bit): size=00, opc[1]=1 -> scale=16
+	// For D register (64-bit): size=01, opc[1]=1 -> scale=8
+	// For S register (32-bit): size=10, opc[1]=1 -> scale=4
+	var scale uint64
+	if size == 0b00 && (opc&0x2) != 0 {
+		// Q register (128-bit)
+		scale = 16
+		inst.Is64Bit = true // Use this to indicate 128-bit
+		inst.Arrangement = Arr16B
+	} else if size == 0b01 {
+		// D register (64-bit)
+		scale = 8
+		inst.Arrangement = Arr8B
+	} else if size == 0b10 {
+		// S register (32-bit)
+		scale = 4
+		inst.Arrangement = Arr2S
+	} else {
+		// Default to Q register
+		scale = 16
+		inst.Arrangement = Arr16B
+	}
+
+	inst.Imm = uint64(imm12) * scale
+
+	// Determine LDR vs STR
+	// opc[0]: 0=STR, 1=LDR
+	if opc&0x1 == 1 {
+		inst.Op = OpLDRQ
+	} else {
+		inst.Op = OpSTRQ
+	}
+}
+
+// isSIMDThreeSame checks for SIMD Three Same instructions (ADD, SUB, MUL, etc.).
+// Format: 0 | Q | U | 01110 | size | 1 | Rm | opcode | 1 | Rn | Rd
+// bits [31] = 0, bits [28:24] = 0b01110
+func (d *Decoder) isSIMDThreeSame(word uint32) bool {
+	bit31 := (word >> 31) & 0x1
+	op := (word >> 24) & 0x1F // bits [28:24]
+	return bit31 == 0 && op == 0b01110
+}
+
+// decodeSIMDThreeSame decodes SIMD Three Same instructions.
+// Format: 0 | Q | U | 01110 | size | 1 | Rm | opcode | 1 | Rn | Rd
+func (d *Decoder) decodeSIMDThreeSame(word uint32, inst *Instruction) {
+	inst.Format = FormatSIMDReg
+	inst.IsSIMD = true
+
+	q := (word >> 30) & 0x1       // bit 30: 0=64-bit (D), 1=128-bit (Q)
+	u := (word >> 29) & 0x1       // bit 29: unsigned flag
+	size := (word >> 22) & 0x3    // bits [23:22]
+	rm := (word >> 16) & 0x1F     // bits [20:16]
+	opcode := (word >> 11) & 0x1F // bits [15:11]
+	rn := (word >> 5) & 0x1F      // bits [9:5]
+	rd := word & 0x1F             // bits [4:0]
+
+	inst.Rd = uint8(rd)
+	inst.Rn = uint8(rn)
+	inst.Rm = uint8(rm)
+	inst.Is64Bit = q == 1 // For SIMD, this indicates 128-bit (Q) vs 64-bit (D)
+
+	// Set arrangement based on Q and size
+	inst.Arrangement = d.getSIMDArrangement(q == 1, size)
+
+	// Decode opcode
+	// Integer three-same: U=0, opcode determines operation
+	// ADD: U=0, opcode=10000 (0x10)
+	// SUB: U=1, opcode=10000 (0x10)
+	// MUL: U=0, opcode=10011 (0x13)
+	// Floating-point three-same: different encoding
+	switch {
+	case opcode == 0b10000: // ADD or SUB
+		if u == 0 {
+			inst.Op = OpVADD
+		} else {
+			inst.Op = OpVSUB
+		}
+	case opcode == 0b10011 && u == 0: // MUL (integer only)
+		inst.Op = OpVMUL
+	case opcode == 0b11010 && u == 0 && size >= 2: // FADD (floating-point)
+		inst.Op = OpVFADD
+		inst.IsFloat = true
+	case opcode == 0b11010 && u == 1 && size >= 2: // FSUB (floating-point)
+		inst.Op = OpVFSUB
+		inst.IsFloat = true
+	case opcode == 0b11011 && u == 1 && size >= 2: // FMUL (floating-point)
+		inst.Op = OpVFMUL
+		inst.IsFloat = true
+	default:
+		inst.Op = OpUnknown
+	}
+}
+
+// getSIMDArrangement returns the SIMD arrangement based on Q bit and size field.
+func (d *Decoder) getSIMDArrangement(isQ bool, size uint32) SIMDArrangement {
+	if isQ {
+		// 128-bit (Q register)
+		switch size {
+		case 0:
+			return Arr16B
+		case 1:
+			return Arr8H
+		case 2:
+			return Arr4S
+		case 3:
+			return Arr2D
+		}
+	} else {
+		// 64-bit (D register)
+		switch size {
+		case 0:
+			return Arr8B
+		case 1:
+			return Arr4H
+		case 2:
+			return Arr2S
+		}
+	}
+	return Arr16B // Default
 }

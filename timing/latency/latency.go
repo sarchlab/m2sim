@@ -50,6 +50,21 @@ func (t *Table) GetLatency(inst *insts.Instruction) uint64 {
 	case insts.OpSVC:
 		return t.config.SyscallLatency
 
+	// SIMD integer operations
+	case insts.OpVADD, insts.OpVSUB, insts.OpVMUL, insts.OpVMOV:
+		return t.config.SIMDIntLatency
+
+	// SIMD floating-point operations
+	case insts.OpVFADD, insts.OpVFSUB, insts.OpVFMUL:
+		return t.config.SIMDFloatLatency
+
+	// SIMD load/store
+	case insts.OpLDRQ:
+		return t.config.SIMDLoadLatency
+
+	case insts.OpSTRQ:
+		return t.config.SIMDStoreLatency
+
 	default:
 		return 1
 	}
@@ -81,7 +96,12 @@ func (t *Table) IsMemoryOp(inst *insts.Instruction) bool {
 	if inst == nil {
 		return false
 	}
-	return inst.Op == insts.OpLDR || inst.Op == insts.OpSTR
+	switch inst.Op {
+	case insts.OpLDR, insts.OpSTR, insts.OpLDRQ, insts.OpSTRQ:
+		return true
+	default:
+		return false
+	}
 }
 
 // IsLoadOp returns true if the instruction is a load operation.
@@ -89,7 +109,7 @@ func (t *Table) IsLoadOp(inst *insts.Instruction) bool {
 	if inst == nil {
 		return false
 	}
-	return inst.Op == insts.OpLDR
+	return inst.Op == insts.OpLDR || inst.Op == insts.OpLDRQ
 }
 
 // IsStoreOp returns true if the instruction is a store operation.
@@ -97,7 +117,7 @@ func (t *Table) IsStoreOp(inst *insts.Instruction) bool {
 	if inst == nil {
 		return false
 	}
-	return inst.Op == insts.OpSTR
+	return inst.Op == insts.OpSTR || inst.Op == insts.OpSTRQ
 }
 
 // IsBranchOp returns true if the instruction is a branch operation.
@@ -107,6 +127,21 @@ func (t *Table) IsBranchOp(inst *insts.Instruction) bool {
 	}
 	switch inst.Op {
 	case insts.OpB, insts.OpBL, insts.OpBCond, insts.OpBR, insts.OpBLR, insts.OpRET:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsSIMDOp returns true if the instruction is a SIMD operation.
+func (t *Table) IsSIMDOp(inst *insts.Instruction) bool {
+	if inst == nil {
+		return false
+	}
+	switch inst.Op {
+	case insts.OpVADD, insts.OpVSUB, insts.OpVMUL, insts.OpVMOV,
+		insts.OpVFADD, insts.OpVFSUB, insts.OpVFMUL,
+		insts.OpLDRQ, insts.OpSTRQ:
 		return true
 	default:
 		return false
