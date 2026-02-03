@@ -20,6 +20,12 @@ type Statistics struct {
 	ExecStalls uint64
 	// MemStalls is the number of stalls due to memory latency.
 	MemStalls uint64
+	// FetchStalls is the number of stalls in the fetch stage.
+	FetchStalls uint64
+	// DecodeStalls is the number of stalls in the decode stage (load-use hazards).
+	DecodeStalls uint64
+	// FlushCycles is the number of cycles lost to pipeline flushes.
+	FlushCycles uint64
 }
 
 // CPI returns the cycles per instruction.
@@ -28,6 +34,11 @@ func (s Statistics) CPI() float64 {
 		return 0
 	}
 	return float64(s.Cycles) / float64(s.Instructions)
+}
+
+// ExecuteCycles returns cycles spent in actual execution (non-stall).
+func (s Statistics) ExecuteCycles() uint64 {
+	return s.Instructions // Each instruction takes at least 1 execute cycle
 }
 
 // PipelineOption is a functional option for configuring the Pipeline.
@@ -350,15 +361,30 @@ func (p *Pipeline) Tick() {
 		// Keep the current IF/ID contents during stall
 		nextIFID = p.ifid
 		p.stats.Stalls++
+		p.stats.FetchStalls++
+	}
+
+	// Track decode stalls (load-use hazards)
+	if loadUseHazard {
+		p.stats.DecodeStalls++
 	}
 
 	// Handle branch: update PC and flush pipeline
 	if branchTaken {
 		p.pc = branchTarget
 		// Flush IF and ID stages (clear their pipeline registers)
+		// Count flushed instructions as lost cycles
+		flushedCycles := uint64(0)
+		if nextIFID.Valid {
+			flushedCycles++
+		}
+		if nextIDEX.Valid {
+			flushedCycles++
+		}
 		nextIFID.Clear()
 		nextIDEX.Clear()
 		p.stats.Flushes++
+		p.stats.FlushCycles += flushedCycles
 	}
 
 	// Latch all pipeline registers at the end of the cycle
