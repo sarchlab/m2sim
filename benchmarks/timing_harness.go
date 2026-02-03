@@ -205,46 +205,46 @@ func (h *Harness) runBenchmark(bench Benchmark) BenchmarkResult {
 
 // PrintResults outputs benchmark results in a human-readable format.
 func (h *Harness) PrintResults(results []BenchmarkResult) {
-	fmt.Fprintln(h.config.Output, "=== M2Sim Timing Benchmark Results ===")
-	fmt.Fprintln(h.config.Output, "")
+	_, _ = fmt.Fprintln(h.config.Output, "=== M2Sim Timing Benchmark Results ===")
+	_, _ = fmt.Fprintln(h.config.Output, "")
 
 	for _, r := range results {
-		fmt.Fprintf(h.config.Output, "Benchmark: %s\n", r.Name)
-		fmt.Fprintf(h.config.Output, "  Description: %s\n", r.Description)
-		fmt.Fprintf(h.config.Output, "  Exit Code: %d\n", r.ExitCode)
-		fmt.Fprintln(h.config.Output, "  --- Timing ---")
-		fmt.Fprintf(h.config.Output, "  Simulated Cycles:     %d\n", r.SimulatedCycles)
-		fmt.Fprintf(h.config.Output, "  Instructions Retired: %d\n", r.InstructionsRetired)
-		fmt.Fprintf(h.config.Output, "  CPI:                  %.3f\n", r.CPI)
-		fmt.Fprintf(h.config.Output, "  Stall Cycles:         %d\n", r.StallCycles)
-		fmt.Fprintf(h.config.Output, "  Exec Stalls:          %d\n", r.ExecStalls)
-		fmt.Fprintf(h.config.Output, "  Mem Stalls:           %d\n", r.MemStalls)
-		fmt.Fprintf(h.config.Output, "  Pipeline Flushes:     %d\n", r.PipelineFlushes)
+		_, _ = fmt.Fprintf(h.config.Output, "Benchmark: %s\n", r.Name)
+		_, _ = fmt.Fprintf(h.config.Output, "  Description: %s\n", r.Description)
+		_, _ = fmt.Fprintf(h.config.Output, "  Exit Code: %d\n", r.ExitCode)
+		_, _ = fmt.Fprintln(h.config.Output, "  --- Timing ---")
+		_, _ = fmt.Fprintf(h.config.Output, "  Simulated Cycles:     %d\n", r.SimulatedCycles)
+		_, _ = fmt.Fprintf(h.config.Output, "  Instructions Retired: %d\n", r.InstructionsRetired)
+		_, _ = fmt.Fprintf(h.config.Output, "  CPI:                  %.3f\n", r.CPI)
+		_, _ = fmt.Fprintf(h.config.Output, "  Stall Cycles:         %d\n", r.StallCycles)
+		_, _ = fmt.Fprintf(h.config.Output, "  Exec Stalls:          %d\n", r.ExecStalls)
+		_, _ = fmt.Fprintf(h.config.Output, "  Mem Stalls:           %d\n", r.MemStalls)
+		_, _ = fmt.Fprintf(h.config.Output, "  Pipeline Flushes:     %d\n", r.PipelineFlushes)
 
 		if r.ICacheHits > 0 || r.ICacheMisses > 0 {
-			fmt.Fprintln(h.config.Output, "  --- I-Cache ---")
-			fmt.Fprintf(h.config.Output, "  Hits:   %d\n", r.ICacheHits)
-			fmt.Fprintf(h.config.Output, "  Misses: %d\n", r.ICacheMisses)
+			_, _ = fmt.Fprintln(h.config.Output, "  --- I-Cache ---")
+			_, _ = fmt.Fprintf(h.config.Output, "  Hits:   %d\n", r.ICacheHits)
+			_, _ = fmt.Fprintf(h.config.Output, "  Misses: %d\n", r.ICacheMisses)
 		}
 
 		if r.DCacheHits > 0 || r.DCacheMisses > 0 {
-			fmt.Fprintln(h.config.Output, "  --- D-Cache ---")
-			fmt.Fprintf(h.config.Output, "  Hits:   %d\n", r.DCacheHits)
-			fmt.Fprintf(h.config.Output, "  Misses: %d\n", r.DCacheMisses)
+			_, _ = fmt.Fprintln(h.config.Output, "  --- D-Cache ---")
+			_, _ = fmt.Fprintf(h.config.Output, "  Hits:   %d\n", r.DCacheHits)
+			_, _ = fmt.Fprintf(h.config.Output, "  Misses: %d\n", r.DCacheMisses)
 		}
 
-		fmt.Fprintf(h.config.Output, "  Wall Time: %v\n", r.WallTime)
-		fmt.Fprintln(h.config.Output, "")
+		_, _ = fmt.Fprintf(h.config.Output, "  Wall Time: %v\n", r.WallTime)
+		_, _ = fmt.Fprintln(h.config.Output, "")
 	}
 }
 
 // PrintCSV outputs benchmark results in CSV format for easy comparison.
 func (h *Harness) PrintCSV(results []BenchmarkResult) {
-	fmt.Fprintln(h.config.Output,
+	_, _ = fmt.Fprintln(h.config.Output,
 		"name,cycles,instructions,cpi,stalls,exec_stalls,mem_stalls,flushes,icache_hits,icache_misses,dcache_hits,dcache_misses,exit_code")
 
 	for _, r := range results {
-		fmt.Fprintf(h.config.Output, "%s,%d,%d,%.3f,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+		_, _ = fmt.Fprintf(h.config.Output, "%s,%d,%d,%.3f,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 			r.Name,
 			r.SimulatedCycles,
 			r.InstructionsRetired,
