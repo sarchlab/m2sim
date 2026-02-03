@@ -45,6 +45,22 @@ type TimingConfig struct {
 	// Default: 1 cycle (handling is external).
 	SyscallLatency uint64 `json:"syscall_latency"`
 
+	// SIMDIntLatency is the execution latency for SIMD integer operations
+	// (VADD, VSUB, VMUL). Default: 2 cycles.
+	SIMDIntLatency uint64 `json:"simd_int_latency"`
+
+	// SIMDFloatLatency is the execution latency for SIMD floating-point operations
+	// (VFADD, VFSUB, VFMUL). Default: 3 cycles.
+	SIMDFloatLatency uint64 `json:"simd_float_latency"`
+
+	// SIMDLoadLatency is the latency for SIMD load operations (128-bit).
+	// Default: 5 cycles (slightly higher than scalar due to wider access).
+	SIMDLoadLatency uint64 `json:"simd_load_latency"`
+
+	// SIMDStoreLatency is the latency for SIMD store operations (128-bit).
+	// Default: 1 cycle (fire-and-forget to LSQ).
+	SIMDStoreLatency uint64 `json:"simd_store_latency"`
+
 	// Note: Memory hierarchy latencies (L1/L2/L3/DRAM) are configured in
 	// cache.Config.HitLatency and cache.Config.MissLatency, not here.
 	// This table provides instruction execution latencies only.
@@ -62,6 +78,10 @@ func DefaultTimingConfig() *TimingConfig {
 		DivideLatencyMin:        10,
 		DivideLatencyMax:        15,
 		SyscallLatency:          1,
+		SIMDIntLatency:          2,
+		SIMDFloatLatency:        3,
+		SIMDLoadLatency:         5,
+		SIMDStoreLatency:        1,
 	}
 }
 
@@ -129,5 +149,9 @@ func (c *TimingConfig) Clone() *TimingConfig {
 		DivideLatencyMin:        c.DivideLatencyMin,
 		DivideLatencyMax:        c.DivideLatencyMax,
 		SyscallLatency:          c.SyscallLatency,
+		SIMDIntLatency:          c.SIMDIntLatency,
+		SIMDFloatLatency:        c.SIMDFloatLatency,
+		SIMDLoadLatency:         c.SIMDLoadLatency,
+		SIMDStoreLatency:        c.SIMDStoreLatency,
 	}
 }

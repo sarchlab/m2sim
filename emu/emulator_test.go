@@ -244,7 +244,9 @@ var _ = Describe("Emulator", func() {
 
 		Context("Unknown instructions", func() {
 			It("should return error for unknown instruction", func() {
-				program := uint32ToBytes(0xFFFFFFFF)
+				// Use an instruction pattern that doesn't match any decoder
+				// 0x00000001 is not a valid ARM64 instruction
+				program := uint32ToBytes(0x00000001)
 
 				e.LoadProgram(0x1000, program)
 
