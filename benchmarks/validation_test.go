@@ -247,11 +247,11 @@ func encodeSVC(imm uint16) uint32 {
 // Format: 11 111 0 01 00 imm12 Rn Rt
 func encodeSTR64(rt, rn uint8, imm12 uint16) uint32 {
 	var inst uint32 = 0
-	inst |= 0b11 << 30        // size = 64-bit
-	inst |= 0b111 << 27       // op1
-	inst |= 0 << 26           // V = 0 (not SIMD)
-	inst |= 0b01 << 24        // op2
-	inst |= 0b00 << 22        // opc = STR
+	inst |= 0b11 << 30  // size = 64-bit
+	inst |= 0b111 << 27 // op1
+	inst |= 0 << 26     // V = 0 (not SIMD)
+	inst |= 0b01 << 24  // op2
+	inst |= 0b00 << 22  // opc = STR
 	inst |= uint32(imm12) << 10
 	inst |= uint32(rn&0x1F) << 5
 	inst |= uint32(rt & 0x1F)
@@ -262,24 +262,14 @@ func encodeSTR64(rt, rn uint8, imm12 uint16) uint32 {
 // Format: 11 111 0 01 01 imm12 Rn Rt
 func encodeLDR64(rt, rn uint8, imm12 uint16) uint32 {
 	var inst uint32 = 0
-	inst |= 0b11 << 30        // size = 64-bit
-	inst |= 0b111 << 27       // op1
-	inst |= 0 << 26           // V = 0 (not SIMD)
-	inst |= 0b01 << 24        // op2
-	inst |= 0b01 << 22        // opc = LDR
+	inst |= 0b11 << 30  // size = 64-bit
+	inst |= 0b111 << 27 // op1
+	inst |= 0 << 26     // V = 0 (not SIMD)
+	inst |= 0b01 << 24  // op2
+	inst |= 0b01 << 22  // opc = LDR
 	inst |= uint32(imm12) << 10
 	inst |= uint32(rn&0x1F) << 5
 	inst |= uint32(rt & 0x1F)
-	return inst
-}
-
-// encodeB encodes unconditional branch B.
-// Format: 000101 imm26
-func encodeB(offset int32) uint32 {
-	var inst uint32 = 0
-	inst |= 0b000101 << 26
-	imm26 := uint32(offset/4) & 0x3FFFFFF
-	inst |= imm26
 	return inst
 }
 
@@ -311,14 +301,14 @@ func TestEdgeCases(t *testing.T) {
 		{
 			name: "large_loop_stress_test",
 			program: buildProgram(
-				encodeADDImm(0, 31, 0, false),    // X0 = 0 (counter)
-				encodeADDImm(1, 31, 100, false),  // X1 = 100 (limit)
+				encodeADDImm(0, 31, 0, false),   // X0 = 0 (counter)
+				encodeADDImm(1, 31, 100, false), // X1 = 100 (limit)
 				// loop:
-				encodeADDImm(0, 0, 1, false),    // X0 = X0 + 1
-				encodeSUBImm(2, 0, 100, true),   // SUBS X2, X0, #100 (compare)
-				encodeBCond(-8, 11),             // B.LT loop (CondLT = 0b1011 = 11)
-				encodeADDImm(8, 31, 93, false),  // X8 = 93
-				encodeSVC(0),                    // exit with X0 = 100
+				encodeADDImm(0, 0, 1, false),   // X0 = X0 + 1
+				encodeSUBImm(2, 0, 100, true),  // SUBS X2, X0, #100 (compare)
+				encodeBCond(-8, 11),            // B.LT loop (CondLT = 0b1011 = 11)
+				encodeADDImm(8, 31, 93, false), // X8 = 93
+				encodeSVC(0),                   // exit with X0 = 100
 			),
 			expectedExit: 100,
 		},
@@ -337,10 +327,10 @@ func TestEdgeCases(t *testing.T) {
 			name: "zero_register_as_source",
 			program: buildProgram(
 				// XZR reads as 0, writes are ignored
-				encodeADDImm(0, 31, 42, false),  // X0 = XZR + 42 = 42
-				encodeADDReg(0, 0, 31, false),   // X0 = X0 + XZR = 42
-				encodeADDImm(8, 31, 93, false),  // X8 = 93
-				encodeSVC(0),                    // exit
+				encodeADDImm(0, 31, 42, false), // X0 = XZR + 42 = 42
+				encodeADDReg(0, 0, 31, false),  // X0 = X0 + XZR = 42
+				encodeADDImm(8, 31, 93, false), // X8 = 93
+				encodeSVC(0),                   // exit
 			),
 			expectedExit: 42,
 		},
@@ -350,19 +340,19 @@ func TestEdgeCases(t *testing.T) {
 			// Using BL to call functions, with manual LR save/restore
 			program: buildProgram(
 				// offset 0: main
-				encodeADDImm(0, 31, 1, false),   // 0: X0 = 1
-				encodeBL(12),                    // 4: BL outer (offset 12 -> addr 16)
-				encodeADDImm(8, 31, 93, false),  // 8: X8 = 93
-				encodeSVC(0),                    // 12: exit with X0
+				encodeADDImm(0, 31, 1, false),  // 0: X0 = 1
+				encodeBL(12),                   // 4: BL outer (offset 12 -> addr 16)
+				encodeADDImm(8, 31, 93, false), // 8: X8 = 93
+				encodeSVC(0),                   // 12: exit with X0
 				// offset 16: outer
-				encodeADDImm(0, 0, 1, false),    // 16: X0 += 1 (now 2)
-				encodeADDReg(9, 30, 31, false),  // 20: X9 = LR (save)
-				encodeBL(12),                    // 24: BL inner (offset 12 -> addr 36)
-				encodeADDReg(30, 9, 31, false),  // 28: LR = X9 (restore)
-				encodeRET(),                     // 32: return to main
+				encodeADDImm(0, 0, 1, false),   // 16: X0 += 1 (now 2)
+				encodeADDReg(9, 30, 31, false), // 20: X9 = LR (save)
+				encodeBL(12),                   // 24: BL inner (offset 12 -> addr 36)
+				encodeADDReg(30, 9, 31, false), // 28: LR = X9 (restore)
+				encodeRET(),                    // 32: return to main
 				// offset 36: inner
-				encodeADDImm(0, 0, 1, false),    // 36: X0 += 1 (now 3)
-				encodeRET(),                     // 40: return to outer
+				encodeADDImm(0, 0, 1, false), // 36: X0 += 1 (now 3)
+				encodeRET(),                  // 40: return to outer
 			),
 			expectedExit: 3,
 		},
@@ -370,10 +360,10 @@ func TestEdgeCases(t *testing.T) {
 			name: "conditional_branch_all_conditions",
 			program: buildProgram(
 				// Test B.EQ (should not branch, Z=0)
-				encodeADDImm(0, 31, 1, false),  // X0 = 1
-				encodeSUBImm(2, 0, 0, true),    // SUBS X2, X0, #0 (sets Z=0, N=0)
-				encodeBCond(12, 0),             // B.EQ skip1 (CondEQ=0, should NOT branch)
-				encodeADDImm(0, 0, 1, false),   // X0 += 1 (now 2)
+				encodeADDImm(0, 31, 1, false), // X0 = 1
+				encodeSUBImm(2, 0, 0, true),   // SUBS X2, X0, #0 (sets Z=0, N=0)
+				encodeBCond(12, 0),            // B.EQ skip1 (CondEQ=0, should NOT branch)
+				encodeADDImm(0, 0, 1, false),  // X0 += 1 (now 2)
 				// skip1:
 				// Test B.NE (should branch, Z=0)
 				encodeBCond(8, 1),              // B.NE skip2 (CondNE=1, should branch)
@@ -438,14 +428,14 @@ func TestNegativeCases(t *testing.T) {
 
 		// Program that would loop many times without limit
 		program := buildProgram(
-			encodeADDImm(0, 31, 0, false),   // X0 = 0
-			encodeADDImm(0, 0, 1, false),    // X0 += 1
-			encodeADDImm(0, 0, 1, false),    // X0 += 1
-			encodeADDImm(0, 0, 1, false),    // X0 += 1
-			encodeADDImm(0, 0, 1, false),    // X0 += 1
-			encodeADDImm(0, 0, 1, false),    // X0 += 1 (6th - should not execute)
-			encodeADDImm(8, 31, 93, false),  // X8 = 93
-			encodeSVC(0),                    // exit
+			encodeADDImm(0, 31, 0, false),  // X0 = 0
+			encodeADDImm(0, 0, 1, false),   // X0 += 1
+			encodeADDImm(0, 0, 1, false),   // X0 += 1
+			encodeADDImm(0, 0, 1, false),   // X0 += 1
+			encodeADDImm(0, 0, 1, false),   // X0 += 1
+			encodeADDImm(0, 0, 1, false),   // X0 += 1 (6th - should not execute)
+			encodeADDImm(8, 31, 93, false), // X8 = 93
+			encodeSVC(0),                   // exit
 		)
 
 		e.LoadProgram(0x1000, program)
@@ -517,10 +507,10 @@ func TestIntermediateStateVerification(t *testing.T) {
 		e.RegFile().SP = 0x8000
 
 		program := buildProgram(
-			encodeADDImm(0, 31, 42, false),  // X0 = 42
-			encodeSTR64(0, 31, 0),           // STR X0, [SP]
-			encodeADDImm(8, 31, 93, false),  // X8 = 93
-			encodeSVC(0),                    // exit
+			encodeADDImm(0, 31, 42, false), // X0 = 42
+			encodeSTR64(0, 31, 0),          // STR X0, [SP]
+			encodeADDImm(8, 31, 93, false), // X8 = 93
+			encodeSVC(0),                   // exit
 		)
 
 		e.LoadProgram(0x1000, program)
