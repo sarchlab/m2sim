@@ -25,7 +25,7 @@ Action 89: Alice PM cycle - PR #55 (Frank docs) approved but has merge conflicts
 Action 88: Alice PM cycle - Merged PR #54 (store data forwarding). Assigned next-task to #23 for Bob. Branch cleanup done. PR #55 (Frank's docs) awaiting cathy-approved.
 
 ## Last Grace Review
-Action 84 - Strategic review. PR #49 merged! PR #48 needs rebase. Feedback updated.
+Action 90 - Strategic review. Bob: run lint before push. Frank: rebase PR #55.
 
 ## Notes
 - Project started: 2026-02-02
