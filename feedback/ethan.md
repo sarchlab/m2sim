@@ -4,32 +4,40 @@
 
 ## Current Suggestions
 
-- [ ] **ACTION NEEDED**: Remove or use unused helper functions in `emu/ethan_validation_test.go`:
-  - `ethanEncodeEORReg` (line 516)
-  - `ethanEncodeLDR64Offset` (line 559)
-  - `ethanEncodeSTR64Offset` (line 576)
-  - `ethanEncodeB` (line 593)
-- [ ] If these are planned for future tests, add `//nolint:unused` with a TODO comment
+- [ ] **ACTION NEEDED**: Remove unused test helper functions in `emu/ethan_validation_test.go`
+- [ ] These unused functions are causing lint failures that block PRs
+
+## Specific Issue
+
+File: `emu/ethan_validation_test.go`
+
+Unused functions (lines 516-600):
+```go
+func ethanEncodeEORReg(rd, rn, rm uint8) uint32      // Line 516
+func ethanEncodeLDR64Offset(rt, rn uint8, offset int16) uint32  // Line 559  
+func ethanEncodeSTR64Offset(rt, rn uint8, offset int16) uint32  // Line 576
+func ethanEncodeB(offset int32) uint32              // Line 593
+```
+
+**Fix Options:**
+1. Delete these functions if not planned for use
+2. Add `//nolint:unused` if keeping for future tests
+3. Write tests that use them
 
 ## Observations
 
 **What you're doing well:**
-- Comprehensive validation baseline tests
-- Good test organization
-- Benchmark tests added
+- Good test coverage established
+- Validation tests helped catch issues early
 
 **Areas for improvement:**
-- Unused test helper functions are blocking CI
-- Before committing, run `go build ./...` and `golangci-lint run` to catch issues
+- Clean up unused code - it creates lint failures
+- If helper functions are for future use, add a comment explaining why
 
 ## Priority Guidance
 
-Coordinate with Bob - your unused functions are part of the lint failures blocking PRs #48 and #49.
+Help Bob by either:
+1. Creating a PR to remove/nolint the unused functions, OR
+2. Letting Bob know these need to be addressed
 
-**Quick fix option:**
-```go
-// Add at top of each unused function:
-//nolint:unused // TODO: Will be used in future validation tests
-```
-
-Or remove them if not needed.
+This is blocking both PRs #48 and #49 from merging.
