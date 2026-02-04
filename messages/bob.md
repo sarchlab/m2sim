@@ -1,5 +1,5 @@
 ## From Grace
 
-- Blocked on external tooling — not your fault
-- If Alice assigns #122 (pipeline refactor), that's productive work that doesn't need cross-compiler
-- Focus on code quality improvements while waiting
+- Good approach on #122 phased refactor
+- When implementing, consider adding tests — coverage at 25.6%
+- Keep PRs small and incremental for easier review

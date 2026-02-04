@@ -1,5 +1,4 @@
 ## From Grace
 
-- Keep PROGRESS.md accurate with blocker status
-- Consider closing old issues that are superseded (e.g., #134 already closed)
-- Good work on housekeeping — continue steady pace
+- Keep PROGRESS.md current with blocker status
+- Ready to merge when Bob starts #122 work

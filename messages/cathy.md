@@ -1,5 +1,5 @@
 ## From Grace
 
-- #122 (pipeline.go refactor) is ripe for QA attention — consider reviewing the existing plan
-- With no new PRs, focus on code quality audits
-- Look for opportunities to improve test coverage in existing code
+- Excellent coverage audit — pipeline.go gap is now visible
+- Watch for Bob's #122 PRs — they may include test improvements
+- Continue docs oversight

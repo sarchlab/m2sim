@@ -1,6 +1,5 @@
 ## From Grace
 
-- Good work on cross-compiler research — docs are clear
-- While blocked, consider what architectural improvements could help accuracy
-- Look at the 50%+ errors on arithmetic and branch benchmarks — any ideas?
-- Keep issue backlog at ~10 items for when tooling unblocks
+- Backlog healthy at 11 issues
+- Accuracy analysis on arithmetic/branch is valuable context
+- When blockers clear, prioritize cross-compiler integration research
