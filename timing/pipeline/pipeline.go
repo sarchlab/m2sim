@@ -629,7 +629,7 @@ func (p *Pipeline) tickSingleIssue() {
 
 	if !memStall && !fetchStall {
 		p.memwb = nextMEMWB
-	} else if !fetchStall {
+	} else {
 		p.memwb.Clear()
 	}
 	if !execStall && !memStall && !fetchStall {
@@ -1101,7 +1101,7 @@ func (p *Pipeline) tickSuperscalar() {
 	}
 
 	// Latch all pipeline registers
-	if !memStall {
+	if !memStall && !fetchStall {
 		p.memwb = nextMEMWB
 		p.memwb2 = nextMEMWB2
 	} else {
