@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-*Last updated: 2026-02-04 16:40 EST*
+*Last updated: 2026-02-04 17:06 EST*
 
 ## Current Milestone: M6 - Validation
 
@@ -10,40 +10,37 @@
 
 ### Recent Activity (2026-02-04)
 
-**This cycle (16:40):**
-- Grace: Skipped (cycle 178, not a 10th)
-- Alice: Updated task board, action count 178→179→180→181
-- Eric: Responded to human question #154 about compiler instruction sequences
-- Bob: Created PR #159 — load/store pair and indexed addressing
-- Cathy: Reviewed and approved PR #159
-- Dana: Fixed gofmt formatting, awaiting CI for merge
+**This cycle (17:00):**
+- Grace: Skipped (cycle 182, not a 10th)
+- Alice: Updated task board, action count 182→183
+- Eric: Created benchmark sub-issues #160-165 per human request
+- Bob: Implemented CoreMark instructions → PR #166
+- Cathy: Reviewed and approved PR #166
+- Dana: Merged PR #166 ✅
 
 **Progress:**
-- 🚧 **PR #159** — Load/store pair (STP/LDP), pre/post-indexed addressing
-- ✅ CoreMark execution: **11 → 2102 instructions** (PR #159)
-- ✅ **36 PRs merged** (once #159 merges)
+- ✅ **PR #166 merged** — CSEL/CSINC, UDIV/SDIV, MADD/MSUB, TBZ/TBNZ, CBZ/CBNZ
+- ✅ **37 PRs merged** total — excellent velocity!
+- ✅ **0 open PRs** — clean slate again
+- 🔄 CoreMark execution should progress further (test pending)
 
 ### Blockers Status
 
 **Previous blockers RESOLVED ✅**
 - Cross-compiler: `aarch64-elf-gcc 15.2.0` ✅
 - SPEC: `benchspec/CPU` exists ✅
-- PR #153-157 all merged ✅
+- PRs #153-159, #166 all merged ✅
 
-**Current blocker (#158):**
-- CoreMark needs more instructions:
-  - CSEL/CSINC (conditional select)
-  - UDIV/SDIV (division)
-  - MADD/MSUB (multiply-add)
-  - TBZ/TBNZ (test bit and branch)
-  - CBZ/CBNZ (compare and branch zero)
+**Current status:**
+- CoreMark instruction support expanded (PR #166)
+- Next: test CoreMark execution with new instructions
+- If more instructions needed, Eric has created tracking issues
 
 ### Next Steps
 
-1. **Merge PR #159** — load/store expansion (awaiting CI)
-2. **Implement conditional select instructions** — CSEL/CSINC
-3. Continue expanding instruction coverage until CoreMark runs fully
-4. Begin Embench-IoT phase 2 after CoreMark validates
+1. **Test CoreMark** — verify how many more instructions execute
+2. **Continue instruction expansion** if needed (#160, #161, #162)
+3. Begin **Embench-IoT phase 2** (#163, #164, #165) after CoreMark validates
 
 ### Current Accuracy (microbenchmarks)
 
@@ -60,7 +57,7 @@
 
 | Package | Coverage | Notes |
 |---------|----------|-------|
-| **insts** | **96.6%** ✅ | SIMD tests merged |
+| **insts** | **96%+** ✅ | 18 new tests added |
 | timing/cache | 89.1% | |
 | benchmarks | 80.8% | |
 | emu | 72.5% | |
@@ -70,22 +67,23 @@
 
 ### Open PRs
 
-| PR | Title | Status |
-|----|-------|--------|
-| #159 | Load/store pair + indexed addressing | cathy-approved, CI running |
+None — clean slate! 🎉
 
 ### Open Issues
 
 | Issue | Priority | Status |
 |-------|----------|--------|
-| #158 | High | More instructions needed — new |
-| #154 | Medium | ELF vs Mach-O question — answered |
+| #167 | — | Human: Consider recreate milestones (new) |
+| #165 | Medium | Embench: matmult-int (new) |
+| #164 | Medium | Embench: crc32 (new) |
+| #163 | Medium | Embench: aha-mont64 (new) |
 | #152 | — | Human directive (blockers resolved) |
+| #146 | High | SPEC CPU 2017 installation |
 | #145 | Low | Reduce CLAUDE.md |
 | #141 | High | 20% error target — approved |
 | #139 | Low | Multi-core (long-term) |
 | #138 | High | Spec benchmark execution |
-| #132 | High | Intermediate benchmarks — in progress |
+| #132 | High | Intermediate benchmarks — sub-issues created |
 | #122 | Medium | Pipeline refactor (deferred) |
 | #115 | High/Med | Accuracy gaps investigation |
 | #107 | High | SPEC suite available |
