@@ -762,6 +762,25 @@ func (p *Pipeline) tickSuperscalar() {
 			rmValue := p.hazardUnit.GetForwardedValue(
 				forwarding.ForwardRm, p.idex.RmValue, &p.exmem, &savedMEMWB)
 
+			// Forward from secondary pipeline stages (exmem2, memwb2) to primary slot
+			// When pairs dual-issue, primary slot may need values from previous secondary execution
+			if p.memwb2.Valid && p.memwb2.RegWrite && p.memwb2.Rd != 31 {
+				if p.idex.Rn == p.memwb2.Rd {
+					rnValue = p.memwb2.ALUResult
+				}
+				if p.idex.Rm == p.memwb2.Rd {
+					rmValue = p.memwb2.ALUResult
+				}
+			}
+			if p.exmem2.Valid && p.exmem2.RegWrite && p.exmem2.Rd != 31 {
+				if p.idex.Rn == p.exmem2.Rd {
+					rnValue = p.exmem2.ALUResult
+				}
+				if p.idex.Rm == p.exmem2.Rd {
+					rmValue = p.exmem2.ALUResult
+				}
+			}
+
 			execResult := p.executeStage.Execute(&p.idex, rnValue, rmValue)
 
 			storeValue := execResult.StoreValue
@@ -837,10 +856,6 @@ func (p *Pipeline) tickSuperscalar() {
 			rnValue := p.idex2.RnValue
 			rmValue := p.idex2.RmValue
 
-			// Track if we found a value from each source
-			rnFromNextEXMEM := false
-			rmFromNextEXMEM := false
-
 			// Bug fix: Forward from secondary pipeline stages (exmem2, memwb2)
 			// This is needed when consecutive secondary-slot instructions have dependencies.
 			// Example: add x1, x1, #1 (→exmem2) followed by add x1, x1, #1 needs x1 from exmem2.
@@ -875,17 +890,11 @@ func (p *Pipeline) tickSuperscalar() {
 			if nextEXMEM.Valid && nextEXMEM.RegWrite && nextEXMEM.Rd != 31 {
 				if p.idex2.Rn == nextEXMEM.Rd {
 					rnValue = nextEXMEM.ALUResult
-					rnFromNextEXMEM = true
 				}
 				if p.idex2.Rm == nextEXMEM.Rd {
 					rmValue = nextEXMEM.ALUResult
-					rmFromNextEXMEM = true
 				}
 			}
-
-			// Suppress unused variable warnings
-			_ = rnFromNextEXMEM
-			_ = rmFromNextEXMEM
 
 			execResult := p.executeStage.Execute(&idex2, rnValue, rmValue)
 
