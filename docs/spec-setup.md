@@ -65,3 +65,38 @@ Per `spec_runner.go`:
 | 531.deepsjeng_r | Chess engine (alpha-beta search) |
 
 These were chosen as integer-rate benchmarks suitable for M2Sim validation.
+
+## Troubleshooting
+
+### macOS Gatekeeper/Quarantine Issue
+
+**Symptom:** The installer hangs when running `specxz` or other SPEC tools.
+
+**Cause:** macOS quarantines downloaded files and blocks unsigned executables.
+
+**Solution (requires admin/human intervention):**
+
+1. **Remove quarantine attributes:**
+   ```bash
+   xattr -cr /Users/yifan/Documents/spec
+   ```
+
+2. **Or allow in System Settings:**
+   - Open System Settings > Privacy & Security
+   - Look for "specxz was blocked" message
+   - Click "Allow Anyway"
+
+3. **Or sign the tools locally:**
+   ```bash
+   find /Users/yifan/Documents/spec/tools/bin -type f -perm +111 -exec codesign --force -s - {} \;
+   ```
+
+After resolving, retry the install:
+```bash
+cd /Users/yifan/Documents/spec
+./install.sh -f -u macos-arm64 -d /Users/yifan/Documents/spec
+```
+
+---
+
+*Updated by Cathy — 2026-02-04*
