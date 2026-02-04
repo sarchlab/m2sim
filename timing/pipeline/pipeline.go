@@ -318,7 +318,11 @@ func (p *Pipeline) Tick() {
 
 	p.stats.Cycles++
 
-	// Use superscalar tick if dual-issue is enabled
+	// Use superscalar tick if multi-issue is enabled
+	if p.superscalarConfig.IssueWidth >= 4 {
+		p.tickQuadIssue()
+		return
+	}
 	if p.superscalarConfig.IssueWidth >= 2 {
 		p.tickSuperscalar()
 		return
@@ -1952,7 +1956,14 @@ func (p *Pipeline) forwardFromAllSlots(reg uint8, currentValue uint64) uint64 {
 		return currentValue
 	}
 
-	// Check memwb stages (oldest first)
+	// Check memwb stages (oldest first, primary slot first)
+	if p.memwb.Valid && p.memwb.RegWrite && p.memwb.Rd == reg {
+		if p.memwb.MemToReg {
+			currentValue = p.memwb.MemData
+		} else {
+			currentValue = p.memwb.ALUResult
+		}
+	}
 	if p.memwb2.Valid && p.memwb2.RegWrite && p.memwb2.Rd == reg {
 		currentValue = p.memwb2.ALUResult
 	}
@@ -1963,7 +1974,10 @@ func (p *Pipeline) forwardFromAllSlots(reg uint8, currentValue uint64) uint64 {
 		currentValue = p.memwb4.ALUResult
 	}
 
-	// Check exmem stages (newer, higher priority)
+	// Check exmem stages (newer, higher priority, primary slot first)
+	if p.exmem.Valid && p.exmem.RegWrite && p.exmem.Rd == reg {
+		currentValue = p.exmem.ALUResult
+	}
 	if p.exmem2.Valid && p.exmem2.RegWrite && p.exmem2.Rd == reg {
 		currentValue = p.exmem2.ALUResult
 	}

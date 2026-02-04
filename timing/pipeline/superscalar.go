@@ -381,8 +381,6 @@ func (r *TertiaryIDEXRegister) toIDEX() IDEXRegister {
 }
 
 // fromIDEX populates TertiaryIDEXRegister from IDEXRegister.
-//
-
 func (r *TertiaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 	r.Valid = idex.Valid
 	r.PC = idex.PC
@@ -521,8 +519,6 @@ func (r *QuaternaryIDEXRegister) toIDEX() IDEXRegister {
 }
 
 // fromIDEX populates QuaternaryIDEXRegister from IDEXRegister.
-//
-
 func (r *QuaternaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 	r.Valid = idex.Valid
 	r.PC = idex.PC
@@ -541,8 +537,6 @@ func (r *QuaternaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 
 // canIssueWith checks if a new instruction can be issued with a set of previously issued instructions.
 // This is a generalized version that checks dependencies against all earlier instructions in the batch.
-//
-
 func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 	if newInst == nil || !newInst.Valid {
 		return false
@@ -604,4 +598,3 @@ func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 
 	return true
 }
-
