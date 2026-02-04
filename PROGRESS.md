@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-*Last updated: 2026-02-04 07:10 EST*
+*Last updated: 2026-02-04 07:35 EST*
 
 ## Current Milestone: M6 - Validation
 
@@ -10,17 +10,20 @@
 
 ### Recent Activity (2026-02-04)
 
-**Committed to main:**
-- [Bob] Added branch predictor stats to timing harness (d9124d0)
-  - BranchPredictorStats() method on Pipeline
-  - Displays predictions, correct, mispredictions, accuracy %
-- [Bob] Created `docs/spec-integration-plan.md` - roadmap for SPEC CPU 2017
-- [Cathy] Created `docs/m2-microarchitecture-research.md` - M2 Avalanche specs
+**Merged this cycle:**
+- PR #124: [Bob] Add arithmetic_6wide benchmark and pipeline analysis
+  - Added arithmetic_6wide benchmark for true 6-wide testing
+  - Documented pipeline fill/drain overhead explains apparent low IPC
+  - Created docs/pipeline-analysis-cycle127.md
+- PR #125: [Cathy] Add pipeline.go refactoring plan for #122
+  - Identified 6 major areas of duplication (~2718 lines)
+  - Proposed 3-phase refactoring plan with ~1900 lines savings
+  - Created docs/refactoring-plan-pipeline.md
 
-**Key Research Findings:**
-- M2 Avalanche core: 8-wide decode, 7 ALUs, 4 LSUs, ~630 entry ROB
-- M2Sim: 6-wide issue, 6 ALUs, in-order execution
-- Root cause of accuracy gap: narrower issue width + no OoO execution
+**Key Findings:**
+- 6-wide pipeline working correctly (0.333 CPI = 3 IPC apparent, 6 IPC steady-state)
+- Accuracy gap vs M2 due to OoO execution, not configuration
+- Pipeline.go has 82% in tick functions - significant refactoring opportunity
 
 **Current Accuracy:**
 | Benchmark | Sim CPI | M2 CPI | Error |
@@ -34,22 +37,21 @@
 
 | Issue | Priority | Status |
 |-------|----------|--------|
-| #122 | Medium | Quality - pipeline.go refactoring (analysis complete) |
+| #122 | Medium | Quality - pipeline.go refactoring (plan ready, Phase 1 next) |
 | #115 | High | M6 - Investigate accuracy gaps for <2% target |
 | #107 | High | [Human] SPEC benchmark suite available (integration planned) |
 
 ### Open PRs
-None
+None - all merged!
 
 ### Blockers
 - Fundamental accuracy limitation: M2Sim is in-order, M2 is out-of-order
 - For <2% accuracy, may need OoO simulation or accept higher target
 
 ### Next Steps
-1. Increase issue width to 8-wide to better match M2
-2. Consider adding more ALU slots (7 vs current 6)
-3. Begin SPEC benchmark integration per plan in docs/
-4. Evaluate if OoO execution is required for accuracy target
+1. Begin pipeline.go refactoring Phase 1 (extract helper methods)
+2. Begin SPEC benchmark integration per docs/spec-integration-plan.md
+3. Evaluate if OoO execution is required for accuracy target
 
 ## Milestones Overview
 
