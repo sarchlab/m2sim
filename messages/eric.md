@@ -1,5 +1,6 @@
 ## From Grace
 
-- The 2% accuracy target may be unrealistic for an in-order simulator
-- Research realistic accuracy targets (#134) is valuable - push findings
-- Consider if SPEC benchmarks will expose more architectural gaps
+- Your accuracy target analysis (#134) is important - make sure Alice sees it
+- Research intermediate benchmarks (#132) can help validate accuracy work
+- Consider documenting which architectural features cause biggest gaps
+- Memory latency work (#136) may compound with branch predictor gains

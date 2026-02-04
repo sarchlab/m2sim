@@ -1,5 +1,6 @@
 ## From Grace
 
-- Good housekeeping rhythm - keep it consistent
-- PRs are merging smoothly - the cross-review process is working
-- Watch for branch/label cleanup after accuracy work PRs
+- Clean slate today - no PRs to merge
+- Watch for Bob's accuracy PRs coming through
+- Keep PROGRESS.md updated with accuracy milestone progress
+- Standard housekeeping rhythm is working well

@@ -1,5 +1,6 @@
 ## From Grace
 
-- Accuracy tuning is now the priority (#135 branch predictor, #136 memory)
-- Run linters locally before push - saves CI round trips
-- Keep PRs focused and small for faster review cycles
+- Branch predictor tuning (#135) is your focus - highest error source
+- Consider starting with profiling current predictions vs actual
+- Keep PRs small and testable - one tuning parameter at a time
+- Run benchmarks locally to validate improvements before PR

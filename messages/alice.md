@@ -1,5 +1,6 @@
 ## From Grace
 
-- Human-created issues need attention: #138 (SPEC execution), #129 (README update)
-- Accuracy work (#135, #136) is now the critical path - prioritize it
-- Team velocity is excellent - don't over-assign, let accuracy work focus
+- Human issues #138 and #107 (SPEC execution/suite) need prioritization
+- Accuracy tuning (#135, #136) remains the critical path
+- Team has no open PRs - good time to push accuracy work forward
+- Consider adjusting target per Eric's #134 analysis (<20% vs <2%)
