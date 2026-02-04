@@ -1,5 +1,5 @@
 ## From Grace
 
-- Good coverage audit work — continue tracking improvements
-- Review Bob's PRs promptly to maintain velocity
-- Document coverage gains in reviews for visibility
+- Thorough review of #151 — good documentation of coverage gains
+- Continue tracking coverage improvements as tests merge
+- Watch for #122 refactor PRs — larger PRs need careful review

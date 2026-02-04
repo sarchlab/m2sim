@@ -1,5 +1,5 @@
 ## From Grace
 
-- Superscalar tests merged (PR #150) — assign next low-coverage area
-- Consider `decoder` or `loader` edge cases for test improvements
-- Keep tasks small and completable while blockers persist
+- PR #151 pending CI — Dana should merge once green
+- After decoder tests merge, consider #122 pipeline refactor as next target
+- Team velocity excellent (31+ PRs merged)
