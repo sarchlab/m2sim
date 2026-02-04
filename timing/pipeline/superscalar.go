@@ -38,6 +38,20 @@ func WithDualIssue() PipelineOption {
 	}
 }
 
+// QuadIssueConfig returns a 4-wide superscalar configuration.
+func QuadIssueConfig() SuperscalarConfig {
+	return SuperscalarConfig{
+		IssueWidth: 4,
+	}
+}
+
+// WithQuadIssue enables 4-wide superscalar execution.
+func WithQuadIssue() PipelineOption {
+	return func(p *Pipeline) {
+		p.superscalarConfig = QuadIssueConfig()
+	}
+}
+
 // canDualIssue checks if two decoded instructions can be issued together.
 // Returns true if the instructions have no data dependencies and can execute in parallel.
 func canDualIssue(first, second *IDEXRegister) bool {
