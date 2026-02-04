@@ -1251,6 +1251,8 @@ func (p *Pipeline) tickSuperscalar() {
 
 // tickQuadIssue executes one cycle with 4-wide superscalar support.
 // This extends dual-issue to support up to 4 independent instructions per cycle.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (p *Pipeline) tickQuadIssue() {
 	// Stage 5: Writeback (all 4 slots)
 	savedMEMWB := p.memwb
@@ -1905,6 +1907,8 @@ func (p *Pipeline) tickQuadIssue() {
 }
 
 // pendingFetchInst represents an instruction waiting in fetch buffer.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 type pendingFetchInst struct {
 	PC   uint64
 	Word uint32
@@ -1912,6 +1916,8 @@ type pendingFetchInst struct {
 
 // collectPendingFetchInstructions returns unissued instructions that need to remain in fetch.
 // issueCount is how many instructions were issued from the current IF/ID registers.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (p *Pipeline) collectPendingFetchInstructions(issueCount int) []pendingFetchInst {
 	var pending []pendingFetchInst
 
@@ -1939,6 +1945,8 @@ func (p *Pipeline) collectPendingFetchInstructions(issueCount int) []pendingFetc
 }
 
 // forwardFromAllSlots checks all secondary pipeline stages for forwarding.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (p *Pipeline) forwardFromAllSlots(reg uint8, currentValue uint64) uint64 {
 	if reg == 31 {
 		return currentValue
@@ -1970,6 +1978,8 @@ func (p *Pipeline) forwardFromAllSlots(reg uint8, currentValue uint64) uint64 {
 }
 
 // flushAllIFID clears all IF/ID pipeline registers.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (p *Pipeline) flushAllIFID() {
 	p.ifid.Clear()
 	p.ifid2.Clear()
@@ -1978,6 +1988,8 @@ func (p *Pipeline) flushAllIFID() {
 }
 
 // flushAllIDEX clears all ID/EX pipeline registers.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (p *Pipeline) flushAllIDEX() {
 	p.idex.Clear()
 	p.idex2.Clear()

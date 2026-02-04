@@ -368,6 +368,8 @@ func (r *TertiaryMEMWBRegister) Clear() {
 }
 
 // toIDEX converts TertiaryIDEXRegister to IDEXRegister.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (r *TertiaryIDEXRegister) toIDEX() IDEXRegister {
 	return IDEXRegister{
 		Valid:    r.Valid,
@@ -387,6 +389,8 @@ func (r *TertiaryIDEXRegister) toIDEX() IDEXRegister {
 }
 
 // fromIDEX populates TertiaryIDEXRegister from IDEXRegister.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (r *TertiaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 	r.Valid = idex.Valid
 	r.PC = idex.PC
@@ -504,6 +508,8 @@ func (r *QuaternaryMEMWBRegister) Clear() {
 }
 
 // toIDEX converts QuaternaryIDEXRegister to IDEXRegister.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (r *QuaternaryIDEXRegister) toIDEX() IDEXRegister {
 	return IDEXRegister{
 		Valid:    r.Valid,
@@ -523,6 +529,8 @@ func (r *QuaternaryIDEXRegister) toIDEX() IDEXRegister {
 }
 
 // fromIDEX populates QuaternaryIDEXRegister from IDEXRegister.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func (r *QuaternaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 	r.Valid = idex.Valid
 	r.PC = idex.PC
@@ -541,6 +549,8 @@ func (r *QuaternaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 
 // canIssueWith checks if a new instruction can be issued with a set of previously issued instructions.
 // This is a generalized version that checks dependencies against all earlier instructions in the batch.
+//
+//nolint:unused // Scaffolding for 4-wide implementation (PR #114)
 func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 	if newInst == nil || !newInst.Valid {
 		return false
