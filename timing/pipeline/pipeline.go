@@ -533,33 +533,7 @@ func (p *Pipeline) tickSingleIssue() {
 	// Branch mispredictions cause flushes, correct predictions don't.
 	stallResult := p.hazardUnit.ComputeStalls(loadUseHazard || execStall || memStall, branchMispredicted)
 
-	// Stage 2: Decode
-	var nextIDEX IDEXRegister
-	if p.ifid.Valid && !stallResult.StallID && !stallResult.FlushID && !execStall {
-		decResult := p.decodeStage.Decode(p.ifid.InstructionWord, p.ifid.PC)
-		nextIDEX = IDEXRegister{
-			Valid:           true,
-			PC:              p.ifid.PC,
-			Inst:            decResult.Inst,
-			RnValue:         decResult.RnValue,
-			RmValue:         decResult.RmValue,
-			Rd:              decResult.Rd,
-			Rn:              decResult.Rn,
-			Rm:              decResult.Rm,
-			MemRead:         decResult.MemRead,
-			MemWrite:        decResult.MemWrite,
-			RegWrite:        decResult.RegWrite,
-			MemToReg:        decResult.MemToReg,
-			IsBranch:        decResult.IsBranch,
-			PredictedTaken:  p.ifid.PredictedTaken,
-			PredictedTarget: p.ifid.PredictedTarget,
-			EarlyResolved:   p.ifid.EarlyResolved,
-		}
-	} else if (stallResult.StallID || execStall || memStall) && !stallResult.FlushID {
-		nextIDEX = p.idex
-	}
-
-	// Stage 1: Fetch
+	// Stage 1: Fetch (need to process fetch first to check for fetch stalls)
 	var nextIFID IFIDRegister
 	fetchStall := false
 	if !stallResult.StallIF && !stallResult.FlushIF && !memStall {
@@ -616,6 +590,34 @@ func (p *Pipeline) tickSingleIssue() {
 		p.stats.Stalls++
 	}
 
+	// Stage 2: Decode
+	// Note: When fetch stalls, we must NOT decode because ifid is preserved
+	// for next cycle. If we decode now, the instruction would be executed twice.
+	var nextIDEX IDEXRegister
+	if p.ifid.Valid && !stallResult.StallID && !stallResult.FlushID && !execStall && !fetchStall {
+		decResult := p.decodeStage.Decode(p.ifid.InstructionWord, p.ifid.PC)
+		nextIDEX = IDEXRegister{
+			Valid:           true,
+			PC:              p.ifid.PC,
+			Inst:            decResult.Inst,
+			RnValue:         decResult.RnValue,
+			RmValue:         decResult.RmValue,
+			Rd:              decResult.Rd,
+			Rn:              decResult.Rn,
+			Rm:              decResult.Rm,
+			MemRead:         decResult.MemRead,
+			MemWrite:        decResult.MemWrite,
+			RegWrite:        decResult.RegWrite,
+			MemToReg:        decResult.MemToReg,
+			IsBranch:        decResult.IsBranch,
+			PredictedTaken:  p.ifid.PredictedTaken,
+			PredictedTarget: p.ifid.PredictedTarget,
+			EarlyResolved:   p.ifid.EarlyResolved,
+		}
+	} else if (stallResult.StallID || execStall || memStall || fetchStall) && !stallResult.FlushID {
+		nextIDEX = p.idex
+	}
+
 	// Handle branch misprediction: update PC and flush pipeline
 	// Note: Only mispredictions cause flushes. Correct predictions don't need flushing.
 	if branchMispredicted {
@@ -625,20 +627,22 @@ func (p *Pipeline) tickSingleIssue() {
 		p.stats.Flushes++
 	}
 
-	if !memStall {
+	if !memStall && !fetchStall {
 		p.memwb = nextMEMWB
-	} else {
+	} else if !fetchStall {
 		p.memwb.Clear()
 	}
-	if !execStall && !memStall {
+	if !execStall && !memStall && !fetchStall {
 		p.exmem = nextEXMEM
 	}
-	if stallResult.InsertBubbleEX && !execStall && !memStall {
+	if stallResult.InsertBubbleEX && !execStall && !memStall && !fetchStall {
 		p.idex.Clear()
-	} else if !memStall {
+	} else if !memStall && !fetchStall {
 		p.idex = nextIDEX
 	}
-	p.ifid = nextIFID
+	if !fetchStall {
+		p.ifid = nextIFID
+	}
 }
 
 // tickSuperscalar executes one cycle with dual-issue support.
@@ -1012,18 +1016,31 @@ func (p *Pipeline) tickSuperscalar() {
 			// Fetch a new second instruction
 			var word2 uint32
 			var ok2 bool
+			var stall2 bool
 			if p.useICache && p.cachedFetchStage != nil {
-				word2, ok2, _ = p.cachedFetchStage.Fetch(p.pc)
+				word2, ok2, stall2 = p.cachedFetchStage.Fetch(p.pc)
+				if stall2 {
+					fetchStall = true
+					p.stats.Stalls++
+				}
 			} else {
 				word2, ok2 = p.fetchStage.Fetch(p.pc)
 			}
-			if ok2 {
+			if ok2 && !stall2 {
 				nextIFID2 = SecondaryIFIDRegister{
 					Valid:           true,
 					PC:              p.pc,
 					InstructionWord: word2,
 				}
 				p.pc += 4
+			} else if stall2 {
+				// When fetch stalls, preserve the entire pipeline state
+				nextIFID = p.ifid
+				nextIFID2 = p.ifid2
+				nextIDEX = p.idex
+				nextIDEX2 = p.idex2
+				nextEXMEM = p.exmem
+				nextEXMEM2 = p.exmem2
 			}
 		} else {
 			// Normal dual-fetch: fetch two new instructions
@@ -1068,6 +1085,13 @@ func (p *Pipeline) tickSuperscalar() {
 			} else if fetchStall {
 				nextIFID = p.ifid
 				nextIFID2 = p.ifid2
+				// When fetch stalls, we must stall the entire pipeline to prevent
+				// instructions from being executed twice. If we decoded/executed,
+				// the instructions would be executed again when the stall clears.
+				nextIDEX = p.idex
+				nextIDEX2 = p.idex2
+				nextEXMEM = p.exmem
+				nextEXMEM2 = p.exmem2
 			}
 		}
 	} else if (stallResult.StallIF || memStall || execStall) && !stallResult.FlushIF {
