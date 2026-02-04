@@ -31,6 +31,14 @@ func QuadIssueConfig() SuperscalarConfig {
 	}
 }
 
+// SextupleIssueConfig returns a 6-wide superscalar configuration.
+// This matches the Apple M2's 6 integer ALUs.
+func SextupleIssueConfig() SuperscalarConfig {
+	return SuperscalarConfig{
+		IssueWidth: 6,
+	}
+}
+
 // WithSuperscalar sets the superscalar configuration.
 func WithSuperscalar(config SuperscalarConfig) PipelineOption {
 	return func(p *Pipeline) {
@@ -49,6 +57,14 @@ func WithDualIssue() PipelineOption {
 func WithQuadIssue() PipelineOption {
 	return func(p *Pipeline) {
 		p.superscalarConfig = QuadIssueConfig()
+	}
+}
+
+// WithSextupleIssue enables 6-wide superscalar execution.
+// This matches the Apple M2's 6 integer ALUs.
+func WithSextupleIssue() PipelineOption {
+	return func(p *Pipeline) {
+		p.superscalarConfig = SextupleIssueConfig()
 	}
 }
 
@@ -520,6 +536,278 @@ func (r *QuaternaryIDEXRegister) toIDEX() IDEXRegister {
 
 // fromIDEX populates QuaternaryIDEXRegister from IDEXRegister.
 func (r *QuaternaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
+	r.Valid = idex.Valid
+	r.PC = idex.PC
+	r.Inst = idex.Inst
+	r.RnValue = idex.RnValue
+	r.RmValue = idex.RmValue
+	r.Rd = idex.Rd
+	r.Rn = idex.Rn
+	r.Rm = idex.Rm
+	r.MemRead = idex.MemRead
+	r.MemWrite = idex.MemWrite
+	r.RegWrite = idex.RegWrite
+	r.MemToReg = idex.MemToReg
+	r.IsBranch = idex.IsBranch
+}
+
+// QuinaryIFIDRegister holds the fifth fetched instruction for 6-wide issue.
+type QuinaryIFIDRegister struct {
+	Valid           bool
+	PC              uint64
+	InstructionWord uint32
+}
+
+// QuinaryIDEXRegister holds the fifth decoded instruction for 6-wide issue.
+type QuinaryIDEXRegister struct {
+	Valid    bool
+	PC       uint64
+	Inst     *insts.Instruction
+	RnValue  uint64
+	RmValue  uint64
+	Rd       uint8
+	Rn       uint8
+	Rm       uint8
+	MemRead  bool
+	MemWrite bool
+	RegWrite bool
+	MemToReg bool
+	IsBranch bool
+}
+
+// QuinaryEXMEMRegister holds the fifth execute result for 6-wide issue.
+type QuinaryEXMEMRegister struct {
+	Valid      bool
+	PC         uint64
+	Inst       *insts.Instruction
+	ALUResult  uint64
+	StoreValue uint64
+	Rd         uint8
+	MemRead    bool
+	MemWrite   bool
+	RegWrite   bool
+	MemToReg   bool
+}
+
+// QuinaryMEMWBRegister holds the fifth memory result for 6-wide issue.
+type QuinaryMEMWBRegister struct {
+	Valid     bool
+	PC        uint64
+	Inst      *insts.Instruction
+	ALUResult uint64
+	MemData   uint64
+	Rd        uint8
+	RegWrite  bool
+	MemToReg  bool
+}
+
+// Clear resets the quinary IF/ID register.
+func (r *QuinaryIFIDRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.InstructionWord = 0
+}
+
+// Clear resets the quinary ID/EX register.
+func (r *QuinaryIDEXRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.RnValue = 0
+	r.RmValue = 0
+	r.Rd = 0
+	r.Rn = 0
+	r.Rm = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+	r.IsBranch = false
+}
+
+// Clear resets the quinary EX/MEM register.
+func (r *QuinaryEXMEMRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.StoreValue = 0
+	r.Rd = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// Clear resets the quinary MEM/WB register.
+func (r *QuinaryMEMWBRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.MemData = 0
+	r.Rd = 0
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// toIDEX converts QuinaryIDEXRegister to IDEXRegister.
+func (r *QuinaryIDEXRegister) toIDEX() IDEXRegister {
+	return IDEXRegister{
+		Valid:    r.Valid,
+		PC:       r.PC,
+		Inst:     r.Inst,
+		RnValue:  r.RnValue,
+		RmValue:  r.RmValue,
+		Rd:       r.Rd,
+		Rn:       r.Rn,
+		Rm:       r.Rm,
+		MemRead:  r.MemRead,
+		MemWrite: r.MemWrite,
+		RegWrite: r.RegWrite,
+		MemToReg: r.MemToReg,
+		IsBranch: r.IsBranch,
+	}
+}
+
+// fromIDEX populates QuinaryIDEXRegister from IDEXRegister.
+func (r *QuinaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
+	r.Valid = idex.Valid
+	r.PC = idex.PC
+	r.Inst = idex.Inst
+	r.RnValue = idex.RnValue
+	r.RmValue = idex.RmValue
+	r.Rd = idex.Rd
+	r.Rn = idex.Rn
+	r.Rm = idex.Rm
+	r.MemRead = idex.MemRead
+	r.MemWrite = idex.MemWrite
+	r.RegWrite = idex.RegWrite
+	r.MemToReg = idex.MemToReg
+	r.IsBranch = idex.IsBranch
+}
+
+// SenaryIFIDRegister holds the sixth fetched instruction for 6-wide issue.
+type SenaryIFIDRegister struct {
+	Valid           bool
+	PC              uint64
+	InstructionWord uint32
+}
+
+// SenaryIDEXRegister holds the sixth decoded instruction for 6-wide issue.
+type SenaryIDEXRegister struct {
+	Valid    bool
+	PC       uint64
+	Inst     *insts.Instruction
+	RnValue  uint64
+	RmValue  uint64
+	Rd       uint8
+	Rn       uint8
+	Rm       uint8
+	MemRead  bool
+	MemWrite bool
+	RegWrite bool
+	MemToReg bool
+	IsBranch bool
+}
+
+// SenaryEXMEMRegister holds the sixth execute result for 6-wide issue.
+type SenaryEXMEMRegister struct {
+	Valid      bool
+	PC         uint64
+	Inst       *insts.Instruction
+	ALUResult  uint64
+	StoreValue uint64
+	Rd         uint8
+	MemRead    bool
+	MemWrite   bool
+	RegWrite   bool
+	MemToReg   bool
+}
+
+// SenaryMEMWBRegister holds the sixth memory result for 6-wide issue.
+type SenaryMEMWBRegister struct {
+	Valid     bool
+	PC        uint64
+	Inst      *insts.Instruction
+	ALUResult uint64
+	MemData   uint64
+	Rd        uint8
+	RegWrite  bool
+	MemToReg  bool
+}
+
+// Clear resets the senary IF/ID register.
+func (r *SenaryIFIDRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.InstructionWord = 0
+}
+
+// Clear resets the senary ID/EX register.
+func (r *SenaryIDEXRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.RnValue = 0
+	r.RmValue = 0
+	r.Rd = 0
+	r.Rn = 0
+	r.Rm = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+	r.IsBranch = false
+}
+
+// Clear resets the senary EX/MEM register.
+func (r *SenaryEXMEMRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.StoreValue = 0
+	r.Rd = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// Clear resets the senary MEM/WB register.
+func (r *SenaryMEMWBRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.MemData = 0
+	r.Rd = 0
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// toIDEX converts SenaryIDEXRegister to IDEXRegister.
+func (r *SenaryIDEXRegister) toIDEX() IDEXRegister {
+	return IDEXRegister{
+		Valid:    r.Valid,
+		PC:       r.PC,
+		Inst:     r.Inst,
+		RnValue:  r.RnValue,
+		RmValue:  r.RmValue,
+		Rd:       r.Rd,
+		Rn:       r.Rn,
+		Rm:       r.Rm,
+		MemRead:  r.MemRead,
+		MemWrite: r.MemWrite,
+		RegWrite: r.RegWrite,
+		MemToReg: r.MemToReg,
+		IsBranch: r.IsBranch,
+	}
+}
+
+// fromIDEX populates SenaryIDEXRegister from IDEXRegister.
+func (r *SenaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 	r.Valid = idex.Valid
 	r.PC = idex.PC
 	r.Inst = idex.Inst

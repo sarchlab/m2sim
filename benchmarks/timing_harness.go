@@ -92,6 +92,10 @@ type HarnessConfig struct {
 	// EnableQuadIssue enables 4-wide superscalar execution (overrides EnableDualIssue)
 	EnableQuadIssue bool
 
+	// EnableSextupleIssue enables 6-wide superscalar execution (overrides EnableQuadIssue)
+	// This matches the Apple M2's 6 integer ALUs
+	EnableSextupleIssue bool
+
 	// Output is where to write results (default: os.Stdout)
 	Output io.Writer
 
@@ -102,12 +106,13 @@ type HarnessConfig struct {
 // DefaultConfig returns a default harness configuration.
 func DefaultConfig() HarnessConfig {
 	return HarnessConfig{
-		EnableICache:    true,
-		EnableDCache:    true,
-		EnableDualIssue: false, // Superseded by EnableQuadIssue
-		EnableQuadIssue: true,  // Enable 4-wide superscalar by default
-		Output:          os.Stdout,
-		Verbose:         false,
+		EnableICache:        true,
+		EnableDCache:        true,
+		EnableDualIssue:     false, // Superseded by higher-width options
+		EnableQuadIssue:     false, // Superseded by EnableSextupleIssue
+		EnableSextupleIssue: true,  // Enable 6-wide superscalar by default (matches M2)
+		Output:              os.Stdout,
+		Verbose:             false,
 	}
 }
 
@@ -175,7 +180,9 @@ func (h *Harness) runBenchmark(bench Benchmark) BenchmarkResult {
 	if h.config.EnableICache || h.config.EnableDCache {
 		opts = append(opts, pipeline.WithDefaultCaches())
 	}
-	if h.config.EnableQuadIssue {
+	if h.config.EnableSextupleIssue {
+		opts = append(opts, pipeline.WithSextupleIssue())
+	} else if h.config.EnableQuadIssue {
 		opts = append(opts, pipeline.WithQuadIssue())
 	} else if h.config.EnableDualIssue {
 		opts = append(opts, pipeline.WithDualIssue())
