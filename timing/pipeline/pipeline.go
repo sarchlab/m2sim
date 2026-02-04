@@ -810,10 +810,10 @@ func (p *Pipeline) tickSuperscalar() {
 		// Convert to IDEXRegister for hazard detection
 		idex2 := p.idex2.toIDEX()
 
-		// Detect forwarding for secondary slot
+		// Detect forwarding for secondary slot from primary pipeline stages
 		forwarding2 := p.hazardUnit.DetectForwarding(&idex2, &p.exmem, &p.memwb)
 
-		// Also check forwarding from primary execute result
+		// Also check forwarding from primary execute result (same cycle)
 		if nextEXMEM.Valid && nextEXMEM.RegWrite && nextEXMEM.Rd != 31 {
 			if p.idex2.Rn == nextEXMEM.Rd {
 				forwarding2.ForwardRn = ForwardFromEXMEM
@@ -833,23 +833,59 @@ func (p *Pipeline) tickSuperscalar() {
 
 		if p.exLatency2 == 0 {
 			// Get operand values with forwarding
+			// Priority (most recent first): nextEXMEM > exmem/exmem2 > memwb/memwb2 > register
 			rnValue := p.idex2.RnValue
 			rmValue := p.idex2.RmValue
 
-			// Apply forwarding from primary execute stage if needed
+			// Track if we found a value from each source
+			rnFromNextEXMEM := false
+			rmFromNextEXMEM := false
+
+			// Bug fix: Forward from secondary pipeline stages (exmem2, memwb2)
+			// This is needed when consecutive secondary-slot instructions have dependencies.
+			// Example: add x1, x1, #1 (→exmem2) followed by add x1, x1, #1 needs x1 from exmem2.
+
+			// First check memwb2 (oldest secondary pipeline stage)
+			if p.memwb2.Valid && p.memwb2.RegWrite && p.memwb2.Rd != 31 {
+				if p.idex2.Rn == p.memwb2.Rd {
+					rnValue = p.memwb2.ALUResult
+				}
+				if p.idex2.Rm == p.memwb2.Rd {
+					rmValue = p.memwb2.ALUResult
+				}
+			}
+
+			// Then check primary memwb (same age as memwb2, but different register)
+			rnValue = p.hazardUnit.GetForwardedValue(
+				forwarding2.ForwardRn, rnValue, &p.exmem, &savedMEMWB)
+			rmValue = p.hazardUnit.GetForwardedValue(
+				forwarding2.ForwardRm, rmValue, &p.exmem, &savedMEMWB)
+
+			// Then check exmem2 (newer than memwb2, same priority as exmem)
+			if p.exmem2.Valid && p.exmem2.RegWrite && p.exmem2.Rd != 31 {
+				if p.idex2.Rn == p.exmem2.Rd {
+					rnValue = p.exmem2.ALUResult
+				}
+				if p.idex2.Rm == p.exmem2.Rd {
+					rmValue = p.exmem2.ALUResult
+				}
+			}
+
+			// Finally check nextEXMEM (current cycle - highest priority)
 			if nextEXMEM.Valid && nextEXMEM.RegWrite && nextEXMEM.Rd != 31 {
 				if p.idex2.Rn == nextEXMEM.Rd {
 					rnValue = nextEXMEM.ALUResult
+					rnFromNextEXMEM = true
 				}
 				if p.idex2.Rm == nextEXMEM.Rd {
 					rmValue = nextEXMEM.ALUResult
+					rmFromNextEXMEM = true
 				}
-			} else {
-				rnValue = p.hazardUnit.GetForwardedValue(
-					forwarding2.ForwardRn, p.idex2.RnValue, &p.exmem, &savedMEMWB)
-				rmValue = p.hazardUnit.GetForwardedValue(
-					forwarding2.ForwardRm, p.idex2.RmValue, &p.exmem, &savedMEMWB)
 			}
+
+			// Suppress unused variable warnings
+			_ = rnFromNextEXMEM
+			_ = rmFromNextEXMEM
 
 			execResult := p.executeStage.Execute(&idex2, rnValue, rmValue)
 
