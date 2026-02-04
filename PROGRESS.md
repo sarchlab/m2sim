@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-*Last updated: 2026-02-04 09:54 EST*
+*Last updated: 2026-02-04 10:08 EST*
 
 ## Current Milestone: M6 - Validation
 
@@ -10,22 +10,28 @@
 
 ### Recent Activity (2026-02-04)
 
-**This cycle (09:54):**
-- **PR #130 MERGED** ✅ SPEC benchmark build scripts
-  - Added `scripts/spec-setup.sh` for SPEC installation and ARM64 compilation
-  - Added `scripts/arm64-m2sim.cfg` for clang ARM64 configuration
-- **PR #131 MERGED** ✅ Markdown consolidation
-  - Reduced root markdown files from 8→6
-  - Created docs/archive/ for historical analysis documents
-  - Issue #128 closed
+**This cycle (10:08):**
+- **PR #137 MERGED** ✅ SPEC benchmark CI workflow
+  - Added `.github/workflows/spec-bench.yml` for daily SPEC benchmarks
+  - Added `cmd/spec-check` utility for SPEC availability verification
+  - Scheduled 6 AM UTC daily, 4-hour timeout
+  - Issue #133 closed
 
-**Previous cycle:**
-- PR #127 MERGED ✅ SPEC benchmark runner infrastructure
+**Eric created new issues:**
+- #132 (high) - Intermediate ARM64 benchmarks research
+- #134 (high) - Accuracy target discussion (2% vs realistic in-order)
+- #135 (medium) - Branch predictor tuning
+- #136 (medium) - Memory latency tuning
+
+**Previous cycle (09:54):**
+- PR #130 MERGED ✅ SPEC benchmark build scripts
+- PR #131 MERGED ✅ Markdown consolidation
 
 **SPEC Integration Progress:**
 - Phase 1: ✅ Runner infrastructure (PR #127)
 - Phase 2: ✅ Build scripts (PR #130)
-- Phase 3: 🔜 Build ARM64 binaries and validate
+- Phase 3: ✅ CI integration (PR #137)
+- Phase 4: 🔜 Build ARM64 binaries and run validation
 
 **Current Accuracy:**
 | Benchmark | Sim CPI | M2 CPI | Error |
@@ -39,8 +45,12 @@
 
 | Issue | Priority | Status |
 |-------|----------|--------|
-| #107 | High | SPEC benchmarks - Phase 2 complete, Phase 3 next |
+| #107 | High | SPEC benchmarks - Phase 3 complete |
+| #132 | High | Intermediate benchmarks research |
+| #134 | High | Accuracy target discussion |
 | #115 | Medium | M6 - Investigate accuracy gaps |
+| #135 | Medium | Branch predictor tuning |
+| #136 | Medium | Memory latency tuning |
 | #122 | Low | Quality - pipeline.go refactoring |
 | #129 | Low | README update |
 
@@ -50,12 +60,13 @@ None - all merged this cycle!
 ### Blockers
 - Fundamental accuracy limitation: M2Sim is in-order, M2 is out-of-order
 - For <2% accuracy, may need OoO simulation or adjusted target (10-15%)
+- Need decision on #134 (accuracy target) to determine M6 completion criteria
 
 ### Next Steps
-1. Run spec-setup.sh to build ARM64 SPEC binaries
-2. Test SPEC benchmark infrastructure with built binaries
-3. Gather accuracy data from larger benchmark suite
-4. Decide on accuracy target adjustment
+1. Discuss accuracy target (#134) - is 2% realistic for in-order sim?
+2. Research intermediate benchmarks (#132) per human guidance
+3. Build ARM64 SPEC binaries using spec-setup.sh
+4. Run SPEC CI (triggers at 6 AM UTC daily)
 
 ## Milestones Overview
 
