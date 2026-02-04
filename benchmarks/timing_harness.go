@@ -39,6 +39,9 @@ type BenchmarkResult struct {
 	// MemStalls is stalls due to memory latency
 	MemStalls uint64 `json:"mem_stalls"`
 
+	// DataHazards is the number of RAW data hazards detected and resolved via forwarding
+	DataHazards uint64 `json:"data_hazards"`
+
 	// PipelineFlushes is the number of pipeline flushes
 	PipelineFlushes uint64 `json:"pipeline_flushes"`
 
@@ -184,6 +187,7 @@ func (h *Harness) runBenchmark(bench Benchmark) BenchmarkResult {
 		StallCycles:         stats.Stalls,
 		ExecStalls:          stats.ExecStalls,
 		MemStalls:           stats.MemStalls,
+		DataHazards:         stats.DataHazards,
 		PipelineFlushes:     stats.Flushes,
 		ExitCode:            exitCode,
 		WallTime:            wallTime,
@@ -220,6 +224,7 @@ func (h *Harness) PrintResults(results []BenchmarkResult) {
 		_, _ = fmt.Fprintf(h.config.Output, "  Stall Cycles:         %d\n", r.StallCycles)
 		_, _ = fmt.Fprintf(h.config.Output, "  Exec Stalls:          %d\n", r.ExecStalls)
 		_, _ = fmt.Fprintf(h.config.Output, "  Mem Stalls:           %d\n", r.MemStalls)
+		_, _ = fmt.Fprintf(h.config.Output, "  Data Hazards:         %d\n", r.DataHazards)
 		_, _ = fmt.Fprintf(h.config.Output, "  Pipeline Flushes:     %d\n", r.PipelineFlushes)
 
 		if r.ICacheHits > 0 || r.ICacheMisses > 0 {
@@ -242,10 +247,10 @@ func (h *Harness) PrintResults(results []BenchmarkResult) {
 // PrintCSV outputs benchmark results in CSV format for easy comparison.
 func (h *Harness) PrintCSV(results []BenchmarkResult) {
 	_, _ = fmt.Fprintln(h.config.Output,
-		"name,cycles,instructions,cpi,stalls,exec_stalls,mem_stalls,flushes,icache_hits,icache_misses,dcache_hits,dcache_misses,exit_code")
+		"name,cycles,instructions,cpi,stalls,exec_stalls,mem_stalls,data_hazards,flushes,icache_hits,icache_misses,dcache_hits,dcache_misses,exit_code")
 
 	for _, r := range results {
-		_, _ = fmt.Fprintf(h.config.Output, "%s,%d,%d,%.3f,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+		_, _ = fmt.Fprintf(h.config.Output, "%s,%d,%d,%.3f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 			r.Name,
 			r.SimulatedCycles,
 			r.InstructionsRetired,
@@ -253,6 +258,7 @@ func (h *Harness) PrintCSV(results []BenchmarkResult) {
 			r.StallCycles,
 			r.ExecStalls,
 			r.MemStalls,
+			r.DataHazards,
 			r.PipelineFlushes,
 			r.ICacheHits,
 			r.ICacheMisses,
