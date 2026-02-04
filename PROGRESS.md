@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-*Last updated: 2026-02-04 18:28 EST*
+*Last updated: 2026-02-04 18:45 EST*
 
 ## Current Milestone: C1 - Execution Completeness
 
@@ -11,19 +11,19 @@
 
 ### Recent Activity (2026-02-04)
 
-**This cycle (18:27):**
-- Grace: Skipped (cycle 187, not a 10th)
-- Alice: Updated task board, closed #167, action count 186→187
-- Eric: Evaluated milestones, confirmed C1-C4 appropriate
-- Bob: Awaiting PR #173 merge for further debugging
-- Cathy: Reviewed #122 refactor — recommending defer until after C1
-- Dana: **Merged PR #173** ✅
+**This cycle (18:45):**
+- Grace: Skipped (cycle 188, not a 10th)
+- Alice: Updated task board, action count 187→188
+- Eric: Evaluated status, 15 open issues healthy
+- Bob: **PR #174** — Add BRK instruction support
+- Cathy: Reviewed PR #174 — approved ✅
+- Dana: **Merged PR #174** ✅
 
 **Progress:**
-- ✅ **PR #173 merged** — shift regs, bitfield, reg offset, CCMP
-- ✅ **#167 closed** — milestones created
-- **CoreMark: 2406 instructions** (hitting BRK trap)
-- **39+ PRs merged** total — excellent velocity!
+- ✅ **PR #174 merged** — BRK instruction decoding & handling
+- ✅ **PR #173 merged** — LSLV, UBFM, STR register offset, CCMP
+- **CoreMark: 2406 instructions** (now properly reports BRK trap)
+- **40 PRs merged** total — excellent velocity!
 
 ### Blockers Status
 
@@ -32,11 +32,12 @@
 - SPEC: `benchspec/CPU` exists ✅
 - Logical immediate instructions ✅
 - LSLV, UBFM, STR register offset, CCMP ✅
+- BRK instruction ✅ (was showing "unknown instruction")
 
 **Current status:**
 - CoreMark hits BRK #0x3e8 at PC=0x80BA8 (2406 instructions)
-- Bob investigating why x21 becomes 0
-- May be CCMP flag handling or expected program assertion
+- Bob investigating why x21 becomes 0 in core_list_mergesort
+- Need execution tracing to find root cause
 
 ### Calibration Milestones
 
@@ -48,7 +49,7 @@ Per #167 discussion, Eric's proposal approved by Human:
 
 ### Next Steps
 
-1. **Debug BRK trap** — trace execution to find root cause
+1. **Debug BRK trap** — trace execution to find why x21 becomes 0
 2. **Complete CoreMark** — achieve C1 milestone
 3. **Begin #122 refactor** — after C1 completes
 4. Continue **Embench-IoT phase 2** after CoreMark validates
@@ -78,14 +79,11 @@ Per #167 discussion, Eric's proposal approved by Human:
 
 ### Open PRs
 
-None — clean slate ✅
+None currently.
 
-### Key Open Issues
+### Recent Merges
 
-| Issue | Priority | Status |
-|-------|----------|--------|
-| #172 | High | Debug CoreMark — next: trace BRK trap |
-| #165-163 | Medium | Embench phase 2 (after CoreMark) |
-| #146 | High | SPEC CPU 2017 setup |
-| #132 | High | Intermediate benchmarks |
-| #122 | Medium | Pipeline refactor (defer to C2) |
+| PR | Title | Status |
+|----|-------|--------|
+| #174 | [Bob] Add BRK instruction support | ✅ Merged |
+| #173 | [Bob] Implement LSLV, UBFM, STR reg offset, CCMP | ✅ Merged |
