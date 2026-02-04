@@ -24,6 +24,13 @@ func DualIssueConfig() SuperscalarConfig {
 	}
 }
 
+// QuadIssueConfig returns a 4-wide superscalar configuration.
+func QuadIssueConfig() SuperscalarConfig {
+	return SuperscalarConfig{
+		IssueWidth: 4,
+	}
+}
+
 // WithSuperscalar sets the superscalar configuration.
 func WithSuperscalar(config SuperscalarConfig) PipelineOption {
 	return func(p *Pipeline) {
@@ -44,6 +51,7 @@ func QuadIssueConfig() SuperscalarConfig {
 		IssueWidth: 4,
 	}
 }
+
 
 // WithQuadIssue enables 4-wide superscalar execution.
 func WithQuadIssue() PipelineOption {
@@ -110,23 +118,29 @@ type SecondaryIFIDRegister struct {
 	Valid           bool
 	PC              uint64
 	InstructionWord uint32
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // SecondaryIDEXRegister holds the second decoded instruction for dual-issue.
 type SecondaryIDEXRegister struct {
-	Valid    bool
-	PC       uint64
-	Inst     *insts.Instruction
-	RnValue  uint64
-	RmValue  uint64
-	Rd       uint8
-	Rn       uint8
-	Rm       uint8
-	MemRead  bool
-	MemWrite bool
-	RegWrite bool
-	MemToReg bool
-	IsBranch bool
+	Valid           bool
+	PC              uint64
+	Inst            *insts.Instruction
+	RnValue         uint64
+	RmValue         uint64
+	Rd              uint8
+	Rn              uint8
+	Rm              uint8
+	MemRead         bool
+	MemWrite        bool
+	RegWrite        bool
+	MemToReg        bool
+	IsBranch        bool
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // SecondaryEXMEMRegister holds the second execute result for dual-issue.
@@ -160,6 +174,9 @@ func (r *SecondaryIFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the secondary ID/EX register.
@@ -177,6 +194,9 @@ func (r *SecondaryIDEXRegister) Clear() {
 	r.RegWrite = false
 	r.MemToReg = false
 	r.IsBranch = false
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the secondary EX/MEM register.
@@ -208,19 +228,22 @@ func (r *SecondaryMEMWBRegister) Clear() {
 // toIDEX converts SecondaryIDEXRegister to IDEXRegister for use with existing hazard/execute logic.
 func (r *SecondaryIDEXRegister) toIDEX() IDEXRegister {
 	return IDEXRegister{
-		Valid:    r.Valid,
-		PC:       r.PC,
-		Inst:     r.Inst,
-		RnValue:  r.RnValue,
-		RmValue:  r.RmValue,
-		Rd:       r.Rd,
-		Rn:       r.Rn,
-		Rm:       r.Rm,
-		MemRead:  r.MemRead,
-		MemWrite: r.MemWrite,
-		RegWrite: r.RegWrite,
-		MemToReg: r.MemToReg,
-		IsBranch: r.IsBranch,
+		Valid:           r.Valid,
+		PC:              r.PC,
+		Inst:            r.Inst,
+		RnValue:         r.RnValue,
+		RmValue:         r.RmValue,
+		Rd:              r.Rd,
+		Rn:              r.Rn,
+		Rm:              r.Rm,
+		MemRead:         r.MemRead,
+		MemWrite:        r.MemWrite,
+		RegWrite:        r.RegWrite,
+		MemToReg:        r.MemToReg,
+		IsBranch:        r.IsBranch,
+		PredictedTaken:  r.PredictedTaken,
+		PredictedTarget: r.PredictedTarget,
+		EarlyResolved:   r.EarlyResolved,
 	}
 }
 
@@ -239,6 +262,345 @@ func (r *SecondaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
 	r.RegWrite = idex.RegWrite
 	r.MemToReg = idex.MemToReg
 	r.IsBranch = idex.IsBranch
+	r.PredictedTaken = idex.PredictedTaken
+	r.PredictedTarget = idex.PredictedTarget
+	r.EarlyResolved = idex.EarlyResolved
+}
+
+// TertiaryIFIDRegister holds the third fetched instruction for 4-wide issue.
+type TertiaryIFIDRegister struct {
+	Valid           bool
+	PC              uint64
+	InstructionWord uint32
+}
+
+// TertiaryIDEXRegister holds the third decoded instruction for 4-wide issue.
+type TertiaryIDEXRegister struct {
+	Valid    bool
+	PC       uint64
+	Inst     *insts.Instruction
+	RnValue  uint64
+	RmValue  uint64
+	Rd       uint8
+	Rn       uint8
+	Rm       uint8
+	MemRead  bool
+	MemWrite bool
+	RegWrite bool
+	MemToReg bool
+	IsBranch bool
+}
+
+// TertiaryEXMEMRegister holds the third execute result for 4-wide issue.
+type TertiaryEXMEMRegister struct {
+	Valid      bool
+	PC         uint64
+	Inst       *insts.Instruction
+	ALUResult  uint64
+	StoreValue uint64
+	Rd         uint8
+	MemRead    bool
+	MemWrite   bool
+	RegWrite   bool
+	MemToReg   bool
+}
+
+// TertiaryMEMWBRegister holds the third memory result for 4-wide issue.
+type TertiaryMEMWBRegister struct {
+	Valid     bool
+	PC        uint64
+	Inst      *insts.Instruction
+	ALUResult uint64
+	MemData   uint64
+	Rd        uint8
+	RegWrite  bool
+	MemToReg  bool
+}
+
+// Clear resets the tertiary IF/ID register.
+func (r *TertiaryIFIDRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.InstructionWord = 0
+}
+
+// Clear resets the tertiary ID/EX register.
+func (r *TertiaryIDEXRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.RnValue = 0
+	r.RmValue = 0
+	r.Rd = 0
+	r.Rn = 0
+	r.Rm = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+	r.IsBranch = false
+}
+
+// Clear resets the tertiary EX/MEM register.
+func (r *TertiaryEXMEMRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.StoreValue = 0
+	r.Rd = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// Clear resets the tertiary MEM/WB register.
+func (r *TertiaryMEMWBRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.MemData = 0
+	r.Rd = 0
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// toIDEX converts TertiaryIDEXRegister to IDEXRegister.
+func (r *TertiaryIDEXRegister) toIDEX() IDEXRegister {
+	return IDEXRegister{
+		Valid:    r.Valid,
+		PC:       r.PC,
+		Inst:     r.Inst,
+		RnValue:  r.RnValue,
+		RmValue:  r.RmValue,
+		Rd:       r.Rd,
+		Rn:       r.Rn,
+		Rm:       r.Rm,
+		MemRead:  r.MemRead,
+		MemWrite: r.MemWrite,
+		RegWrite: r.RegWrite,
+		MemToReg: r.MemToReg,
+		IsBranch: r.IsBranch,
+	}
+}
+
+// fromIDEX populates TertiaryIDEXRegister from IDEXRegister.
+func (r *TertiaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
+	r.Valid = idex.Valid
+	r.PC = idex.PC
+	r.Inst = idex.Inst
+	r.RnValue = idex.RnValue
+	r.RmValue = idex.RmValue
+	r.Rd = idex.Rd
+	r.Rn = idex.Rn
+	r.Rm = idex.Rm
+	r.MemRead = idex.MemRead
+	r.MemWrite = idex.MemWrite
+	r.RegWrite = idex.RegWrite
+	r.MemToReg = idex.MemToReg
+	r.IsBranch = idex.IsBranch
+}
+
+// QuaternaryIFIDRegister holds the fourth fetched instruction for 4-wide issue.
+type QuaternaryIFIDRegister struct {
+	Valid           bool
+	PC              uint64
+	InstructionWord uint32
+}
+
+// QuaternaryIDEXRegister holds the fourth decoded instruction for 4-wide issue.
+type QuaternaryIDEXRegister struct {
+	Valid    bool
+	PC       uint64
+	Inst     *insts.Instruction
+	RnValue  uint64
+	RmValue  uint64
+	Rd       uint8
+	Rn       uint8
+	Rm       uint8
+	MemRead  bool
+	MemWrite bool
+	RegWrite bool
+	MemToReg bool
+	IsBranch bool
+}
+
+// QuaternaryEXMEMRegister holds the fourth execute result for 4-wide issue.
+type QuaternaryEXMEMRegister struct {
+	Valid      bool
+	PC         uint64
+	Inst       *insts.Instruction
+	ALUResult  uint64
+	StoreValue uint64
+	Rd         uint8
+	MemRead    bool
+	MemWrite   bool
+	RegWrite   bool
+	MemToReg   bool
+}
+
+// QuaternaryMEMWBRegister holds the fourth memory result for 4-wide issue.
+type QuaternaryMEMWBRegister struct {
+	Valid     bool
+	PC        uint64
+	Inst      *insts.Instruction
+	ALUResult uint64
+	MemData   uint64
+	Rd        uint8
+	RegWrite  bool
+	MemToReg  bool
+}
+
+// Clear resets the quaternary IF/ID register.
+func (r *QuaternaryIFIDRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.InstructionWord = 0
+}
+
+// Clear resets the quaternary ID/EX register.
+func (r *QuaternaryIDEXRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.RnValue = 0
+	r.RmValue = 0
+	r.Rd = 0
+	r.Rn = 0
+	r.Rm = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+	r.IsBranch = false
+}
+
+// Clear resets the quaternary EX/MEM register.
+func (r *QuaternaryEXMEMRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.StoreValue = 0
+	r.Rd = 0
+	r.MemRead = false
+	r.MemWrite = false
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// Clear resets the quaternary MEM/WB register.
+func (r *QuaternaryMEMWBRegister) Clear() {
+	r.Valid = false
+	r.PC = 0
+	r.Inst = nil
+	r.ALUResult = 0
+	r.MemData = 0
+	r.Rd = 0
+	r.RegWrite = false
+	r.MemToReg = false
+}
+
+// toIDEX converts QuaternaryIDEXRegister to IDEXRegister.
+func (r *QuaternaryIDEXRegister) toIDEX() IDEXRegister {
+	return IDEXRegister{
+		Valid:    r.Valid,
+		PC:       r.PC,
+		Inst:     r.Inst,
+		RnValue:  r.RnValue,
+		RmValue:  r.RmValue,
+		Rd:       r.Rd,
+		Rn:       r.Rn,
+		Rm:       r.Rm,
+		MemRead:  r.MemRead,
+		MemWrite: r.MemWrite,
+		RegWrite: r.RegWrite,
+		MemToReg: r.MemToReg,
+		IsBranch: r.IsBranch,
+	}
+}
+
+// fromIDEX populates QuaternaryIDEXRegister from IDEXRegister.
+func (r *QuaternaryIDEXRegister) fromIDEX(idex *IDEXRegister) {
+	r.Valid = idex.Valid
+	r.PC = idex.PC
+	r.Inst = idex.Inst
+	r.RnValue = idex.RnValue
+	r.RmValue = idex.RmValue
+	r.Rd = idex.Rd
+	r.Rn = idex.Rn
+	r.Rm = idex.Rm
+	r.MemRead = idex.MemRead
+	r.MemWrite = idex.MemWrite
+	r.RegWrite = idex.RegWrite
+	r.MemToReg = idex.MemToReg
+	r.IsBranch = idex.IsBranch
+}
+
+// canIssueWith checks if a new instruction can be issued with a set of previously issued instructions.
+// This is a generalized version that checks dependencies against all earlier instructions in the batch.
+func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
+	if newInst == nil || !newInst.Valid {
+		return false
+	}
+
+	// Cannot issue branches in superscalar mode (only in slot 0)
+	if newInst.IsBranch {
+		return false
+	}
+
+	// Cannot issue syscalls in secondary slots
+	if newInst.Inst != nil && newInst.Inst.Op == insts.OpSVC {
+		return false
+	}
+
+	// Count memory operations - only 1 memory operation allowed per cycle (single memory port)
+	newAccessesMem := newInst.MemRead || newInst.MemWrite
+	memOpCount := 0
+	if newAccessesMem {
+		memOpCount = 1
+	}
+
+	for _, prev := range earlier {
+		if prev == nil || !prev.Valid {
+			continue
+		}
+
+		if prev.MemRead || prev.MemWrite {
+			memOpCount++
+		}
+
+		// Check for RAW hazard: new reads register that prev writes
+		if prev.RegWrite && prev.Rd != 31 {
+			if newInst.Rn == prev.Rd {
+				return false
+			}
+			// Only check Rm for register-format instructions
+			if newInst.Inst != nil && newInst.Inst.Format == insts.FormatDPReg {
+				if newInst.Rm == prev.Rd {
+					return false
+				}
+			}
+			// For stores, the value register might also conflict
+			if newInst.MemWrite && newInst.Inst != nil && newInst.Inst.Rd == prev.Rd {
+				return false
+			}
+		}
+
+		// Check for WAW hazard: both write to same register
+		if prev.RegWrite && newInst.RegWrite && prev.Rd == newInst.Rd && prev.Rd != 31 {
+			return false
+		}
+	}
+
+	// Only 1 memory operation per cycle
+	if memOpCount > 1 {
+		return false
+	}
+
+	return true
 }
 
 // TertiaryIFIDRegister holds the third fetched instruction for 4-wide issue.
