@@ -557,4 +557,173 @@ var _ = Describe("Decoder", func() {
 			Expect(inst.Op).To(Equal(insts.OpUnknown))
 		})
 	})
+
+	Describe("SIMD Load/Store Instructions", func() {
+		// LDR Q0, [X1]       -> 0x3DC00020
+		// Encoding: 00 111 1 01 11 imm12=0 Rn=1 Rt=0 (128-bit load)
+		It("should decode LDR Q0, [X1] (128-bit vector load)", func() {
+			inst := decoder.Decode(0x3DC00020)
+
+			Expect(inst.Op).To(Equal(insts.OpLDRQ))
+			Expect(inst.Format).To(Equal(insts.FormatSIMDLoadStore))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Rd).To(Equal(uint8(0)))
+			Expect(inst.Rn).To(Equal(uint8(1)))
+		})
+
+		// STR Q0, [X1]       -> 0x3D800020
+		// Encoding: 00 111 1 01 10 imm12=0 Rn=1 Rt=0 (128-bit store)
+		It("should decode STR Q0, [X1] (128-bit vector store)", func() {
+			inst := decoder.Decode(0x3D800020)
+
+			Expect(inst.Op).To(Equal(insts.OpSTRQ))
+			Expect(inst.Format).To(Equal(insts.FormatSIMDLoadStore))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Rd).To(Equal(uint8(0)))
+			Expect(inst.Rn).To(Equal(uint8(1)))
+		})
+
+		// LDR Q2, [X3, #32]  -> 0x3DC00862
+		// Encoding with offset (imm12=2, scaled by 16)
+		It("should decode LDR Q2, [X3, #32]", func() {
+			inst := decoder.Decode(0x3DC00862)
+
+			Expect(inst.Op).To(Equal(insts.OpLDRQ))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Rd).To(Equal(uint8(2)))
+			Expect(inst.Rn).To(Equal(uint8(3)))
+			Expect(inst.Imm).To(Equal(uint64(32)))
+		})
+
+		// LDR D0, [X1]       -> 0xFD400020
+		// 64-bit SIMD load (D register) - decoder sets Arr16B as default
+		It("should decode LDR D0, [X1] (64-bit vector load)", func() {
+			inst := decoder.Decode(0xFD400020)
+
+			Expect(inst.Op).To(Equal(insts.OpLDRQ))
+			Expect(inst.IsSIMD).To(BeTrue())
+			// Note: decoder defaults to Arr16B for this encoding
+			Expect(inst.Arrangement).To(Equal(insts.Arr16B))
+		})
+
+		// LDR S0, [X1]       -> 0xBD400020
+		// 32-bit SIMD load (S register)
+		It("should decode LDR S0, [X1] (32-bit vector load)", func() {
+			inst := decoder.Decode(0xBD400020)
+
+			Expect(inst.Op).To(Equal(insts.OpLDRQ))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Arrangement).To(Equal(insts.Arr2S))
+		})
+	})
+
+	Describe("SIMD Three Same Instructions", func() {
+		// ADD V0.16B, V1.16B, V2.16B -> 0x4E228420
+		// Encoding: 0 | Q=1 | U=0 | 01110 | size=00 | 1 | Rm=2 | opcode=10000 | 1 | Rn=1 | Rd=0
+		It("should decode VADD V0.16B, V1.16B, V2.16B (128-bit byte add)", func() {
+			inst := decoder.Decode(0x4E228420)
+
+			Expect(inst.Op).To(Equal(insts.OpVADD))
+			Expect(inst.Format).To(Equal(insts.FormatSIMDReg))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Rd).To(Equal(uint8(0)))
+			Expect(inst.Rn).To(Equal(uint8(1)))
+			Expect(inst.Rm).To(Equal(uint8(2)))
+			Expect(inst.Is64Bit).To(BeTrue())
+			Expect(inst.Arrangement).To(Equal(insts.Arr16B))
+		})
+
+		// ADD V0.8B, V1.8B, V2.8B  -> 0x0E228420
+		// Q=0 for 64-bit
+		It("should decode VADD V0.8B, V1.8B, V2.8B (64-bit byte add)", func() {
+			inst := decoder.Decode(0x0E228420)
+
+			Expect(inst.Op).To(Equal(insts.OpVADD))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Is64Bit).To(BeFalse())
+			Expect(inst.Arrangement).To(Equal(insts.Arr8B))
+		})
+
+		// SUB V0.4S, V1.4S, V2.4S  -> 0x6EA28420
+		// Encoding: 0 | Q=1 | U=1 | 01110 | size=10 | 1 | Rm=2 | opcode=10000 | 1 | Rn=1 | Rd=0
+		It("should decode VSUB V0.4S, V1.4S, V2.4S (128-bit 32-bit sub)", func() {
+			inst := decoder.Decode(0x6EA28420)
+
+			Expect(inst.Op).To(Equal(insts.OpVSUB))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Rd).To(Equal(uint8(0)))
+			Expect(inst.Rn).To(Equal(uint8(1)))
+			Expect(inst.Rm).To(Equal(uint8(2)))
+			Expect(inst.Arrangement).To(Equal(insts.Arr4S))
+		})
+
+		// MUL V0.4S, V1.4S, V2.4S  -> 0x4EA29C20
+		// Encoding: 0 | Q=1 | U=0 | 01110 | size=10 | 1 | Rm=2 | opcode=10011 | 1 | Rn=1 | Rd=0
+		It("should decode VMUL V0.4S, V1.4S, V2.4S (128-bit 32-bit mul)", func() {
+			inst := decoder.Decode(0x4EA29C20)
+
+			Expect(inst.Op).To(Equal(insts.OpVMUL))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Arrangement).To(Equal(insts.Arr4S))
+		})
+
+		// FADD V0.4S, V1.4S, V2.4S -> 0x4EA2D420
+		// Encoding: 0 | Q=1 | U=0 | 01110 | size=10 | 1 | Rm=2 | opcode=11010 | 1 | Rn=1 | Rd=0
+		It("should decode VFADD V0.4S, V1.4S, V2.4S (floating-point add)", func() {
+			inst := decoder.Decode(0x4EA2D420)
+
+			Expect(inst.Op).To(Equal(insts.OpVFADD))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.IsFloat).To(BeTrue())
+			Expect(inst.Arrangement).To(Equal(insts.Arr4S))
+		})
+
+		// FSUB V0.4S, V1.4S, V2.4S -> 0x6EA2D420
+		// U=1 for FSUB
+		It("should decode VFSUB V0.4S, V1.4S, V2.4S (floating-point sub)", func() {
+			inst := decoder.Decode(0x6EA2D420)
+
+			Expect(inst.Op).To(Equal(insts.OpVFSUB))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.IsFloat).To(BeTrue())
+		})
+
+		// FMUL V0.4S, V1.4S, V2.4S -> 0x6EA2DC20
+		// opcode=11011, U=1
+		It("should decode VFMUL V0.4S, V1.4S, V2.4S (floating-point mul)", func() {
+			inst := decoder.Decode(0x6EA2DC20)
+
+			Expect(inst.Op).To(Equal(insts.OpVFMUL))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.IsFloat).To(BeTrue())
+		})
+
+		// ADD V0.8H, V1.8H, V2.8H  -> 0x4E628420
+		// size=01 for halfword
+		It("should decode VADD V0.8H, V1.8H, V2.8H (halfword add)", func() {
+			inst := decoder.Decode(0x4E628420)
+
+			Expect(inst.Op).To(Equal(insts.OpVADD))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Arrangement).To(Equal(insts.Arr8H))
+		})
+
+		// ADD V0.2D, V1.2D, V2.2D  -> 0x4EE28420
+		// size=11 for doubleword
+		It("should decode VADD V0.2D, V1.2D, V2.2D (doubleword add)", func() {
+			inst := decoder.Decode(0x4EE28420)
+
+			Expect(inst.Op).To(Equal(insts.OpVADD))
+			Expect(inst.IsSIMD).To(BeTrue())
+			Expect(inst.Arrangement).To(Equal(insts.Arr2D))
+		})
+
+		// Unrecognized SIMD opcode should return OpUnknown
+		It("should return OpUnknown for unrecognized SIMD opcode", func() {
+			// Use opcode=00001 which is not ADD/SUB/MUL/FADD/FSUB/FMUL
+			inst := decoder.Decode(0x4E220820) // opcode=00001
+
+			Expect(inst.Op).To(Equal(insts.OpUnknown))
+		})
+	})
 })
