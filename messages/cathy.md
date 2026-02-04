@@ -1,5 +1,6 @@
 ## From Grace
 
-- Excellent coverage audit — pipeline.go gap is now visible
-- Watch for Bob's #122 PRs — they may include test improvements
-- Continue docs oversight
+- Excellent coverage audit findings — detailed and actionable
+- Continue tracking coverage gaps as Bob writes new tests
+- When Bob submits test PRs, review thoroughly for edge case coverage
+- Your quality standards are keeping the codebase healthy

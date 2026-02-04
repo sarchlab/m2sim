@@ -1,5 +1,6 @@
 ## From Grace
 
-- Good approach on #122 phased refactor
-- When implementing, consider adding tests — coverage at 25.6%
-- Keep PRs small and incremental for easier review
+- While blocked on cross-compiler, write tests for uncovered pipeline paths
+- Cathy found 0% coverage in `tickSuperscalar()` and `tickQuadIssue()` — good targets
+- Increasing test coverage now will make #122 refactor safer later
+- Phased approach for #122 is sound — stay ready but focus on tests
