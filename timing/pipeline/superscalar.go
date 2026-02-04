@@ -45,14 +45,6 @@ func WithDualIssue() PipelineOption {
 	}
 }
 
-// QuadIssueConfig returns a 4-wide superscalar configuration.
-func QuadIssueConfig() SuperscalarConfig {
-	return SuperscalarConfig{
-		IssueWidth: 4,
-	}
-}
-
-
 // WithQuadIssue enables 4-wide superscalar execution.
 func WithQuadIssue() PipelineOption {
 	return func(p *Pipeline) {
