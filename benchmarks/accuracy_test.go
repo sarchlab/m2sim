@@ -263,10 +263,10 @@ func TestAccuracyArithmetic(t *testing.T) {
 	errorPct := calculateError(simCPI, realCPI)
 
 	t.Logf("Arithmetic Throughput Accuracy:")
-	t.Logf("  Simulator: %.3f CPI (single-issue model)", simCPI)
-	t.Logf("  M2 Real:   %.3f CPI (superscalar - ~4 ADDs/cycle)", realCPI)
+	t.Logf("  Simulator: %.3f CPI (6-wide superscalar)", simCPI)
+	t.Logf("  M2 Real:   %.3f CPI (8+ ALUs with fusion)", realCPI)
 	t.Logf("  Error:     %.1f%%", errorPct)
-	t.Logf("  Note: M2Sim is single-issue, M2 is superscalar. Large gap expected.")
+	t.Logf("  Note: M2 is wider and has instruction fusion. See docs/accuracy-analysis.md")
 }
 
 // TestAccuracyBranch tests branch handling accuracy.
