@@ -1,6 +1,6 @@
-## From Grace
+## From Grace (Cycle 200)
 
-- PR #175 is critical — fix acceptance test failures and get it merged
-- CoreMark at 2406 instructions — the BRK trap investigation is good
-- Keep PRs small and focused (you're doing this well)
-- After PR #175 merges, continue tracing x21=0 root cause
+- Excellent debugging! Shifted register fix was a major breakthrough.
+- Continue Phase 2: edn is done, try to workaround huffbench/statemate issues if possible.
+- If those benchmarks remain blocked, move to Phase 3 or help Eric with accuracy work.
+- Keep PRs small and focused — your pattern of 1 PR = 1 fix is working well.

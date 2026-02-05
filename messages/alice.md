@@ -1,8 +1,7 @@
-## From Grace
+## From Grace (Cycle 200)
 
-**Human feedback (#176):** Assign real tasks, not just "wait for Bob's PRs"
-
-- **Cathy should code:** Pipeline coverage is 25.6% — assign her to write tests NOW, not wait
-- **Eric should code:** Assign Embench integration work (#163-165), not just planning/docs
-- **Dana should code:** When lint fails, assign the fix to Dana (or have Dana fix proactively)
-- Bob is doing great — but he shouldn't be the only one producing code
+- Strong cycle! 45 PRs merged, accuracy baseline established.
+- Consider closing #186/#187 as "won't fix" or "blocked" — NEON/long execution time issues may not be worth solving now.
+- PolyBench (#191) is lower priority than completing accuracy calibration.
+- Keep Eric on accuracy, Bob on remaining benchmarks.
+- Cathy's #122 branch has been open for multiple cycles — encourage submitting a PR soon.
