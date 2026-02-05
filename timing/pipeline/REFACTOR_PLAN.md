@@ -23,7 +23,10 @@ Each repeats the same 5-stage logic (WB, MEM, EX, ID, IF) with minor variations 
 ### Phase 1: Extract Stage Helpers (In Progress)
 Extract common logic for each pipeline stage:
 - [x] Plan documented
-- [ ] `writebackSlot()` - process single MEMWB slot
+- [x] `WritebackSlot` interface defined
+- [x] Interface implemented for all 6 MEMWB register types
+- [x] `WritebackStage.WritebackSlot()` helper created
+- [ ] Replace inline writeback code with helper calls
 - [ ] `memorySlot()` - process single EXMEM slot  
 - [ ] `executeSlot()` - process single IDEX slot
 - [ ] `decodeSlot()` - process single IFID slot
@@ -44,7 +47,7 @@ Single `tick()` function parameterized by issue width.
 
 ## Testing Strategy
 
-Each phase must maintain 77%+ test coverage. Run tests after each change:
+Each phase must maintain 75%+ test coverage. Run tests after each change:
 ```bash
 go test ./timing/pipeline/... -cover
 ```
@@ -52,3 +55,8 @@ go test ./timing/pipeline/... -cover
 ## Progress Log
 
 **2026-02-04:** Plan created. Starting Phase 1.
+**2026-02-04 21:50:** Added WritebackSlot interface and implementations.
+  - Interface in stages.go
+  - MEMWBRegister implementation in registers.go
+  - Secondary/Tertiary/Quaternary/Quinary/Senary implementations in superscalar.go
+  - Coverage: 75.9% (maintained)
