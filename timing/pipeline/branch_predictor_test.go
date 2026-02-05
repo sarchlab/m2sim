@@ -267,7 +267,7 @@ var _ = Describe("BranchPredictor", func() {
 		It("should use sensible defaults", func() {
 			config := pipeline.DefaultBranchPredictorConfig()
 			Expect(config.BHTSize).To(Equal(uint32(4096)))
-			Expect(config.BTBSize).To(Equal(uint32(512)))
+			Expect(config.BTBSize).To(Equal(uint32(2048)))
 			Expect(config.GlobalHistoryLength).To(Equal(uint32(12)))
 			Expect(config.UseTournament).To(BeTrue())
 		})
