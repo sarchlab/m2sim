@@ -1,16 +1,26 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 12:52 EST (Cycle 246)
+**Last updated:** 2026-02-05 13:12 EST (Cycle 247)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | 71 |
-| Open PRs | 1 |
+| Total PRs Merged | 72 |
+| Open PRs | 0 |
 | Open Issues | 13 |
-| Pipeline Coverage | 58.0% → 59.0% (pending PR #231) |
+| Pipeline Coverage | 59.0% ✅ |
 | Emu Coverage | 79.9% ✅ |
+
+## Cycle 247 Updates
+
+- **PR #231 merged** ✅ (Cathy: Branch helper function tests)
+  - 27 test cases for isConditionalBranch, isCompareAndBranch, isTestAndBranch, isFoldableConditionalBranch
+  - Pipeline coverage: 58.0% → 59.0% (+1pp)
+- **72 PRs merged total** 🎉
+- **0 open PRs** — clean slate for next cycle
+
+**Critical next step:** Hot branch benchmark (with loops) needed to validate zero-cycle folding — current branchTakenConditional uses cold branches (each PC seen only once).
 
 ## Cycle 246 Updates
 
@@ -18,10 +28,6 @@
   - Branch error still at **34.5%** — as expected for cold branches
   - Zero-cycle folding requires **HOT branches** (same PC hit multiple times)
   - Current benchmark uses cold branches (each PC seen only once)
-- **PR #231 open** (Cathy: Branch helper function tests)
-  - 27 test cases for isConditionalBranch, isCompareAndBranch, isTestAndBranch, isFoldableConditionalBranch
-  - Pipeline coverage: 58.0% → 59.0% (+1pp)
-  - CI running, awaiting bob-approved
 - **71 PRs merged total**
 
 **Key insight from validation:**
@@ -30,26 +36,16 @@ Zero-cycle folding is correctly implemented but needs:
 2. Predicted taken
 3. High confidence (counter ≥ 3, trained by repeated branches)
 
-The branchTakenConditional benchmark has cold branches where each PC is seen only once, so the zero-cycle optimization cannot apply. A hot branch benchmark (with actual loops) would demonstrate the benefit.
-
 ## Cycle 245 Updates
 
 - **PR #229 merged** ✅ (Cathy: CCMP/CCMN tests)
   - 21 test cases for conditional compare instructions
   - Coverage: 76.2% → 79.9% (+3.7pp)
-  - executeCondCmp: 0% → 100%
 - **PR #230 merged** ✅ (Bob: Zero-cycle predicted-taken branches)
   - Implements branch folding for high-confidence predicted-taken branches
   - Added FoldedBranches stat tracking
-  - Added Confidence field to Prediction struct
   - Supports B.cond, CBZ/CBNZ, TBZ/TBNZ branch types
 - **71 PRs merged total** 🎉
-
-## Cycle 244 Updates
-
-- **PR #229 open** (Cathy: CCMP/CCMN tests) — awaiting bob-approved
-- **PR #230 open** (Bob: Zero-cycle branches) — awaiting cathy-approved
-- Cross-reviews completed, both PRs ready for merge
 
 ## Key Achievements
 
@@ -82,14 +78,15 @@ The branchTakenConditional benchmark has cold branches where each PC is seen onl
 | 1 | ✅ CMP + B.cond fusion (PR #212) | Merged |
 | 2 | ✅ 8-wide decode infrastructure (PR #215) | Merged |
 | 3 | ✅ BTB size increase 512→2048 (PR #227) | Merged |
-| 4 | ✅ Zero-cycle predicted-taken branches (PR #230) | **Merged** 🎉 |
+| 4 | ✅ Zero-cycle predicted-taken branches (PR #230) | Merged |
+| 5 | ✅ Branch helper tests (PR #231) | **Merged** |
 
 ## Coverage Analysis
 
 | Package | Coverage | Status |
 |---------|----------|--------|
 | timing/cache | 89.1% | ✅ |
-| timing/pipeline | 58.6% | ⚠️ (8-wide code untested) |
+| timing/pipeline | 59.0% | ⬆️ +1pp |
 | timing/latency | 73.3% | ✅ |
 | timing/core | 100% | ✅ |
 | emu | 79.9% | ✅ Target exceeded! |
@@ -103,6 +100,7 @@ The branchTakenConditional benchmark has cold branches where each PC is seen onl
 5. ✅ BTB size increase 512→2048 (PR #227)
 6. ✅ Emu coverage 79.9% (PRs #214, #217, #218, #222, #225, #226, #228, #229)
 7. ✅ Zero-cycle predicted-taken branches (PR #230)
+8. ✅ Branch helper tests (PR #231) — pipeline coverage 59.0%
 
 ## Calibration Milestones
 
@@ -124,10 +122,11 @@ The branchTakenConditional benchmark has cold branches where each PC is seen onl
 
 ## Stats
 
-- 71 PRs merged total
-- 1 open PR (#231 — branch helper tests)
+- 72 PRs merged total
+- 0 open PRs
 - 205+ tests passing
 - All coverage targets exceeded ✓
 - 8-wide arithmetic accuracy: **6.7%** ✓
 - Emu coverage: **79.9%** ✓
+- Pipeline coverage: **59.0%** ✓
 - Branch accuracy: **34.5%** (cold branches — hot branch benchmark needed)
