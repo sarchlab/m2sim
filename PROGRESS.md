@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 15:37 EST (Cycle 254)
+**Last updated:** 2026-02-05 15:56 EST (Cycle 255)
 
 ## Current Status
 
@@ -8,9 +8,27 @@
 |--------|-------|
 | Total PRs Merged | 74 |
 | Open PRs | 1 |
-| Open Issues | 15 |
-| Pipeline Coverage | 73.8% ✅ |
+| Open Issues | 14 |
+| Pipeline Coverage | 72.8% ✅ |
 | Emu Coverage | 79.9% ✅ |
+
+## Cycle 255 Updates
+
+- **Cathy: Fixed PSTATE flag forwarding for ALL superscalar slots (2-8)** — root cause found!
+  - Previous fix only covered slot 1; CMP in slot 2 + B.NE in slot 3 still read stale flags
+  - Added SetsFlags/FlagN/Z/C/V to all EXMEM registers (3-8)
+  - Changed Execute→ExecuteWithFlags for slots 2-8
+  - TestCountdownLoop and TestBackwardBranch now pass ✅
+- **PR #233** (Bob: Hot branch benchmark) — Rebased with PSTATE fix, CI running
+  - Build ✅, Lint ✅, Unit Tests ✅, Acceptance Tests in progress
+  - Should pass CI now with the complete PSTATE forwarding fix!
+- **Issue #236 CLOSED** — PSTATE forwarding fix is complete
+- **Bob rebased PR #233** on main to pick up Cathy's fix
+
+**Open PRs:**
+- PR #233: cathy-approved ✅, CI 3/4 ✅, Acceptance Tests in progress
+
+**Critical path:** Once PR #233 passes CI, Bob can validate zero-cycle folding with FoldedBranches stat!
 
 ## Cycle 254 Updates
 
@@ -142,7 +160,7 @@ The PSTATE forwarding fix was implemented and merged to main, but PR #233 (hot b
 | 3 | ✅ BTB size increase 512→2048 (PR #227) | Merged |
 | 4 | ✅ Zero-cycle predicted-taken branches (PR #230) | Merged |
 | 5 | ✅ Branch helper tests (PR #231) | Merged |
-| 6 | 🔄 Hot branch benchmark (PR #233) | Blocked (timing sim bug) |
+| 6 | 🔄 Hot branch benchmark (PR #233) | CI running (should pass now!) |
 | 7 | ✅ Stage helper tests (PR #234) | Merged |
 | 8 | ✅ CMP+B.NE PSTATE tests (PR #235) | Merged |
 
@@ -188,10 +206,10 @@ The PSTATE forwarding fix was implemented and merged to main, but PR #233 (hot b
 ## Stats
 
 - 74 PRs merged total
-- 1 open PR (#233 hot branch benchmark — blocked on timing sim)
+- 1 open PR (#233 hot branch benchmark — CI should pass now!)
 - 258+ tests passing
 - All coverage targets exceeded ✓
 - 8-wide arithmetic accuracy: **6.7%** ✓
 - Emu coverage: **79.9%** ✓
-- Pipeline coverage: **73.8%** ✓ (+13.6pp from Cathy cycle 253)
+- Pipeline coverage: **72.8%** ✓
 - Branch accuracy: **34.5%** (cold branches — hot branch benchmark will validate zero-cycle folding)
