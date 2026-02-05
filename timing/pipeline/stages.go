@@ -150,11 +150,29 @@ type ExecuteResult struct {
 	StoreValue   uint64
 	BranchTaken  bool
 	BranchTarget uint64
+
+	// Flag output for flag-setting instructions (CMP, SUBS, ADDS).
+	// These are stored in EXMEM for forwarding to dependent B.cond instructions.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // Execute performs the ALU operation for the instruction.
 // rnValue and rmValue are the (possibly forwarded) operand values.
 func (s *ExecuteStage) Execute(idex *IDEXRegister, rnValue, rmValue uint64) ExecuteResult {
+	// Call ExecuteWithFlags with no forwarded flags (reads from PSTATE)
+	return s.ExecuteWithFlags(idex, rnValue, rmValue, false, false, false, false, false)
+}
+
+// ExecuteWithFlags performs the ALU operation with optional flag forwarding.
+// When forwardFlags is true, the provided n, z, c, v flags are used instead of reading PSTATE.
+// This fixes the pipeline timing hazard where CMP sets PSTATE at cycle END but B.cond reads
+// at cycle START, causing stale flag reads.
+func (s *ExecuteStage) ExecuteWithFlags(idex *IDEXRegister, rnValue, rmValue uint64,
+	forwardFlags bool, fwdN, fwdZ, fwdC, fwdV bool) ExecuteResult {
 	result := ExecuteResult{}
 
 	if !idex.Valid || idex.Inst == nil {
@@ -167,12 +185,30 @@ func (s *ExecuteStage) Execute(idex *IDEXRegister, rnValue, rmValue uint64) Exec
 	case insts.OpADD:
 		result.ALUResult = s.executeADD(inst, rnValue, rmValue)
 		if inst.SetFlags {
-			s.setAddFlags(inst, rnValue, rmValue, result.ALUResult)
+			n, z, c, v := s.computeAddFlags(inst, rnValue, rmValue, result.ALUResult)
+			s.regFile.PSTATE.N = n
+			s.regFile.PSTATE.Z = z
+			s.regFile.PSTATE.C = c
+			s.regFile.PSTATE.V = v
+			result.SetsFlags = true
+			result.FlagN = n
+			result.FlagZ = z
+			result.FlagC = c
+			result.FlagV = v
 		}
 	case insts.OpSUB:
 		result.ALUResult = s.executeSUB(inst, rnValue, rmValue)
 		if inst.SetFlags {
-			s.setSubFlags(inst, rnValue, rmValue, result.ALUResult)
+			n, z, c, v := s.computeSubFlags(inst, rnValue, rmValue, result.ALUResult)
+			s.regFile.PSTATE.N = n
+			s.regFile.PSTATE.Z = z
+			s.regFile.PSTATE.C = c
+			s.regFile.PSTATE.V = v
+			result.SetsFlags = true
+			result.FlagN = n
+			result.FlagZ = z
+			result.FlagC = c
+			result.FlagV = v
 		}
 	case insts.OpAND:
 		result.ALUResult = s.executeAND(inst, rnValue, rmValue)
@@ -228,8 +264,14 @@ func (s *ExecuteStage) Execute(idex *IDEXRegister, rnValue, rmValue uint64) Exec
 			}
 			n, z, c, v := ComputeSubFlags(idex.FusedRnVal, op2, idex.FusedIs64)
 			conditionMet = EvaluateConditionWithFlags(inst.Cond, n, z, c, v)
+		} else if forwardFlags {
+			// Non-fused with flag forwarding: use forwarded flags from previous
+			// flag-setting instruction (e.g., CMP in EXMEM stage).
+			// This fixes the pipeline timing hazard where CMP sets PSTATE at cycle
+			// END but B.cond reads at cycle START.
+			conditionMet = EvaluateConditionWithFlags(inst.Cond, fwdN, fwdZ, fwdC, fwdV)
 		} else {
-			// Non-fused: read condition from PSTATE (set by previous CMP)
+			// Non-fused without forwarding: read condition from PSTATE
 			conditionMet = s.checkCondition(inst.Cond)
 		}
 		if conditionMet {
@@ -353,58 +395,62 @@ func (s *ExecuteStage) executeEOR(inst *insts.Instruction, rnValue, rmValue uint
 	return uint64(uint32(rnValue) ^ uint32(rmValue))
 }
 
-// setAddFlags sets PSTATE flags after an ADD/ADDS operation.
-func (s *ExecuteStage) setAddFlags(inst *insts.Instruction, op1, op2, result uint64) {
+// computeAddFlags computes PSTATE flags for an ADD/ADDS operation without setting them.
+// Returns n, z, c, v flag values.
+func (s *ExecuteStage) computeAddFlags(inst *insts.Instruction, op1, op2, result uint64) (n, z, c, v bool) {
 	if inst.Is64Bit {
 		// 64-bit flags
-		s.regFile.PSTATE.N = (result >> 63) == 1
-		s.regFile.PSTATE.Z = result == 0
-		s.regFile.PSTATE.C = result < op1 // unsigned overflow (carry out)
+		n = (result >> 63) == 1
+		z = result == 0
+		c = result < op1 // unsigned overflow (carry out)
 		// V: signed overflow - adding same signs gives different sign
 		op1Sign := op1 >> 63
 		op2Sign := op2 >> 63
 		resultSign := result >> 63
-		s.regFile.PSTATE.V = (op1Sign == op2Sign) && (op1Sign != resultSign)
+		v = (op1Sign == op2Sign) && (op1Sign != resultSign)
 	} else {
 		// 32-bit flags
 		r32 := uint32(result)
 		o1 := uint32(op1)
 		o2 := uint32(op2)
-		s.regFile.PSTATE.N = (r32 >> 31) == 1
-		s.regFile.PSTATE.Z = r32 == 0
-		s.regFile.PSTATE.C = r32 < o1
+		n = (r32 >> 31) == 1
+		z = r32 == 0
+		c = r32 < o1
 		op1Sign := o1 >> 31
 		op2Sign := o2 >> 31
 		resultSign := r32 >> 31
-		s.regFile.PSTATE.V = (op1Sign == op2Sign) && (op1Sign != resultSign)
+		v = (op1Sign == op2Sign) && (op1Sign != resultSign)
 	}
+	return
 }
 
-// setSubFlags sets PSTATE flags after a SUB/SUBS/CMP operation.
-func (s *ExecuteStage) setSubFlags(inst *insts.Instruction, op1, op2, result uint64) {
+// computeSubFlags computes PSTATE flags for a SUB/SUBS/CMP operation without setting them.
+// Returns n, z, c, v flag values.
+func (s *ExecuteStage) computeSubFlags(inst *insts.Instruction, op1, op2, result uint64) (n, z, c, v bool) {
 	if inst.Is64Bit {
 		// 64-bit flags
-		s.regFile.PSTATE.N = (result >> 63) == 1
-		s.regFile.PSTATE.Z = result == 0
-		s.regFile.PSTATE.C = op1 >= op2 // no borrow
+		n = (result >> 63) == 1
+		z = result == 0
+		c = op1 >= op2 // no borrow
 		// V: signed overflow - subtracting different signs gives wrong sign
 		op1Sign := op1 >> 63
 		op2Sign := op2 >> 63
 		resultSign := result >> 63
-		s.regFile.PSTATE.V = (op1Sign != op2Sign) && (op2Sign == resultSign)
+		v = (op1Sign != op2Sign) && (op2Sign == resultSign)
 	} else {
 		// 32-bit flags
 		r32 := uint32(result)
 		o1 := uint32(op1)
 		o2 := uint32(op2)
-		s.regFile.PSTATE.N = (r32 >> 31) == 1
-		s.regFile.PSTATE.Z = r32 == 0
-		s.regFile.PSTATE.C = o1 >= o2
+		n = (r32 >> 31) == 1
+		z = r32 == 0
+		c = o1 >= o2
 		op1Sign := o1 >> 31
 		op2Sign := o2 >> 31
 		resultSign := r32 >> 31
-		s.regFile.PSTATE.V = (op1Sign != op2Sign) && (op2Sign == resultSign)
+		v = (op1Sign != op2Sign) && (op2Sign == resultSign)
 	}
+	return
 }
 
 // MemoryStage handles memory reads and writes.

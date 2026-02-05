@@ -613,7 +613,24 @@ func (p *Pipeline) tickSingleIssue() {
 			rmValue := p.hazardUnit.GetForwardedValue(
 				forwarding.ForwardRm, p.idex.RmValue, &p.exmem, &savedMEMWB)
 
-			execResult := p.executeStage.Execute(&p.idex, rnValue, rmValue)
+			// Check for PSTATE flag forwarding from EXMEM stage.
+			// This fixes the timing hazard where CMP sets PSTATE at cycle END
+			// but B.cond reads at cycle START, causing stale flag reads.
+			forwardFlags := false
+			var fwdN, fwdZ, fwdC, fwdV bool
+			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
+				// Check if previous instruction (now in EXMEM) sets flags
+				if p.exmem.Valid && p.exmem.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem.FlagN
+					fwdZ = p.exmem.FlagZ
+					fwdC = p.exmem.FlagC
+					fwdV = p.exmem.FlagV
+				}
+			}
+
+			execResult := p.executeStage.ExecuteWithFlags(&p.idex, rnValue, rmValue,
+				forwardFlags, fwdN, fwdZ, fwdC, fwdV)
 
 			// Handle branch prediction verification
 			if p.idex.IsBranch {
@@ -687,6 +704,12 @@ func (p *Pipeline) tickSingleIssue() {
 				MemWrite:   p.idex.MemWrite,
 				RegWrite:   p.idex.RegWrite,
 				MemToReg:   p.idex.MemToReg,
+				// Store computed flags for forwarding to dependent B.cond
+				SetsFlags: execResult.SetsFlags,
+				FlagN:     execResult.FlagN,
+				FlagZ:     execResult.FlagZ,
+				FlagC:     execResult.FlagC,
+				FlagV:     execResult.FlagV,
 			}
 		}
 	}
@@ -954,7 +977,21 @@ func (p *Pipeline) tickSuperscalar() {
 				}
 			}
 
-			execResult := p.executeStage.Execute(&p.idex, rnValue, rmValue)
+			// Check for PSTATE flag forwarding from EXMEM stage (dual-issue).
+			forwardFlags := false
+			var fwdN, fwdZ, fwdC, fwdV bool
+			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
+				if p.exmem.Valid && p.exmem.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem.FlagN
+					fwdZ = p.exmem.FlagZ
+					fwdC = p.exmem.FlagC
+					fwdV = p.exmem.FlagV
+				}
+			}
+
+			execResult := p.executeStage.ExecuteWithFlags(&p.idex, rnValue, rmValue,
+				forwardFlags, fwdN, fwdZ, fwdC, fwdV)
 
 			storeValue := execResult.StoreValue
 			if p.idex.MemWrite {
@@ -974,6 +1011,12 @@ func (p *Pipeline) tickSuperscalar() {
 				MemWrite:   p.idex.MemWrite,
 				RegWrite:   p.idex.RegWrite,
 				MemToReg:   p.idex.MemToReg,
+				// Store computed flags for forwarding
+				SetsFlags: execResult.SetsFlags,
+				FlagN:     execResult.FlagN,
+				FlagZ:     execResult.FlagZ,
+				FlagC:     execResult.FlagC,
+				FlagV:     execResult.FlagV,
 			}
 
 			// Branch prediction verification for primary slot (same logic as single-issue)
@@ -1593,7 +1636,21 @@ func (p *Pipeline) tickQuadIssue() {
 			rnValue = p.forwardFromAllSlots(p.idex.Rn, rnValue)
 			rmValue = p.forwardFromAllSlots(p.idex.Rm, rmValue)
 
-			execResult := p.executeStage.Execute(&p.idex, rnValue, rmValue)
+			// Check for PSTATE flag forwarding from EXMEM stage (quad-issue).
+			forwardFlags := false
+			var fwdN, fwdZ, fwdC, fwdV bool
+			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
+				if p.exmem.Valid && p.exmem.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem.FlagN
+					fwdZ = p.exmem.FlagZ
+					fwdC = p.exmem.FlagC
+					fwdV = p.exmem.FlagV
+				}
+			}
+
+			execResult := p.executeStage.ExecuteWithFlags(&p.idex, rnValue, rmValue,
+				forwardFlags, fwdN, fwdZ, fwdC, fwdV)
 
 			storeValue := execResult.StoreValue
 			if p.idex.MemWrite {
@@ -1613,6 +1670,12 @@ func (p *Pipeline) tickQuadIssue() {
 				MemWrite:   p.idex.MemWrite,
 				RegWrite:   p.idex.RegWrite,
 				MemToReg:   p.idex.MemToReg,
+				// Store computed flags for forwarding
+				SetsFlags: execResult.SetsFlags,
+				FlagN:     execResult.FlagN,
+				FlagZ:     execResult.FlagZ,
+				FlagC:     execResult.FlagC,
+				FlagV:     execResult.FlagV,
 			}
 
 			// Branch prediction verification for primary slot
@@ -2515,7 +2578,21 @@ func (p *Pipeline) tickSextupleIssue() {
 			rnValue = p.forwardFromAllSlots(p.idex.Rn, rnValue)
 			rmValue = p.forwardFromAllSlots(p.idex.Rm, rmValue)
 
-			execResult := p.executeStage.Execute(&p.idex, rnValue, rmValue)
+			// Check for PSTATE flag forwarding from EXMEM stage (sextuple-issue).
+			forwardFlags := false
+			var fwdN, fwdZ, fwdC, fwdV bool
+			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
+				if p.exmem.Valid && p.exmem.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem.FlagN
+					fwdZ = p.exmem.FlagZ
+					fwdC = p.exmem.FlagC
+					fwdV = p.exmem.FlagV
+				}
+			}
+
+			execResult := p.executeStage.ExecuteWithFlags(&p.idex, rnValue, rmValue,
+				forwardFlags, fwdN, fwdZ, fwdC, fwdV)
 
 			storeValue := execResult.StoreValue
 			if p.idex.MemWrite {
@@ -2536,6 +2613,12 @@ func (p *Pipeline) tickSextupleIssue() {
 				RegWrite:   p.idex.RegWrite,
 				MemToReg:   p.idex.MemToReg,
 				IsFused:    p.idex.IsFused,
+				// Store computed flags for forwarding
+				SetsFlags: execResult.SetsFlags,
+				FlagN:     execResult.FlagN,
+				FlagZ:     execResult.FlagZ,
+				FlagC:     execResult.FlagC,
+				FlagV:     execResult.FlagV,
 			}
 
 			// Branch prediction verification for primary slot
@@ -3709,7 +3792,22 @@ func (p *Pipeline) tickOctupleIssue() {
 			rnValue = p.forwardFromAllSlots(p.idex.Rn, rnValue)
 			rmValue = p.forwardFromAllSlots(p.idex.Rm, rmValue)
 
-			execResult := p.executeStage.Execute(&p.idex, rnValue, rmValue)
+			// Check for PSTATE flag forwarding from EXMEM stage (octuple-issue).
+			// Note: Branches only execute in slot 0, so we only check the primary EXMEM.
+			forwardFlags := false
+			var fwdN, fwdZ, fwdC, fwdV bool
+			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
+				if p.exmem.Valid && p.exmem.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem.FlagN
+					fwdZ = p.exmem.FlagZ
+					fwdC = p.exmem.FlagC
+					fwdV = p.exmem.FlagV
+				}
+			}
+
+			execResult := p.executeStage.ExecuteWithFlags(&p.idex, rnValue, rmValue,
+				forwardFlags, fwdN, fwdZ, fwdC, fwdV)
 
 			storeValue := execResult.StoreValue
 			if p.idex.MemWrite {
@@ -3730,6 +3828,12 @@ func (p *Pipeline) tickOctupleIssue() {
 				RegWrite:   p.idex.RegWrite,
 				MemToReg:   p.idex.MemToReg,
 				IsFused:    p.idex.IsFused,
+				// Store computed flags for forwarding to dependent B.cond
+				SetsFlags: execResult.SetsFlags,
+				FlagN:     execResult.FlagN,
+				FlagZ:     execResult.FlagZ,
+				FlagC:     execResult.FlagC,
+				FlagV:     execResult.FlagV,
 			}
 
 			// Branch prediction verification for primary slot

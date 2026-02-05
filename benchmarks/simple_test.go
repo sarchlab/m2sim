@@ -58,7 +58,7 @@ func TestBenchmarkEncoding(t *testing.T) {
 }
 
 func TestCountdownLoop(t *testing.T) {
-	t.Skip("Skipped: timing pipeline doesn't update PSTATE flags, causing infinite loop")
+	// t.Skip("Skipped: timing pipeline doesn't update PSTATE flags, causing infinite loop")
 	// Simple countdown: X0 = 5, loop decrement until 0
 	program := BuildProgram(
 		EncodeSUBImm(0, 0, 1, true), // SUBS X0, X0, #1

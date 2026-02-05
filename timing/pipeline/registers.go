@@ -133,6 +133,15 @@ type EXMEMRegister struct {
 	// IsFused indicates this is a fused CMP+B.cond operation.
 	// When this instruction retires, it counts as 2 instructions.
 	IsFused bool
+
+	// PSTATE flag forwarding fields.
+	// When a flag-setting instruction (CMP, SUBS, ADDS) executes, it stores
+	// the computed flags here for forwarding to dependent B.cond instructions.
+	SetsFlags bool // True if this instruction sets PSTATE flags
+	FlagN     bool // Negative flag (forwarded)
+	FlagZ     bool // Zero flag (forwarded)
+	FlagC     bool // Carry flag (forwarded)
+	FlagV     bool // Overflow flag (forwarded)
 }
 
 // Clear resets the EX/MEM register to empty state.
@@ -148,6 +157,11 @@ func (r *EXMEMRegister) Clear() {
 	r.RegWrite = false
 	r.MemToReg = false
 	r.IsFused = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for EXMEMRegister

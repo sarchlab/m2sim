@@ -59,7 +59,7 @@ func TestSUBSFlags(t *testing.T) {
 }
 
 func TestBackwardBranch(t *testing.T) {
-	t.Skip("Skipped: timing pipeline doesn't update PSTATE flags, causing infinite loop")
+	// t.Skip("Skipped: timing pipeline doesn't update PSTATE flags, causing infinite loop")
 	regFile := &emu.RegFile{}
 	regFile.WriteReg(8, 93) // X8 = 93 (exit syscall)
 	regFile.WriteReg(0, 2)  // X0 = 2 (small counter)
