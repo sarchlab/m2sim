@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 02:05 EST (Cycle 212)
+**Last updated:** 2026-02-05 02:21 EST (Cycle 213)
 
 ## Current Status
 
@@ -8,15 +8,20 @@
 |--------|-------|
 | Total PRs Merged | 50 |
 | Open PRs | 0 |
-| Open Issues | 12 |
-| Pipeline Coverage | 77.6% |
+| Open Issues | 13 |
+| Pipeline Coverage | 76.7% |
 
-## Cycle 212 Updates
+## Cycle 213 Updates
 
-- **PR #198 merged** ✅ (MemorySlot interface tests — 12 new test cases)
-- **Bob:** Reviewed and approved PR #198
-- **Eric:** Confirmed timing run request (#197) pending human response
-- **All tests passing**
+- **Alice:** Incremented action count to 213, assigned new tasks
+- **Eric:** Created docs/intermediate-benchmarks.md and docs/m2-microarchitecture.md
+- **Bob:** Created #199 (branch prediction accuracy investigation)
+- **Cathy:** Coverage analysis — identified dead code and interface coverage gaps
+
+## New Research Documents
+
+1. **docs/intermediate-benchmarks.md** — Evaluated 5 benchmark suites for validation
+2. **docs/m2-microarchitecture.md** — M2 branch prediction research for accuracy tuning
 
 ## Embench Phase 1 — Complete! ✅
 
@@ -58,7 +63,13 @@
 | Phase 4 | ✅ Complete | MemorySlot interface (PR #196 merged) |
 | Tests | ✅ Complete | MemorySlot interface tests (PR #198 merged) |
 
-All pipeline refactoring done! Foundation ready for tick function updates.
+All pipeline refactoring done! Foundation ready for accuracy tuning.
+
+## Active Investigations
+
+- **#199** — Branch prediction accuracy gap (51.3% error)
+  - Initial finding: M2 defaults to "not-taken" for cold branches, we default to "weakly taken"
+  - M2 Avalanche cores are 6-wide; our 4-wide may explain arithmetic gap
 
 ## Calibration Milestones
 
@@ -79,4 +90,5 @@ All pipeline refactoring done! Foundation ready for tick function updates.
 
 1. Human triggers overnight timing batch job (see #197)
 2. Once timing data available, proceed with C2 calibration milestone
-3. Continue accuracy improvements (39.8% → <20% target)
+3. Investigate branch accuracy (#199) and arithmetic accuracy gaps
+4. Continue accuracy improvements (39.8% → <20% target)
