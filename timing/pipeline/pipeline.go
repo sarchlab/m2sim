@@ -977,7 +977,7 @@ func (p *Pipeline) tickSuperscalar() {
 				}
 			}
 
-			// Check for PSTATE flag forwarding from EXMEM stage (dual-issue).
+			// Check for PSTATE flag forwarding from all EXMEM stages (dual-issue).
 			forwardFlags := false
 			var fwdN, fwdZ, fwdC, fwdV bool
 			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
@@ -987,6 +987,12 @@ func (p *Pipeline) tickSuperscalar() {
 					fwdZ = p.exmem.FlagZ
 					fwdC = p.exmem.FlagC
 					fwdV = p.exmem.FlagV
+				} else if p.exmem2.Valid && p.exmem2.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem2.FlagN
+					fwdZ = p.exmem2.FlagZ
+					fwdC = p.exmem2.FlagC
+					fwdV = p.exmem2.FlagV
 				}
 			}
 
@@ -1165,6 +1171,11 @@ func (p *Pipeline) tickSuperscalar() {
 				MemWrite:   p.idex2.MemWrite,
 				RegWrite:   p.idex2.RegWrite,
 				MemToReg:   p.idex2.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -1636,7 +1647,7 @@ func (p *Pipeline) tickQuadIssue() {
 			rnValue = p.forwardFromAllSlots(p.idex.Rn, rnValue)
 			rmValue = p.forwardFromAllSlots(p.idex.Rm, rmValue)
 
-			// Check for PSTATE flag forwarding from EXMEM stage (quad-issue).
+			// Check for PSTATE flag forwarding from all EXMEM stages (quad-issue).
 			forwardFlags := false
 			var fwdN, fwdZ, fwdC, fwdV bool
 			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
@@ -1646,6 +1657,24 @@ func (p *Pipeline) tickQuadIssue() {
 					fwdZ = p.exmem.FlagZ
 					fwdC = p.exmem.FlagC
 					fwdV = p.exmem.FlagV
+				} else if p.exmem2.Valid && p.exmem2.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem2.FlagN
+					fwdZ = p.exmem2.FlagZ
+					fwdC = p.exmem2.FlagC
+					fwdV = p.exmem2.FlagV
+				} else if p.exmem3.Valid && p.exmem3.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem3.FlagN
+					fwdZ = p.exmem3.FlagZ
+					fwdC = p.exmem3.FlagC
+					fwdV = p.exmem3.FlagV
+				} else if p.exmem4.Valid && p.exmem4.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem4.FlagN
+					fwdZ = p.exmem4.FlagZ
+					fwdC = p.exmem4.FlagC
+					fwdV = p.exmem4.FlagV
 				}
 			}
 
@@ -1783,6 +1812,11 @@ func (p *Pipeline) tickQuadIssue() {
 				MemWrite:   p.idex2.MemWrite,
 				RegWrite:   p.idex2.RegWrite,
 				MemToReg:   p.idex2.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -1837,6 +1871,11 @@ func (p *Pipeline) tickQuadIssue() {
 				MemWrite:   p.idex3.MemWrite,
 				RegWrite:   p.idex3.RegWrite,
 				MemToReg:   p.idex3.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -1899,6 +1938,11 @@ func (p *Pipeline) tickQuadIssue() {
 				MemWrite:   p.idex4.MemWrite,
 				RegWrite:   p.idex4.RegWrite,
 				MemToReg:   p.idex4.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -2578,7 +2622,7 @@ func (p *Pipeline) tickSextupleIssue() {
 			rnValue = p.forwardFromAllSlots(p.idex.Rn, rnValue)
 			rmValue = p.forwardFromAllSlots(p.idex.Rm, rmValue)
 
-			// Check for PSTATE flag forwarding from EXMEM stage (sextuple-issue).
+			// Check for PSTATE flag forwarding from all EXMEM stages (sextuple-issue).
 			forwardFlags := false
 			var fwdN, fwdZ, fwdC, fwdV bool
 			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
@@ -2588,6 +2632,36 @@ func (p *Pipeline) tickSextupleIssue() {
 					fwdZ = p.exmem.FlagZ
 					fwdC = p.exmem.FlagC
 					fwdV = p.exmem.FlagV
+				} else if p.exmem2.Valid && p.exmem2.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem2.FlagN
+					fwdZ = p.exmem2.FlagZ
+					fwdC = p.exmem2.FlagC
+					fwdV = p.exmem2.FlagV
+				} else if p.exmem3.Valid && p.exmem3.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem3.FlagN
+					fwdZ = p.exmem3.FlagZ
+					fwdC = p.exmem3.FlagC
+					fwdV = p.exmem3.FlagV
+				} else if p.exmem4.Valid && p.exmem4.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem4.FlagN
+					fwdZ = p.exmem4.FlagZ
+					fwdC = p.exmem4.FlagC
+					fwdV = p.exmem4.FlagV
+				} else if p.exmem5.Valid && p.exmem5.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem5.FlagN
+					fwdZ = p.exmem5.FlagZ
+					fwdC = p.exmem5.FlagC
+					fwdV = p.exmem5.FlagV
+				} else if p.exmem6.Valid && p.exmem6.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem6.FlagN
+					fwdZ = p.exmem6.FlagZ
+					fwdC = p.exmem6.FlagC
+					fwdV = p.exmem6.FlagV
 				}
 			}
 
@@ -2716,6 +2790,11 @@ func (p *Pipeline) tickSextupleIssue() {
 				MemWrite:   p.idex2.MemWrite,
 				RegWrite:   p.idex2.RegWrite,
 				MemToReg:   p.idex2.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -2760,6 +2839,11 @@ func (p *Pipeline) tickSextupleIssue() {
 				MemWrite:   p.idex3.MemWrite,
 				RegWrite:   p.idex3.RegWrite,
 				MemToReg:   p.idex3.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -2812,6 +2896,11 @@ func (p *Pipeline) tickSextupleIssue() {
 				MemWrite:   p.idex4.MemWrite,
 				RegWrite:   p.idex4.RegWrite,
 				MemToReg:   p.idex4.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -2872,6 +2961,11 @@ func (p *Pipeline) tickSextupleIssue() {
 				MemWrite:   p.idex5.MemWrite,
 				RegWrite:   p.idex5.RegWrite,
 				MemToReg:   p.idex5.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -2940,6 +3034,11 @@ func (p *Pipeline) tickSextupleIssue() {
 				MemWrite:   p.idex6.MemWrite,
 				RegWrite:   p.idex6.RegWrite,
 				MemToReg:   p.idex6.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -3792,8 +3891,8 @@ func (p *Pipeline) tickOctupleIssue() {
 			rnValue = p.forwardFromAllSlots(p.idex.Rn, rnValue)
 			rmValue = p.forwardFromAllSlots(p.idex.Rm, rmValue)
 
-			// Check for PSTATE flag forwarding from EXMEM stage (octuple-issue).
-			// Note: Branches only execute in slot 0, so we only check the primary EXMEM.
+			// Check for PSTATE flag forwarding from all EXMEM stages (octuple-issue).
+			// CMP can execute in any slot, and B.cond in slot 0 needs the flags.
 			forwardFlags := false
 			var fwdN, fwdZ, fwdC, fwdV bool
 			if p.idex.Inst != nil && p.idex.Inst.Op == insts.OpBCond && !p.idex.IsFused {
@@ -3803,6 +3902,48 @@ func (p *Pipeline) tickOctupleIssue() {
 					fwdZ = p.exmem.FlagZ
 					fwdC = p.exmem.FlagC
 					fwdV = p.exmem.FlagV
+				} else if p.exmem2.Valid && p.exmem2.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem2.FlagN
+					fwdZ = p.exmem2.FlagZ
+					fwdC = p.exmem2.FlagC
+					fwdV = p.exmem2.FlagV
+				} else if p.exmem3.Valid && p.exmem3.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem3.FlagN
+					fwdZ = p.exmem3.FlagZ
+					fwdC = p.exmem3.FlagC
+					fwdV = p.exmem3.FlagV
+				} else if p.exmem4.Valid && p.exmem4.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem4.FlagN
+					fwdZ = p.exmem4.FlagZ
+					fwdC = p.exmem4.FlagC
+					fwdV = p.exmem4.FlagV
+				} else if p.exmem5.Valid && p.exmem5.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem5.FlagN
+					fwdZ = p.exmem5.FlagZ
+					fwdC = p.exmem5.FlagC
+					fwdV = p.exmem5.FlagV
+				} else if p.exmem6.Valid && p.exmem6.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem6.FlagN
+					fwdZ = p.exmem6.FlagZ
+					fwdC = p.exmem6.FlagC
+					fwdV = p.exmem6.FlagV
+				} else if p.exmem7.Valid && p.exmem7.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem7.FlagN
+					fwdZ = p.exmem7.FlagZ
+					fwdC = p.exmem7.FlagC
+					fwdV = p.exmem7.FlagV
+				} else if p.exmem8.Valid && p.exmem8.SetsFlags {
+					forwardFlags = true
+					fwdN = p.exmem8.FlagN
+					fwdZ = p.exmem8.FlagZ
+					fwdC = p.exmem8.FlagC
+					fwdV = p.exmem8.FlagV
 				}
 			}
 
@@ -3935,6 +4076,11 @@ func (p *Pipeline) tickOctupleIssue() {
 				MemWrite:   p.idex2.MemWrite,
 				RegWrite:   p.idex2.RegWrite,
 				MemToReg:   p.idex2.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -3979,6 +4125,11 @@ func (p *Pipeline) tickOctupleIssue() {
 				MemWrite:   p.idex3.MemWrite,
 				RegWrite:   p.idex3.RegWrite,
 				MemToReg:   p.idex3.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -4031,6 +4182,11 @@ func (p *Pipeline) tickOctupleIssue() {
 				MemWrite:   p.idex4.MemWrite,
 				RegWrite:   p.idex4.RegWrite,
 				MemToReg:   p.idex4.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -4091,6 +4247,11 @@ func (p *Pipeline) tickOctupleIssue() {
 				MemWrite:   p.idex5.MemWrite,
 				RegWrite:   p.idex5.RegWrite,
 				MemToReg:   p.idex5.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -4159,6 +4320,11 @@ func (p *Pipeline) tickOctupleIssue() {
 				MemWrite:   p.idex6.MemWrite,
 				RegWrite:   p.idex6.RegWrite,
 				MemToReg:   p.idex6.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -4235,6 +4401,11 @@ func (p *Pipeline) tickOctupleIssue() {
 				MemWrite:   p.idex7.MemWrite,
 				RegWrite:   p.idex7.RegWrite,
 				MemToReg:   p.idex7.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}
@@ -4319,6 +4490,11 @@ func (p *Pipeline) tickOctupleIssue() {
 				MemWrite:   p.idex8.MemWrite,
 				RegWrite:   p.idex8.RegWrite,
 				MemToReg:   p.idex8.MemToReg,
+				SetsFlags:  execResult.SetsFlags,
+				FlagN:      execResult.FlagN,
+				FlagZ:      execResult.FlagZ,
+				FlagC:      execResult.FlagC,
+				FlagV:      execResult.FlagV,
 			}
 		}
 	}

@@ -179,6 +179,13 @@ type SecondaryEXMEMRegister struct {
 	MemWrite   bool
 	RegWrite   bool
 	MemToReg   bool
+
+	// PSTATE flag forwarding fields.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // SecondaryMEMWBRegister holds the second memory result for dual-issue.
@@ -235,6 +242,11 @@ func (r *SecondaryEXMEMRegister) Clear() {
 	r.MemWrite = false
 	r.RegWrite = false
 	r.MemToReg = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for SecondaryEXMEMRegister
@@ -347,6 +359,13 @@ type TertiaryEXMEMRegister struct {
 	MemWrite   bool
 	RegWrite   bool
 	MemToReg   bool
+
+	// PSTATE flag forwarding fields.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // TertiaryMEMWBRegister holds the third memory result for 4-wide issue.
@@ -397,6 +416,11 @@ func (r *TertiaryEXMEMRegister) Clear() {
 	r.MemWrite = false
 	r.RegWrite = false
 	r.MemToReg = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for TertiaryEXMEMRegister
@@ -505,6 +529,13 @@ type QuaternaryEXMEMRegister struct {
 	MemWrite   bool
 	RegWrite   bool
 	MemToReg   bool
+
+	// PSTATE flag forwarding fields.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // QuaternaryMEMWBRegister holds the fourth memory result for 4-wide issue.
@@ -555,6 +586,11 @@ func (r *QuaternaryEXMEMRegister) Clear() {
 	r.MemWrite = false
 	r.RegWrite = false
 	r.MemToReg = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for QuaternaryEXMEMRegister
@@ -663,6 +699,13 @@ type QuinaryEXMEMRegister struct {
 	MemWrite   bool
 	RegWrite   bool
 	MemToReg   bool
+
+	// PSTATE flag forwarding fields.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // QuinaryMEMWBRegister holds the fifth memory result for 6-wide issue.
@@ -713,6 +756,11 @@ func (r *QuinaryEXMEMRegister) Clear() {
 	r.MemWrite = false
 	r.RegWrite = false
 	r.MemToReg = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for QuinaryEXMEMRegister
@@ -819,6 +867,13 @@ type SenaryEXMEMRegister struct {
 	MemWrite   bool
 	RegWrite   bool
 	MemToReg   bool
+
+	// PSTATE flag forwarding fields.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // SenaryMEMWBRegister holds the sixth memory result for 6-wide issue.
@@ -869,6 +924,11 @@ func (r *SenaryEXMEMRegister) Clear() {
 	r.MemWrite = false
 	r.RegWrite = false
 	r.MemToReg = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for SenaryEXMEMRegister
@@ -1154,6 +1214,13 @@ type SeptenaryEXMEMRegister struct {
 	MemWrite   bool
 	RegWrite   bool
 	MemToReg   bool
+
+	// PSTATE flag forwarding fields.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // SeptenaryMEMWBRegister holds the seventh memory result for 8-wide issue.
@@ -1204,6 +1271,11 @@ func (r *SeptenaryEXMEMRegister) Clear() {
 	r.MemWrite = false
 	r.RegWrite = false
 	r.MemToReg = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for SeptenaryEXMEMRegister
@@ -1333,6 +1405,13 @@ type OctonaryEXMEMRegister struct {
 	MemWrite   bool
 	RegWrite   bool
 	MemToReg   bool
+
+	// PSTATE flag forwarding fields.
+	SetsFlags bool
+	FlagN     bool
+	FlagZ     bool
+	FlagC     bool
+	FlagV     bool
 }
 
 // OctonaryMEMWBRegister holds the eighth memory result for 8-wide issue.
@@ -1383,6 +1462,11 @@ func (r *OctonaryEXMEMRegister) Clear() {
 	r.MemWrite = false
 	r.RegWrite = false
 	r.MemToReg = false
+	r.SetsFlags = false
+	r.FlagN = false
+	r.FlagZ = false
+	r.FlagC = false
+	r.FlagV = false
 }
 
 // MemorySlot interface implementation for OctonaryEXMEMRegister
