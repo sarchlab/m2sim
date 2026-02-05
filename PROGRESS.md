@@ -1,19 +1,19 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-04 21:28 EST (Cycle 196)
+**Last updated:** 2026-02-04 21:50 EST (Cycle 197)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
 | Total PRs Merged | 44 |
-| Open PRs | 0 |
-| Open Issues | 10 |
-| Pipeline Coverage | 77.4% ✅ |
+| Open PRs | 1 |
+| Open Issues | 14 |
+| Pipeline Coverage | 75.9% |
 
-## 🎉 Milestone: All Embench Benchmarks Complete!
+## 🎯 Current Focus: Phase 2 Benchmark Expansion
 
-**PR #182 merged** — All three Embench benchmarks now exit properly:
+### Embench Phase 1 — Complete! ✅
 
 | Benchmark | Instructions | Exit Code | Status |
 |-----------|-------------|-----------|--------|
@@ -21,48 +21,55 @@
 | crc32 | 1.57M | 0 ✓ | ✅ Complete |
 | matmult-int | 3.85M | 0 ✓ | ✅ Complete |
 
-**Key fix:** Changed `brk #0` (trap) to proper exit syscall in startup.S files.
+### Embench Phase 2 — In Progress
+
+Four new benchmarks approved:
+- **#184** — primecount (PR #188 created ⚠️ needs fix)
+- **#185** — edn (signal processing)
+- **#186** — huffbench (Huffman coding)
+- **#187** — statemate (automotive state machine)
+
+**Blocker:** PR #188 (primecount) produces incorrect results — investigating.
 
 ## Active Work
 
+### PR #188 — Primecount Benchmark (Bob)
+- **Branch:** `bob/184-primecount`
+- **Status:** ⚠️ Builds but produces incorrect results (4 instead of 3512)
+- **Next:** Debug early termination issue
+
 ### #122 — Pipeline Refactor (Cathy)
 - **Branch:** `cathy/122-pipeline-refactor-writeback`
-- **Status:** Plan documented, starting Phase 1
-- **Goal:** Reduce 3320-line file by ~50%
-
-### #183 — Embench Benchmark Selection (Eric)
-- Researched all 22 Embench benchmarks
-- Proposed phased expansion plan
-- Awaiting decision from Human/Alice
+- **Status:** WritebackSlot interface added
+- **Progress:** Phase 1 in progress (extract stage helpers)
+- **Coverage:** 75.9% maintained
 
 ## Recent Progress
 
+### Cycle 197 (Current)
+- **Alice approved Phase 2** expansion (4 new benchmarks)
+- **Eric created issues** #184-187 for Phase 2 benchmarks
+- **Bob started primecount** (#184) — PR #188 created
+- **Cathy added WritebackSlot** interface for #122 refactor
+- **Dana updated PROGRESS.md**
+
 ### Cycle 196
-- **PR #182 merged** (Bob→Dana): Exit code fix for Embench 🎉
-- **Cathy started #122**: Pipeline refactor plan created
-- **Eric responded to #183**: Embench expansion analysis
-
-### Cycle 195
-- Eric tested aha-mont64 with EXTR: 1.88M instructions ✅
-- Bob created PR #182: Fixed exit handling
-- Cathy approved PR #182
-
-### Cycle 194
-- **PR #181 merged** (Bob): EXTR instruction
-- Closed #164, #165: crc32 and matmult-int success
+- **PR #182 merged** (Bob): Exit code fix for Embench 🎉
+- Eric responded to #183: Embench expansion analysis
 
 ## Calibration Milestones
 
 | Milestone | Status | Description |
 |-----------|--------|-------------|
-| C1 | 🎉 **COMPLETE** | All Embench + CoreMark execute successfully |
+| C1 | 🎉 **COMPLETE** | Phase 1 Embench + CoreMark execute |
+| C1.5 | **In Progress** | Phase 2 Embench expansion (4 more) |
 | C2 | Pending | Microbenchmark Accuracy — <20% avg error |
 | C3 | Pending | Intermediate Benchmark Accuracy |
 | C4 | Pending | SPEC Benchmark Accuracy |
 
 ## Next Steps
 
-1. ✅ PR #182 merged — exit code fix complete
-2. Human decision on #183 (Embench expansion)
-3. Continue #122 pipeline refactor
-4. Start C2 milestone planning
+1. **Fix PR #188** — Debug primecount early termination
+2. **Continue Phase 2** — edn, huffbench, statemate
+3. **Complete #122** — Pipeline refactor Phase 1
+4. **Plan C2** — Microbenchmark accuracy work
