@@ -1,27 +1,27 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 02:21 EST (Cycle 213)
+**Last updated:** 2026-02-05 02:38 EST (Cycle 214)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | 50 |
+| Total PRs Merged | 51 |
 | Open PRs | 0 |
 | Open Issues | 13 |
-| Pipeline Coverage | 76.7% |
+| Pipeline Coverage | 77.6% |
 
-## Cycle 213 Updates
+## Cycle 214 Updates
 
-- **Alice:** Incremented action count to 213, assigned new tasks
-- **Eric:** Created docs/intermediate-benchmarks.md and docs/m2-microarchitecture.md
-- **Bob:** Created #199 (branch prediction accuracy investigation)
-- **Cathy:** Coverage analysis — identified dead code and interface coverage gaps
+- **Alice:** Assigned branch predictor fixes to Bob, updated task board
+- **Eric:** Added M2 branch handling research (zero-cycle branches, BTB config)
+- **Bob:** Created PR #200 (branch predictor default init fix)
+- **Cathy:** Reviewed and approved PR #200
+- **Dana:** Merged PR #200 ✅
 
-## New Research Documents
+## Key Achievement This Cycle
 
-1. **docs/intermediate-benchmarks.md** — Evaluated 5 benchmark suites for validation
-2. **docs/m2-microarchitecture.md** — M2 branch prediction research for accuracy tuning
+**PR #200 merged** — Branch predictor default changed from "weakly taken" to "weakly not-taken" to match M2 Avalanche core behavior. This should help reduce the 51.3% error on branch benchmarks.
 
 ## Embench Phase 1 — Complete! ✅
 
@@ -30,17 +30,6 @@
 | aha-mont64 | 1.88M | 0 ✓ | ✅ Complete |
 | crc32 | 1.57M | 0 ✓ | ✅ Complete |
 | matmult-int | 3.85M | 0 ✓ | ✅ Complete |
-
-## Embench Phase 2 — Complete
-
-| Issue | Benchmark | Status |
-|-------|-----------|--------|
-| #184 | primecount | ✅ Merged (2.84M instructions) |
-| #185 | edn | ✅ Merged |
-| #186 | huffbench | ❌ Closed (needs libc stubs) |
-| #187 | statemate | ❌ Closed (needs libc stubs) |
-
-**5 Embench benchmarks working** — sufficient for accuracy calibration
 
 ## Accuracy Status (Microbenchmarks)
 
@@ -53,42 +42,27 @@
 
 **Target:** <20% average error (#141)
 
+**Note:** Re-run benchmarks after PR #200 merge to measure improvement!
+
 ## Pipeline Refactor Progress (#122) — COMPLETE! ✅
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 1 | ✅ Complete | WritebackSlot interface + implementations |
-| Phase 2 | ✅ Complete | Replace inline writeback with helper calls |
-| Phase 3 | ✅ Complete | Primary slot unified with WritebackSlot |
-| Phase 4 | ✅ Complete | MemorySlot interface (PR #196 merged) |
-| Tests | ✅ Complete | MemorySlot interface tests (PR #198 merged) |
-
-All pipeline refactoring done! Foundation ready for accuracy tuning.
+All 4 phases complete + tests. Foundation ready for accuracy tuning.
 
 ## Active Investigations
 
-- **#199** — Branch prediction accuracy gap (51.3% error)
-  - Initial finding: M2 defaults to "not-taken" for cold branches, we default to "weakly taken"
-  - M2 Avalanche cores are 6-wide; our 4-wide may explain arithmetic gap
+- **#199** — Branch prediction accuracy (PR #200 merged, awaiting re-measurement)
+- **#197** — Embench timing run request (waiting on human)
 
 ## Calibration Milestones
 
 | Milestone | Status | Description |
 |-----------|--------|-------------|
 | C1 | ✅ Complete | Benchmarks execute to completion |
-| C2 | 🚧 Blocked | Accuracy calibration — needs Embench timing data |
+| C2 | 🚧 In Progress | Accuracy calibration — branch predictor fix merged |
 | C3 | Pending | Intermediate benchmark timing |
-| C4 | Pending | SPEC benchmark accuracy |
-
-## Current Blockers
-
-1. **Embench timing simulation** — takes 5-10+ min per benchmark, needs human-triggered overnight run
-   - Issue #197 created with instructions
-   - Workaround: quick-calibration.sh for microbenchmarks
 
 ## Next Steps
 
-1. Human triggers overnight timing batch job (see #197)
-2. Once timing data available, proceed with C2 calibration milestone
-3. Investigate branch accuracy (#199) and arithmetic accuracy gaps
-4. Continue accuracy improvements (39.8% → <20% target)
+1. Re-run branch microbenchmark to measure improvement from PR #200
+2. Continue BTB investigation if branch error still high
+3. Wait for human to trigger Embench timing run (#197)
