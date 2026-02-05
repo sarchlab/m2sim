@@ -1,36 +1,39 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 05:36 EST (Cycle 225)
+**Last updated:** 2026-02-05 05:55 EST (Cycle 226)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | 56 |
-| Open PRs | 1 |
-| Open Issues | 13 |
-| Pipeline Coverage | 76.2% |
+| Total PRs Merged | 57 |
+| Open PRs | 0 |
+| Open Issues | 12 |
+| Pipeline Coverage | 77.0% |
 
-## Cycle 225 Updates
+## Cycle 226 Updates
 
-- **Alice:** Updated task board, action count 224 → 225
-- **Eric:** Commented on issue #210 with CMP+B.cond fusion implementation guidance
-- **Bob:** Reviewed fusion implementation scope — multi-cycle task
-- **Cathy:** Fixed gofmt lint issue in PR #211
-- **Dana:** Updated PROGRESS.md, cleaned stale labels
+- **Alice:** Updated task board, action count 225 → 226
+- **Eric:** Confirmed fusion guidance sufficient — no additional research needed
+- **Bob:** Reviewed PR #211 ✅, continued CMP+B.cond fusion design
+- **Cathy:** Coverage analysis — identified emu package (42.1%) as next target
+- **Dana:** Merged PR #211 ✅, updated PROGRESS.md
 
 ## Key Progress This Cycle
 
-**Issue #210 — CMP+B.cond macro-op fusion**
+**PR #211 — timing/core coverage tests (MERGED ✅)**
 
-Eric provided detailed implementation guidance:
-- Decode-stage pattern detection for CMP+B.cond sequences
-- Fused μop execution to eliminate flag dependency stall
-- Expected to significantly reduce 62.5% conditional branch error
+Coverage improvement:
+- timing/core: 60% → 100% ✅
+- All timing packages now meet 70% target
 
-**PR #211 — timing/core coverage tests (lint fixed)**
+**Issue #210 — CMP+B.cond fusion (In Progress)**
 
-Cathy fixed gofmt formatting issue. CI running — ready for Bob's review once CI passes.
+Bob analyzed pipeline for fusion implementation:
+- DecodeStage and ExecuteStage identified
+- CMP handled as SUB with SetFlags=true
+- B.cond reads PSTATE in checkCondition()
+- Design phase complete — implementation next cycle
 
 ## Accuracy Status (Microbenchmarks)
 
@@ -48,20 +51,21 @@ Cathy fixed gofmt formatting issue. CI running — ready for Bob's review once C
 | Package | Coverage | Status |
 |---------|----------|--------|
 | timing/cache | 89.1% | ✅ |
-| timing/pipeline | 76.2% | ✅ |
+| timing/pipeline | 77.0% | ✅ |
 | timing/latency | 73.3% | ✅ |
-| timing/core | 60% → 100% | ⏳ (PR #211) |
+| timing/core | 100% | ✅ (PR #211 merged) |
+| emu | 42.1% | ⚠️ Next target |
 
 ## Active Investigations
 
-- **#210** — CMP+B.cond fusion (implementation guidance provided)
+- **#210** — CMP+B.cond fusion (design complete, implementation pending)
 - **#197** — Embench timing run request (waiting on human)
 - **#132** — Intermediate benchmarks (PolyBench research complete)
 
 ## Potential Accuracy Improvements
 
 Per Eric's analysis:
-1. **CMP + B.cond fusion** — eliminates flag dependency stall (#210)
+1. **CMP + B.cond fusion** — eliminates flag dependency stall (#210) ← **PRIORITY**
 2. Zero-cycle branch elimination for taken conditionals
 3. Branch predictor effectiveness tuning
 4. Pipeline stall reduction
@@ -76,10 +80,7 @@ Per Eric's analysis:
 
 ## Stats
 
-- 56 PRs merged total
+- 57 PRs merged total
 - 205+ tests passing
-- Zero-cycle branch elimination: working ✓
-- Branch predictor: working ✓
-- PSTATE flag updates: working ✓
-- PSTATE flag unit tests: added ✓
-- Coverage: all packages ≥70% ✓
+- timing/core coverage: 100% ✓
+- CMP+B.cond fusion: design complete, implementing
