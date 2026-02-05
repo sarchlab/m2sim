@@ -106,24 +106,6 @@ func (h *HazardUnit) detectForwardForReg(
 	return ForwardNone
 }
 
-// DetectLoadUseHazard detects load-use hazards where a load instruction
-// is immediately followed by an instruction using the loaded value.
-// This requires a stall because the value isn't available until MEM stage.
-func (h *HazardUnit) DetectLoadUseHazard(idex *IDEXRegister, nextRn, nextRm uint8) bool {
-	// Only load instructions cause load-use hazards
-	if !idex.Valid || !idex.MemRead {
-		return false
-	}
-
-	// XZR doesn't cause hazards
-	if idex.Rd == 31 {
-		return false
-	}
-
-	// Check if next instruction uses the load destination
-	return idex.Rd == nextRn || idex.Rd == nextRm
-}
-
 // DetectLoadUseHazardDecoded detects load-use hazard using decoded register info.
 // loadRd is the destination of the load instruction in ID/EX.
 // nextRn, nextRm are the source registers of the next instruction.
