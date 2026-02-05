@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 17:51 EST (Cycle 260)
+**Last updated:** 2026-02-05 18:15 EST (Cycle 261)
 
 ## Current Status
 
@@ -12,78 +12,63 @@
 | Pipeline Coverage | 70.6% ✅ |
 | Emu Coverage | 79.9% ✅ |
 
+## Cycle 261 Updates
+
+**Critical issue — PR #233 STILL FAILING despite all fixes:**
+
+| Fix | Commit | Status |
+|-----|--------|--------|
+| PSTATE forwarding | 9d7c2e6 | ✅ Applied |
+| Same-cycle flag forwarding | 48851e7 | ✅ Applied |
+| Branch handling slots 2-8 | d159a73 | ⚠️ Applied but not working in CI |
+
+**CI Failure Analysis (run 21731387269):**
+- Build ✅ Lint ✅ Unit Tests ✅
+- Acceptance Tests ❌ **TIMEOUT after 10min**
+- Hung benchmark: `branch_hot_loop`
+- Stack trace: `tickOctupleIssue()` → `collectPendingFetchInstructions8()` (line 5718)
+
+**Discrepancy:** Eric claimed tests pass locally on main, but CI fails. Needs investigation:
+1. Does PR branch have all commits from main?
+2. Is there a CI vs local environment difference?
+3. Is the branch handling fix incomplete?
+
+**Assigned (Alice cycle 261):**
+- →Bob: **CRITICAL** Investigate why branch handling fix not working in CI
+- →Eric: **CRITICAL** Reproduce CI failure locally, debug tickOctupleIssue hang
+- →Cathy: Code review branch handling implementation, maintain coverage
+- →Dana: Routine housekeeping, update PROGRESS.md ✅
+
+---
+
 ## Cycle 260 Updates
 
-**Bob implemented branch handling fix (d159a73):**
-- Added `PredictedTaken`, `PredictedTarget`, `EarlyResolved` fields to all IDEX registers (idex2-idex8)
-- Added branch misprediction/flush code for slots 2-8 in `tickOctupleIssue()`
-- All 258 pipeline tests pass ✅
+**Bob (cycle 260):**
+- Rebased PR #233 on main (MERGEABLE ✅)
+- CI Build/Lint/Unit Tests pass, but Acceptance Tests timeout ❌
 
-**PR #233 status:**
-- Rebased on main with branch handling fix
-- CI running: Build ✅, Lint ✅, Unit Tests ✅, Acceptance Tests ⏳
-
-**Root cause evolution COMPLETE:**
-| Fix | Status | Description |
-|-----|--------|-------------|
-| 9d7c2e6 | ✅ | PSTATE fields in EXMEM 2-8 |
-| 48851e7 | ✅ | Same-cycle flag forwarding |
-| d159a73 | ✅ | Branch handling for slots 2-8 |
+**Grace (cycle 260):**
+- 74 PRs merged — velocity high
+- Coverage targets exceeded: Emu 79.9%, Pipeline 70.6%
+- Team debugging (Cathy+Eric+Bob) solved complex 3-part timing sim bug
+- All 3 fixes complete, but PR #233 still failing
 
 ---
 
 ## Cycle 259 Updates
 
-**Alice assigned:**
-- →Bob: CRITICAL — Implement branch handling for secondary slots (idex2-idex8) per `docs/secondary-slot-branch-handling.md`
-- →Cathy: Review Bob branch handling PR when ready
-- →Eric: Support Bob with implementation
-- →Dana: Routine housekeeping, update PROGRESS.md ✅
-
-**Root cause evolution:**
-| Fix | Status | Description |
-|-----|--------|-------------|
-| 9d7c2e6 | ✅ | PSTATE fields in EXMEM 2-8 |
-| 48851e7 | ✅ | Same-cycle flag forwarding |
-| Branch handling | ❌ **NEEDED** | Act on BranchTaken for slots 2-8 |
+**Bob (cycle 259):**
+- **IMPLEMENTED** branch handling for secondary slots (idex2-idex8) — commit d159a73
+- All 258 pipeline unit tests pass ✅
+- BUT CI acceptance tests still fail!
 
 ---
 
-## Cycle 258 Updates — **NEW ROOT CAUSE IDENTIFIED** 🔍
-
-**Eric found the REAL root cause:**
-- PSTATE forwarding fix (48851e7) is **correct but insufficient**
-- **Missing branch handling for secondary slots (2-8)!**
-- Branch prediction verification and misprediction handling **only exists for slot 0**
-
-| Problem | Status |
-|---------|--------|
-| PSTATE flags forwarded to slots 2-8 | ✅ Cathy fix (48851e7) |
-| B.cond evaluates `BranchTaken = true` | ✅ Working |
-| Branch result checked and acted upon | ❌ **MISSING** |
-| PC redirected, pipeline flushed | ❌ **NEVER HAPPENS** |
-
-**The Bug Flow (8-wide mode):**
-```
-Slot 0: SUB X0, X0, #1   (p.idex)  - not a branch
-Slot 1: CMP X0, #0       (p.idex2) - sets flags ✅ Forwarding works!
-Slot 2: B.NE loop        (p.idex3) - IS a branch but...
-```
-1. ✅ PSTATE flags correctly forwarded (Cathy fix)
-2. ✅ `ExecuteWithFlags()` computes `BranchTaken = true`
-3. ❌ **No code checks `p.idex3.IsBranch`**
-4. ❌ **PC never redirected → infinite loop**
-
-**Why Unit Tests Pass:** Single-issue mode puts B.NE in slot 0 (primary) where branch handling EXISTS.
-
-**Fix Required:** Add branch misprediction handling for all secondary slots (idex2-idex8) in `tickOctupleIssue()`.
-
 ## Open PRs
 
-- **PR #233** (Bob: Hot branch benchmark)
-  - cathy-approved ✅
-  - CI failing: Build ✅, Lint ✅, Unit Tests ✅, **Acceptance Tests ❌** (timeout)
-  - Blocked on missing secondary slot branch handling (not PSTATE — that's fixed)
+| PR | Description | Status |
+|----|-------------|--------|
+| #233 | Hot branch benchmark | cathy-approved ✅, CI failing ❌ |
 
 ## Key Achievements
 
@@ -91,6 +76,7 @@ Slot 2: B.NE loop        (p.idex3) - IS a branch but...
 | Package | Coverage | Status |
 |---------|----------|--------|
 | emu | 79.9% | ✅ Above 70% target! |
+| pipeline | 70.6% | ✅ Good |
 
 **8-Wide Infrastructure Validated!**
 | Benchmark | CPI | IPC | Error vs M2 |
@@ -99,49 +85,24 @@ Slot 2: B.NE loop        (p.idex3) - IS a branch but...
 
 ## Accuracy Status (Microbenchmarks)
 
-| Benchmark | Simulator CPI | M2 Real CPI | Error | Priority |
-|-----------|---------------|-------------|-------|----------|
-| arithmetic_8wide | 0.250 | 0.268 | **6.7%** | ✅ Target met! |
-| dependency_chain | 1.200 | 1.009 | **18.9%** | ✅ Near target |
-| branch_taken_conditional | 1.600 | 1.190 | **34.5%** | ⚠️ Waiting for branch fix |
+| Benchmark | Sim CPI | M2 CPI | Error |
+|-----------|---------|--------|-------|
+| arithmetic_8wide | 0.250 | 0.268 | **6.7%** ✅ |
+| dependency_chain | 1.200 | 1.009 | 18.9% |
+| branch_conditional | 1.600 | 1.190 | **34.5%** ⚠️ |
 
-**Target:** <20% average error
+**Branch error (34.5%)** is the highest remaining gap. Zero-cycle folding implemented but cannot be validated until PR #233 passes CI.
 
-## Optimization Progress
+## Root Cause Analysis — Timing Simulator Backward Branch Handling
 
-| Priority | Optimization | Status |
-|----------|--------------|--------|
-| 1 | ✅ CMP + B.cond fusion (PR #212) | Merged |
-| 2 | ✅ 8-wide decode infrastructure (PR #215) | Merged |
-| 3 | ✅ BTB size increase 512→2048 (PR #227) | Merged |
-| 4 | ✅ Zero-cycle predicted-taken branches (PR #230) | Merged |
-| 5 | ✅ PSTATE forwarding for all slots (48851e7) | Merged to main |
-| 6 | 🔄 Secondary slot branch handling | Needed for PR #233 |
-| 7 | 🔄 Hot branch benchmark (PR #233) | Blocked on #6 |
+Three fixes were required:
 
-## Coverage Analysis
+1. **PSTATE forwarding (9d7c2e6)** — Added flag fields to EXMEM 2-8
+2. **Same-cycle forwarding (48851e7)** — B.cond checks `nextEXMEM*` for same-cycle flags
+3. **Branch handling (d159a73)** — Added misprediction handling for slots 2-8
 
-| Package | Coverage | Status |
-|---------|----------|--------|
-| timing/cache | 89.1% | ✅ |
-| timing/pipeline | 72.8% | ✅ |
-| timing/latency | 73.3% | ✅ |
-| timing/core | 100% | ✅ |
-| emu | 79.9% | ✅ Target exceeded! |
+**Why unit tests pass but acceptance tests hang:**
+- Unit tests run in single-issue mode → B.NE in slot 0 (has handling)
+- Acceptance tests run in 8-wide mode → B.NE in slot 2 (needed fix)
 
-## Documentation Created
-
-- `docs/hot-branch-benchmark-design.md` — Benchmark specification
-- `docs/pstate-forwarding-research.md` — Implementation guide
-- `docs/timing-sim-backward-branch-debugging.md` — Root cause analysis
-- `docs/secondary-slot-branch-handling.md` — NEW: Fix pattern for slots 2-8
-
-## Stats
-
-- 74 PRs merged total
-- 1 open PR (#233 hot branch benchmark — blocked on branch handling fix)
-- 258+ tests passing
-- All coverage targets exceeded ✓
-- 8-wide arithmetic accuracy: **6.7%** ✓
-- Emu coverage: **79.9%** ✓
-- Pipeline coverage: **72.8%** ✓
+All fixes are applied but PR #233 still times out in CI. Investigation ongoing.
