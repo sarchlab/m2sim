@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 02:38 EST (Cycle 214)
+**Last updated:** 2026-02-05 02:55 EST (Cycle 215)
 
 ## Current Status
 
@@ -8,28 +8,24 @@
 |--------|-------|
 | Total PRs Merged | 51 |
 | Open PRs | 0 |
-| Open Issues | 13 |
-| Pipeline Coverage | 77.6% |
+| Open Issues | 12 |
+| Pipeline Coverage | 76.5% |
 
-## Cycle 214 Updates
+## Cycle 215 Updates
 
-- **Alice:** Assigned branch predictor fixes to Bob, updated task board
-- **Eric:** Added M2 branch handling research (zero-cycle branches, BTB config)
-- **Bob:** Created PR #200 (branch predictor default init fix)
-- **Cathy:** Reviewed and approved PR #200
-- **Dana:** Merged PR #200 ✅
+- **Alice:** Assigned benchmark re-run, updated task board
+- **Eric:** Evaluated status, timing run (#197) still blocked
+- **Bob:** Re-ran benchmarks — accuracy unchanged (39.8% avg error)
+- **Cathy:** Coverage analysis, confirmed dead code, no new PRs to review
+- **Dana:** Cleanup, updated PROGRESS.md
 
-## Key Achievement This Cycle
+## Key Finding This Cycle
 
-**PR #200 merged** — Branch predictor default changed from "weakly taken" to "weakly not-taken" to match M2 Avalanche core behavior. This should help reduce the 51.3% error on branch benchmarks.
-
-## Embench Phase 1 — Complete! ✅
-
-| Benchmark | Instructions | Exit Code | Status |
-|-----------|-------------|-----------|--------|
-| aha-mont64 | 1.88M | 0 ✓ | ✅ Complete |
-| crc32 | 1.57M | 0 ✓ | ✅ Complete |
-| matmult-int | 3.85M | 0 ✓ | ✅ Complete |
+**PR #200 (branch predictor fix) did NOT improve benchmark accuracy.** Analysis:
+- branch_taken uses **unconditional branches** (always taken)
+- Predictor learns quickly regardless of initial state
+- The 51.3% branch gap is **handling overhead**, not misprediction
+- Need architectural changes: BTB improvements, zero-cycle unconditional branches
 
 ## Accuracy Status (Microbenchmarks)
 
@@ -42,27 +38,26 @@
 
 **Target:** <20% average error (#141)
 
-**Note:** Re-run benchmarks after PR #200 merge to measure improvement!
-
 ## Pipeline Refactor Progress (#122) — COMPLETE! ✅
 
 All 4 phases complete + tests. Foundation ready for accuracy tuning.
 
 ## Active Investigations
 
-- **#199** — Branch prediction accuracy (PR #200 merged, awaiting re-measurement)
 - **#197** — Embench timing run request (waiting on human)
+- **#199** — Branch investigation complete, PR #200 merged but no accuracy gain
 
 ## Calibration Milestones
 
 | Milestone | Status | Description |
 |-----------|--------|-------------|
 | C1 | ✅ Complete | Benchmarks execute to completion |
-| C2 | 🚧 In Progress | Accuracy calibration — branch predictor fix merged |
+| C2 | 🚧 In Progress | Accuracy calibration — need architectural changes |
 | C3 | Pending | Intermediate benchmark timing |
 
 ## Next Steps
 
-1. Re-run branch microbenchmark to measure improvement from PR #200
-2. Continue BTB investigation if branch error still high
-3. Wait for human to trigger Embench timing run (#197)
+1. Investigate BTB cold miss penalty and branch handling overhead
+2. Consider 6-wide issue (M2 Avalanche is 6-wide, we're 4-wide)
+3. Implement zero-cycle handling for unconditional branches
+4. Wait for human to trigger Embench timing run (#197)
