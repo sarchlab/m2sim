@@ -139,6 +139,14 @@ func WithDefaultCaches() PipelineOption {
 	}
 }
 
+// WithBranchPredictorConfig sets a custom branch predictor configuration.
+// This allows tuning BTB size, BHT size, global history length, etc.
+func WithBranchPredictorConfig(config BranchPredictorConfig) PipelineOption {
+	return func(p *Pipeline) {
+		p.branchPredictor = NewBranchPredictor(config)
+	}
+}
+
 // Pipeline implements a 5-stage pipelined CPU model.
 // Stages: Fetch (IF) -> Decode (ID) -> Execute (EX) -> Memory (MEM) -> Writeback (WB)
 // Supports optional superscalar (dual-issue) execution for independent instructions.

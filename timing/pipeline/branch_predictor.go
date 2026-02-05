@@ -17,10 +17,12 @@ type BranchPredictorConfig struct {
 }
 
 // DefaultBranchPredictorConfig returns a default configuration.
+// The BTB size of 2048 is chosen to reduce cold-start penalties for
+// branch-heavy workloads. M2 Avalanche cores likely use 2K-4K BTB entries.
 func DefaultBranchPredictorConfig() BranchPredictorConfig {
 	return BranchPredictorConfig{
 		BHTSize:             4096,
-		BTBSize:             512,
+		BTBSize:             2048, // Increased from 512 to reduce cold-start penalty
 		GlobalHistoryLength: 12,
 		UseTournament:       true,
 	}
