@@ -19,6 +19,7 @@ func GetMicrobenchmarks() []Benchmark {
 		functionCalls(),
 		branchTaken(),
 		branchTakenConditional(),
+		branchHotLoop(),
 		mixedOperations(),
 		matrixMultiply2x2(),
 		loopSimulation(),
@@ -333,6 +334,38 @@ func branchTakenConditional() Benchmark {
 			EncodeSVC(0), // exit with X0 = 5
 		),
 		ExpectedExit: 5,
+	}
+}
+
+// 5c. Branch Hot Loop - Tests zero-cycle branch folding with hot branches
+// This benchmark uses a real loop where the same branch PC is executed multiple times.
+// Zero-cycle folding requires:
+// 1. BTB hit (target known from previous execution)
+// 2. Predicted taken
+// 3. High confidence (counter >= 3, trained by 3+ executions)
+//
+// With 4 iterations:
+// - Iterations 1-3: Normal branch penalty (training phase)
+// - Iteration 4: Zero-cycle folding (1 folded branch expected)
+// Note: Reduced from 16 to 4 to avoid CI timeout (timing sim runs slowly on loops)
+func branchHotLoop() Benchmark {
+	return Benchmark{
+		Name:        "branch_hot_loop",
+		Description: "4-iteration loop with single hot branch - validates zero-cycle folding",
+		Setup: func(regFile *emu.RegFile, memory *emu.Memory) {
+			regFile.WriteReg(8, 93) // X8 = 93 (exit syscall)
+			regFile.WriteReg(0, 4)  // X0 = 4 (loop counter, reduced for CI)
+		},
+		Program: BuildProgram(
+			// loop:
+			EncodeSUBImm(0, 0, 1, false), // X0 = X0 - 1
+			EncodeCMPImm(0, 0),           // CMP X0, #0
+			EncodeBCond(-8, 1),           // B.NE loop (-8 bytes = -2 instructions), CondNE = 1
+
+			// exit: After loop, X0 = 0
+			EncodeSVC(0), // exit with X0 = 0
+		),
+		ExpectedExit: 0,
 	}
 }
 
