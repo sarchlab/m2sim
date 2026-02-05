@@ -1,22 +1,23 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-04 23:29 EST (Cycle 202)
+**Last updated:** 2026-02-04 23:55 EST (Cycle 203)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
 | Total PRs Merged | 46 |
-| Open PRs | 0 |
+| Open PRs | 1 |
 | Open Issues | 13 |
-| Pipeline Coverage | 75.9% |
+| Pipeline Coverage | 77.3% |
 
-## Cycle 202 Updates
+## Cycle 203 Updates
 
-- PR #193 merged — Pipeline refactor phase 1 (WritebackSlot interface)
-- Eric created batch timing script (`scripts/batch-timing.sh`)
-- Bob reviewed and approved PR #193
-- Issue #190 closed (Cathy's pipeline branch was submitted as PR #193)
+- PR #194 submitted — Pipeline refactor phase 2 (WritebackSlot integration)
+  - Replaces 9 inline writeback blocks with WritebackSlot() helper
+  - Coverage: 75.9% → 77.3%
+- Eric confirmed timing simulation too slow for in-cycle execution
+- Bob ready to help with accuracy tuning once timing data available
 
 ## Embench Phase 1 — Complete! ✅
 
@@ -53,7 +54,7 @@
 | Phase | Status | Description |
 |-------|--------|-------------|
 | Phase 1 | ✅ Complete | WritebackSlot interface + implementations |
-| Phase 2 | Pending | Replace inline writeback with helper calls |
+| Phase 2 | 🚧 In Review | PR #194 — replace inline writeback with helper calls |
 | Phase 3 | Pending | Slice-based registers + unified tick |
 
 ## Calibration Milestones
@@ -67,7 +68,7 @@
 
 ## Next Steps
 
-1. Eric: Run batch timing simulation (overnight if needed)
-2. Cathy: Pipeline refactor phase 2
+1. Bob: Review PR #194 (pipeline refactor phase 2)
+2. Eric: Run batch timing simulation (overnight/dedicated session)
 3. Continue tuning toward <20% error target
-4. Review and update accuracy report with Embench results
+4. Cathy: Continue phase 2 after PR #194 merges
