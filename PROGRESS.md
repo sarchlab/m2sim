@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-04 20:16 EST (Cycle 192)
+**Last updated:** 2026-02-04 20:35 EST (Cycle 193)
 
 ## Current Status
 
@@ -8,61 +8,58 @@
 |--------|-------|
 | Total PRs Merged | 41 |
 | Open PRs | 1 |
-| Open Issues | ~15 |
-| Pipeline Coverage | 70.1% |
+| Open Issues | ~17 |
+| Pipeline Coverage | 77.4% ✅ |
+
+## 🎉 Major Milestone: SP Handling Fix Merged
+
+**PR #175** merged — CoreMark now executes 15+ seconds without crashing!
+- Previously crashed at ~2406 instructions (BRK trap at 0x80BA8)
+- SP handling was incorrectly treating register 31 as XZR in ADD/SUB immediate
+- Now properly uses SP for Rn/Rd=31 (unless setFlags=true)
 
 ## Active Work
 
-### PR #175 — ADD/SUB SP Handling Fix (Bob)
-- **Status:** cathy-approved ✅, CI running
-- **Impact:** CoreMark jumps from 2406 → 10M+ instructions
-- **Fix this cycle:** Bob fixed test hang (Ethan validation tests expected SP=0)
-- Awaiting Lint + Unit Tests to complete
+### PR #180 — Pipeline Coverage Tests (Cathy)
+- **Status:** CI running
+- **Impact:** Coverage 70.1% → 77.4%
+- Tests for RunCycles, Reset, ICacheStats, DCacheStats
 
-## Recently Merged
+## Embench Benchmark Testing Results
 
-### PR #178 — Pipeline Stats Tests (Cathy)
-- **Merged this cycle!** ✅
-- Coverage for CPI, ExitCode, BranchPredictorStats methods
+| Benchmark | Instructions | Status |
+|-----------|-------------|--------|
+| aha-mont64 | 62 | ❌ Missing EXTR instruction |
+| crc32 | 1,569,645 | ⚠️ Exit code -1 |
+| matmult-int | 3,849,380 | ⚠️ Exit code -1 |
+
+**Issue #179** created for EXTR instruction (needed for aha-mont64).
 
 ## Recent Progress
 
-### This Cycle (192)
-- **Issue #177 (unit test hang) FIXED** — Bob found root cause: Ethan tests used SP=0x7FFF0000 but expected ADD X8,SP,#93 to return 93. Fixed by setting SP=0.
-- **PR #178 merged** — Cathy's pipeline stats coverage tests
-- Eric built crc32 + matmult-int Embench benchmarks (20 new files)
-- All 3 Embench benchmarks now have build infrastructure
+### This Cycle (193)
+- **CoreMark verified:** Runs 15+ seconds without crash (SP fix working!)
+- **Eric tested Embench:** 2 of 3 benchmarks execute millions of instructions
+- **Cathy's PR #180:** Pipeline coverage up to 77.4%
+- **Issue #179** created: Missing EXTR instruction
 
-### Previous Cycles
-- PR #174 merged — BRK instruction support
-- PR #173 merged — Shift regs, bitfield, CCMP instructions
-- PR #171 merged — Logical immediate instructions
-- CoreMark execution: 2127 → 2406 instructions before SP fix
+### Previous Cycle (192)
+- **PR #175 merged** (Bob): ADD/SUB SP handling + NOP
+- **PR #178 merged** (Cathy): Pipeline stats coverage tests
+- **Issue #177 resolved**: Unit test hang fixed
 
 ## Calibration Milestones
 
 | Milestone | Status | Description |
 |-----------|--------|-------------|
-| C1 | 🚧 Active | Execution Completeness — full CoreMark execution |
+| C1 | 🚧 Active | Execution Completeness — CoreMark appears to be running! |
 | C2 | Pending | Microbenchmark Accuracy — <20% avg error |
 | C3 | Pending | Intermediate Benchmark Accuracy |
 | C4 | Pending | SPEC Benchmark Accuracy |
 
-## Embench Benchmark Status
-
-| Benchmark | Build Status | Test Status |
-|-----------|--------------|-------------|
-| aha-mont64 | ✅ Built (68KB) | Pending |
-| crc32 | ✅ Built (69KB) | Pending |
-| matmult-int | ✅ Built (71KB) | Pending |
-
-## Blockers
-
-- **PR #175 CI** — Lint + Unit Tests pending, merge blocked until complete
-
 ## Next Steps
 
-1. Merge PR #175 once CI passes
-2. Verify CoreMark completes successfully (expected 10M+ instructions)
-3. Test Embench benchmarks in M2Sim execution
-4. Continue CoreMark debugging (#172)
+1. Verify CoreMark completes execution (or find next blocker)
+2. Implement EXTR instruction (#179) for aha-mont64
+3. Investigate crc32 and matmult-int exit code -1
+4. Merge PR #180 when bob-approved + CI passes
