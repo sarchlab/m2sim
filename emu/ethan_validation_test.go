@@ -69,7 +69,7 @@ var _ = Describe("Ethan Validation Suite", func() {
 		stdoutBuf = &bytes.Buffer{}
 		e = emu.NewEmulator(
 			emu.WithStdout(stdoutBuf),
-			emu.WithStackPointer(0x7FFF0000),
+			emu.WithStackPointer(0),
 		)
 	})
 
