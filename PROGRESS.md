@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 11:21 EST (Cycle 242)
+**Last updated:** 2026-02-05 12:02 EST (Cycle 243)
 
 ## Current Status
 
@@ -12,11 +12,21 @@
 | Pipeline Coverage | 58.6% |
 | Emu Coverage | 76.2% ✅ |
 
+## Cycle 243 Updates
+
+- **0 PRs merged this cycle** (research and planning cycle)
+- **Bob completed zero-cycle branch research** — detailed analysis at `docs/zero-cycle-branch-research.md`
+  - Key finding: Simulator already does speculative fetch, but branches still occupy pipeline slots
+  - M2's approach: "Folded" branches that skip execute stage verification
+  - Recommended implementation: foldedBranches map for high-confidence predicted-taken branches
+  - Expected impact: Branch CPI 1.600 → ~1.2-1.3 (25% reduction)
+- **Eric confirmed** BTB capacity was not the bottleneck — zero-cycle branches is the priority
+- **Cathy verified** coverage maintained at 76.2% emu, 58.6% pipeline
+
 ## Cycle 242 Updates
 
 - **PR #227 merged** ✅ (Bob: BTB size increase 512→2048)
 - **69 PRs merged total**
-- **0 open PRs** — ready for new work
 - **Accuracy validation:** BTB increase shows no immediate improvement (34.2% avg unchanged)
   - Benchmarks are short, BTB hit rate was already high
   - Confirms Eric's research: zero-cycle predicted-taken branches is the highest-impact optimization
