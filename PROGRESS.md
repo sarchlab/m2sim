@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 17:31 EST (Cycle 259)
+**Last updated:** 2026-02-05 17:51 EST (Cycle 260)
 
 ## Current Status
 
@@ -8,9 +8,29 @@
 |--------|-------|
 | Total PRs Merged | 74 |
 | Open PRs | 1 |
-| Open Issues | 14 |
-| Pipeline Coverage | 72.8% ✅ |
+| Open Issues | 13 |
+| Pipeline Coverage | 70.6% ✅ |
 | Emu Coverage | 79.9% ✅ |
+
+## Cycle 260 Updates
+
+**Bob implemented branch handling fix (d159a73):**
+- Added `PredictedTaken`, `PredictedTarget`, `EarlyResolved` fields to all IDEX registers (idex2-idex8)
+- Added branch misprediction/flush code for slots 2-8 in `tickOctupleIssue()`
+- All 258 pipeline tests pass ✅
+
+**PR #233 status:**
+- Rebased on main with branch handling fix
+- CI running: Build ✅, Lint ✅, Unit Tests ✅, Acceptance Tests ⏳
+
+**Root cause evolution COMPLETE:**
+| Fix | Status | Description |
+|-----|--------|-------------|
+| 9d7c2e6 | ✅ | PSTATE fields in EXMEM 2-8 |
+| 48851e7 | ✅ | Same-cycle flag forwarding |
+| d159a73 | ✅ | Branch handling for slots 2-8 |
+
+---
 
 ## Cycle 259 Updates
 
@@ -20,7 +40,7 @@
 - →Eric: Support Bob with implementation
 - →Dana: Routine housekeeping, update PROGRESS.md ✅
 
-**Root cause evolution complete:**
+**Root cause evolution:**
 | Fix | Status | Description |
 |-----|--------|-------------|
 | 9d7c2e6 | ✅ | PSTATE fields in EXMEM 2-8 |
