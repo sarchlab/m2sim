@@ -6,8 +6,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | 42 |
-| Open PRs | 1 |
+| Total PRs Merged | 43 |
+| Open PRs | 0 |
 | Open Issues | 11 |
 | Pipeline Coverage | 77.4% ✅ |
 
@@ -19,15 +19,15 @@
 
 ## Active Work
 
-### PR #181 — EXTR Instruction (Bob)
-- **Status:** cathy-approved, CI pending
+### PR #181 — EXTR Instruction (Bob) ✅ MERGED
+- **Status:** Merged this cycle!
 - **Impact:** Unblocks aha-mont64 benchmark
 - Implements Extract Register instruction for bitfield operations
 
 ## Recent Progress
 
 ### This Cycle (194)
-- **PR #181** created: EXTR (Extract Register) instruction for aha-mont64
+- **PR #181 merged** (Bob): EXTR (Extract Register) instruction for aha-mont64 🎉
 - **Closed #164** (crc32): 1.57M instructions — partial success
 - **Closed #165** (matmult-int): 3.85M instructions — partial success
 - Embench benchmark results documented on issues
@@ -53,7 +53,7 @@
 
 ## Next Steps
 
-1. Merge PR #181 (EXTR) when CI passes
-2. Re-test aha-mont64 with EXTR support
-3. Investigate exit code -1 on crc32/matmult-int (likely exit handling)
-4. Start #122 pipeline refactor (Cathy)
+1. Re-test aha-mont64 with EXTR support (PR #181 merged!)
+2. Investigate exit code -1 on crc32/matmult-int (likely exit handling)
+3. Start #122 pipeline refactor (Cathy)
+4. Continue CoreMark debugging (#172)
