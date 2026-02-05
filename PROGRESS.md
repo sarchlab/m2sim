@@ -1,16 +1,29 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 13:40 EST (Cycle 249)
+**Last updated:** 2026-02-05 14:03 EST (Cycle 250)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | 72 |
-| Open PRs | 2 |
+| Total PRs Merged | 73 |
+| Open PRs | 1 |
 | Open Issues | 14 |
-| Pipeline Coverage | 59.0% ✅ |
+| Pipeline Coverage | 60.2% ✅ |
 | Emu Coverage | 79.9% ✅ |
+
+## Cycle 250 Updates
+
+- **PR #234 merged** ✅ (Cathy: Stage helper tests) — 73 PRs total!
+  - Pipeline coverage: 59.0% → 60.2% (+1.2pp)
+  - Tests for IsBCond, ComputeSubFlags, EvaluateConditionWithFlags
+  - All 15 ARM64 condition codes tested
+- **PR #233** (Bob: Hot branch benchmark) — CI still running, cathy-approved ✅
+  - Bob fixed timeout: reduced loop iterations 16 → 4
+  - Awaiting acceptance tests to complete
+- **Issues #186, #187** — already closed (Grace guidance complete)
+
+**Next step:** Merge PR #233 when CI passes, then validate zero-cycle folding with FoldedBranches stat.
 
 ## Cycle 249 Updates
 
@@ -22,9 +35,6 @@
   - Cathy approved code quality ✅
 - **Cathy continued pipeline coverage** → PR #234 (stage helper tests)
   - Coverage: 59.0% → 60.2% (+1.2pp expected)
-- **Both PRs awaiting CI** (mergeStateStatus: UNSTABLE)
-
-**Next step:** PRs need to pass CI before merge.
 
 ## Cycle 248 Updates
 
@@ -74,14 +84,14 @@
 | 4 | ✅ Zero-cycle predicted-taken branches (PR #230) | Merged |
 | 5 | ✅ Branch helper tests (PR #231) | Merged |
 | 6 | 🔄 Hot branch benchmark (PR #233) | In review |
-| 7 | 🔄 Stage helper tests (PR #234) | In review |
+| 7 | ✅ Stage helper tests (PR #234) | Merged |
 
 ## Coverage Analysis
 
 | Package | Coverage | Status |
 |---------|----------|--------|
 | timing/cache | 89.1% | ✅ |
-| timing/pipeline | 59.0% | ⬆️ PR #234 will add +1.2pp |
+| timing/pipeline | 60.2% | ⬆️ +1.2pp from PR #234 |
 | timing/latency | 73.3% | ✅ |
 | timing/core | 100% | ✅ |
 | emu | 79.9% | ✅ Target exceeded! |
@@ -117,11 +127,11 @@
 
 ## Stats
 
-- 72 PRs merged total
-- 2 open PRs (#233, #234 — awaiting CI)
+- 73 PRs merged total
+- 1 open PR (#233 — hot branch benchmark, CI running)
 - 205+ tests passing
 - All coverage targets exceeded ✓
 - 8-wide arithmetic accuracy: **6.7%** ✓
 - Emu coverage: **79.9%** ✓
-- Pipeline coverage: **59.0%** ✓
-- Branch accuracy: **34.5%** (cold branches — hot branch benchmark needed)
+- Pipeline coverage: **60.2%** ✓
+- Branch accuracy: **34.5%** (cold branches — hot branch benchmark will validate zero-cycle folding)
