@@ -1,51 +1,44 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 13:12 EST (Cycle 247)
+**Last updated:** 2026-02-05 13:40 EST (Cycle 249)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
 | Total PRs Merged | 72 |
-| Open PRs | 0 |
-| Open Issues | 13 |
+| Open PRs | 2 |
+| Open Issues | 14 |
 | Pipeline Coverage | 59.0% ✅ |
 | Emu Coverage | 79.9% ✅ |
 
+## Cycle 249 Updates
+
+- **Eric designed hot branch benchmark** with loop-based approach
+  - Created `docs/hot-branch-benchmark-design.md` with detailed spec
+  - Created issue #232 for implementation
+- **Bob implemented hot branch benchmark** → PR #233 (ready-for-review)
+  - Loop-based design to validate zero-cycle folding
+  - Cathy approved code quality ✅
+- **Cathy continued pipeline coverage** → PR #234 (stage helper tests)
+  - Coverage: 59.0% → 60.2% (+1.2pp expected)
+- **Both PRs awaiting CI** (mergeStateStatus: UNSTABLE)
+
+**Next step:** PRs need to pass CI before merge.
+
+## Cycle 248 Updates
+
+- **PR #231 merged** ✅ (Cathy: Branch helper function tests) — 72 PRs total!
+- Pipeline coverage: 58.0% → 59.0% (+1pp)
+- Bob reviewed PR #231, researched further branch optimizations
+- Confirmed: zero-cycle folding correctly implemented but needs hot branches
+
 ## Cycle 247 Updates
 
-- **PR #231 merged** ✅ (Cathy: Branch helper function tests)
-  - 27 test cases for isConditionalBranch, isCompareAndBranch, isTestAndBranch, isFoldableConditionalBranch
-  - Pipeline coverage: 58.0% → 59.0% (+1pp)
-- **72 PRs merged total** 🎉
-- **0 open PRs** — clean slate for next cycle
-
-**Critical next step:** Hot branch benchmark (with loops) needed to validate zero-cycle folding — current branchTakenConditional uses cold branches (each PC seen only once).
-
-## Cycle 246 Updates
-
-- **Accuracy validation complete** (Bob ran quick-calibration.sh)
-  - Branch error still at **34.5%** — as expected for cold branches
-  - Zero-cycle folding requires **HOT branches** (same PC hit multiple times)
-  - Current benchmark uses cold branches (each PC seen only once)
-- **71 PRs merged total**
-
-**Key insight from validation:**
-Zero-cycle folding is correctly implemented but needs:
-1. BTB hit (target known from previous execution)
-2. Predicted taken
-3. High confidence (counter ≥ 3, trained by repeated branches)
-
-## Cycle 245 Updates
-
-- **PR #229 merged** ✅ (Cathy: CCMP/CCMN tests)
-  - 21 test cases for conditional compare instructions
-  - Coverage: 76.2% → 79.9% (+3.7pp)
-- **PR #230 merged** ✅ (Bob: Zero-cycle predicted-taken branches)
-  - Implements branch folding for high-confidence predicted-taken branches
-  - Added FoldedBranches stat tracking
-  - Supports B.cond, CBZ/CBNZ, TBZ/TBNZ branch types
-- **71 PRs merged total** 🎉
+- **PR #230 merged** ✅ (Bob: Zero-cycle predicted-taken branches) — 71 PRs total!
+- **PR #229 merged** ✅ (Cathy: CCMP/CCMN tests) — emu coverage 79.9%
+- **Accuracy validation complete:** branch error still at 34.5% (as expected for cold branches)
+- Zero-cycle folding requires hot branches (same PC hit multiple times) — current benchmark uses cold branches
 
 ## Key Achievements
 
@@ -65,11 +58,11 @@ Zero-cycle folding is correctly implemented but needs:
 |-----------|---------------|-------------|-------|----------|
 | arithmetic_8wide | 0.250 | 0.268 | **6.7%** | ✅ Target met! |
 | dependency_chain | 1.200 | 1.009 | **18.9%** | ✅ Near target |
-| branch_taken_conditional | 1.600 | 1.190 | **34.5%** | ⚠️ Cold branches — needs hot branch benchmark |
+| branch_taken_conditional | 1.600 | 1.190 | **34.5%** | ⚠️ Cold branches — PR #233 will validate |
 
 **Target:** <20% average error
 
-**Next step:** Design hot branch benchmark (loops) to validate zero-cycle folding!
+**Critical:** Hot branch benchmark (PR #233) will validate zero-cycle folding!
 
 ## Optimization Progress
 
@@ -79,14 +72,16 @@ Zero-cycle folding is correctly implemented but needs:
 | 2 | ✅ 8-wide decode infrastructure (PR #215) | Merged |
 | 3 | ✅ BTB size increase 512→2048 (PR #227) | Merged |
 | 4 | ✅ Zero-cycle predicted-taken branches (PR #230) | Merged |
-| 5 | ✅ Branch helper tests (PR #231) | **Merged** |
+| 5 | ✅ Branch helper tests (PR #231) | Merged |
+| 6 | 🔄 Hot branch benchmark (PR #233) | In review |
+| 7 | 🔄 Stage helper tests (PR #234) | In review |
 
 ## Coverage Analysis
 
 | Package | Coverage | Status |
 |---------|----------|--------|
 | timing/cache | 89.1% | ✅ |
-| timing/pipeline | 59.0% | ⬆️ +1pp |
+| timing/pipeline | 59.0% | ⬆️ PR #234 will add +1.2pp |
 | timing/latency | 73.3% | ✅ |
 | timing/core | 100% | ✅ |
 | emu | 79.9% | ✅ Target exceeded! |
@@ -123,7 +118,7 @@ Zero-cycle folding is correctly implemented but needs:
 ## Stats
 
 - 72 PRs merged total
-- 0 open PRs
+- 2 open PRs (#233, #234 — awaiting CI)
 - 205+ tests passing
 - All coverage targets exceeded ✓
 - 8-wide arithmetic accuracy: **6.7%** ✓
