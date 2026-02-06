@@ -9,12 +9,13 @@ import { spawn, execSync } from 'child_process';
 import { existsSync, mkdirSync, appendFileSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import YAML from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = join(__dirname, '..');
 const SKILL_PATH = join(__dirname, 'skills');
 const LOGS_DIR = join(__dirname, 'logs');
-const CONFIG_PATH = join(__dirname, 'config.json');
+const CONFIG_PATH = join(__dirname, 'config.yaml');
 
 // Track currently running agent
 let currentAgentProcess = null;
@@ -29,7 +30,7 @@ function log(message) {
 function loadConfig() {
   try {
     const raw = readFileSync(CONFIG_PATH, 'utf-8');
-    const config = JSON.parse(raw);
+    const config = YAML.parse(raw);
     log(`Config loaded: interval=${config.cycleIntervalMs/1000}s, agents=${config.agents.join('→')}, model=${config.model}`);
     return config;
   } catch (e) {

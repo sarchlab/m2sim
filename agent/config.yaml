@@ -1,0 +1,15 @@
+# M2Sim Orchestrator Configuration
+# Reloaded at the start of each cycle
+
+cycleIntervalMs: 600000    # 10 minutes between cycles
+agentTimeoutMs: 900000     # 15 minutes max per agent
+model: claude-opus-4-5
+trackerIssue: 45
+graceCycleInterval: 10     # Run Grace every N cycles
+
+agents:
+  - alice
+  - eric
+  - bob
+  - cathy
+  - dana
