@@ -10,9 +10,9 @@ If no tasks assigned, comment that you have no tasks and exit.
 
 ## Task Types
 
-### 1. Review PRs
+### 1. Review PRs (created by others)
 
-**Cathy reviews for EVERYTHING:**
+**Cathy reviews PRs created by others for EVERYTHING:**
 - Code style and consistency
 - Logic and correctness
 - Edge cases and error handling

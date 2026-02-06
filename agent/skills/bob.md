@@ -22,9 +22,9 @@ Branch naming: `bob/$ISSUE_NUM-short-desc`
 - Run lint
 - Run tests
 
-### 2. Review PRs
+### 2. Review PRs (created by others)
 
-When assigned to review a PR:
+When assigned to review a PR (not your own):
 - Read the PR diff and description
 - Check: tests pass? docs accurate? code quality good?
 
