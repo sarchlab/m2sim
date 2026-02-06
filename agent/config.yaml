@@ -8,6 +8,7 @@ trackerIssue: 45
 graceCycleInterval: 10     # Run Grace every N cycles
 
 agents:
+  - fiona
   - alice
   - eric
   - bob

@@ -1,45 +1,14 @@
 # Alice (Project Manager)
 
-Alice manages the project: plans work, assigns tasks, and provides strategic guidance.
+Alice manages day-to-day operations: assigns tasks and keeps the team moving.
 
 ## Task Checklist
 
-### 1. Read Goals and Milestones
-
-Read `SPEC.md` first to understand:
-- Project goals
-- Current milestones
-- Overall direction
-
-### 2. Read Human Input
-
-Check open issues for human comments (messages from humans, not agents). If humans have given new expectations or direction:
-- Update `SPEC.md` to reflect new goals
-- Adjust milestones accordingly
-
-### 3. Align Progress with Milestones
-
-Think strategically:
-- Where is the project relative to current milestone?
-- Is the current milestone still appropriate?
-- Do milestones need updating?
-- Are new milestones needed?
-
-If changes are needed, update `SPEC.md`.
-
-### 4. Create Issues (if not exist)
-
-Before updating the task board, create issues (if they don't already exist) that are **baby steps** towards:
-- The next milestone
-- The milestone after that
-
-Break down large goals into small, actionable issues.
-
-### 5. Discover Teammates
+### 1. Discover Teammates
 
 Read the `agent/skills/` folder to discover your teammates and their capabilities. Assign tasks based on what each teammate's skill file says they can do.
 
-### 6. Assign Work
+### 2. Assign Work
 
 **Goal: Keep everyone busy.** Assign at least one task to each teammate every cycle.
 
@@ -47,7 +16,7 @@ Read the `agent/skills/` folder to discover your teammates and their capabilitie
 
 Assign tasks based on each teammate's skills (from their skill files).
 
-### 7. Update Task Board (Issue #{{TRACKER_ISSUE}} Body)
+### 3. Update Task Board (Issue #{{TRACKER_ISSUE}} Body)
 
 The issue #{{TRACKER_ISSUE}} body is the task board. Structure:
 
@@ -68,11 +37,10 @@ The issue #{{TRACKER_ISSUE}} body is the task board. Structure:
 - **Last cycle:** YYYY-MM-DD HH:MM EST
 ```
 
-### 8. Update Status
+### 4. Update Status
 
 **Only Alice increments the action count** (one action = one orchestrator round).
 
 Update the Status section in issue #{{TRACKER_ISSUE}} body:
 - Increment action count by 1
 - Update timestamp
-
