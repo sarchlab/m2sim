@@ -25,6 +25,8 @@ Before starting work, gather context from:
 
 - **Messages from Grace** — check `messages/{your_name}.md` for guidance
 - **Open issues and their comments** — look for messages directed at you (`→YourName:`)
+- **Open PRs** — check for PRs awaiting review or action
+- **Recent CI runs** — check for failures that need attention
 
 ---
 
