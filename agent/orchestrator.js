@@ -19,6 +19,10 @@ const INTERVAL_MS = 180_000; // 3 minutes
 const AGENT_TIMEOUT_MS = 900_000; // 15 minutes
 const MODEL = 'claude-opus-4-5';
 
+// Track currently running agent process
+let currentAgentProcess = null;
+let currentAgentName = null;
+
 function log(message) {
   const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
   console.log(`[${timestamp}] ${message}`);
@@ -49,15 +53,32 @@ function getNextAgent() {
   return nextMatch ? nextMatch.replace('next:', '') : 'alice';
 }
 
-function isAgentActive() {
-  const labels = exec(`gh issue view ${TRACKER_ISSUE} --json labels -q '.labels[].name'`);
-  return labels.split('\n').some(l => l.startsWith('active:'));
-}
-
-function getActiveAgent() {
+function getActiveAgentLabel() {
   const labels = exec(`gh issue view ${TRACKER_ISSUE} --json labels -q '.labels[].name'`);
   const activeMatch = labels.split('\n').find(l => l.startsWith('active:'));
   return activeMatch ? activeMatch.replace('active:', '') : null;
+}
+
+function isLocalAgentRunning() {
+  // Check if our tracked process is still running
+  if (currentAgentProcess && !currentAgentProcess.killed) {
+    try {
+      // Check if process is still alive (signal 0 doesn't kill, just checks)
+      process.kill(currentAgentProcess.pid, 0);
+      return true;
+    } catch (e) {
+      // Process doesn't exist
+      currentAgentProcess = null;
+      currentAgentName = null;
+      return false;
+    }
+  }
+  return false;
+}
+
+function clearStaleLabel(agent) {
+  log(`Clearing stale active label for: ${agent}`);
+  exec(`gh issue edit ${TRACKER_ISSUE} --remove-label "active:${agent}"`);
 }
 
 function shouldRunGrace() {
@@ -98,6 +119,10 @@ Work autonomously. Complete your cycle, then exit.`;
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
+    // Track this process
+    currentAgentProcess = proc;
+    currentAgentName = agent;
+
     const timeout = setTimeout(() => {
       log(`Agent ${agent} timed out, killing...`);
       proc.kill('SIGTERM');
@@ -117,12 +142,16 @@ Work autonomously. Complete your cycle, then exit.`;
 
     proc.on('close', (code) => {
       clearTimeout(timeout);
+      currentAgentProcess = null;
+      currentAgentName = null;
       log(`Agent ${agent} finished with code ${code}`);
       resolve(code);
     });
 
     proc.on('error', (err) => {
       clearTimeout(timeout);
+      currentAgentProcess = null;
+      currentAgentName = null;
       log(`Agent ${agent} error: ${err.message}`);
       resolve(1);
     });
@@ -135,10 +164,18 @@ async function cycle() {
   // Pull latest
   exec('git pull --rebase --quiet');
   
-  if (isAgentActive()) {
-    const activeAgent = getActiveAgent();
-    log(`Agent '${activeAgent}' has active label, waiting...`);
+  // Primary check: is our local Claude process running?
+  if (isLocalAgentRunning()) {
+    log(`Local agent '${currentAgentName}' (pid ${currentAgentProcess.pid}) still running, waiting...`);
     return;
+  }
+  
+  // Secondary check: is there an active label on GitHub?
+  const activeLabel = getActiveAgentLabel();
+  if (activeLabel) {
+    // Label exists but no local process - it's stale
+    log(`Stale active label detected for '${activeLabel}', clearing...`);
+    clearStaleLabel(activeLabel);
   }
   
   // No active agent, run next one
@@ -174,11 +211,19 @@ async function main() {
 // Handle graceful shutdown
 process.on('SIGINT', () => {
   log('Shutting down...');
+  if (currentAgentProcess) {
+    log(`Killing agent ${currentAgentName}...`);
+    currentAgentProcess.kill('SIGTERM');
+  }
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   log('Shutting down...');
+  if (currentAgentProcess) {
+    log(`Killing agent ${currentAgentName}...`);
+    currentAgentProcess.kill('SIGTERM');
+  }
   process.exit(0);
 });
 
