@@ -1,45 +1,39 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 21:50 EST (Cycle 271)
+**Last updated:** 2026-02-05 22:14 EST (Cycle 272)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | **78** 🎉 |
-| Open PRs | 1 (PR #247) |
-| Open Issues | 16 (excl. tracker) |
+| Total PRs Merged | **79** 🎉 |
+| Open PRs | 0 |
+| Open Issues | 15 (excl. tracker) |
 | Pipeline Coverage | **70.5%** ✅ |
 | Emu Coverage | 79.9% ✅ |
 
-## Cycle 271 Updates
+## Cycle 272 Updates
 
-### 🎉 Pipeline Coverage Target MET! (70.5%)
+### 🎉 PR #247 Merged (Statemate Benchmark)
 
-Cathy achieved the 70% pipeline coverage target:
-- Added comprehensive tests for superscalar register interfaces
-- Tested Secondary/Tertiary/Quaternary/Quinary/Senary MEMWB and EXMEM registers
-- 303 lines of new test code added
-- **Pipeline coverage: 69.6% → 70.5%** (+0.9pp)
-
-### 📈 Benchmark Expansion Progress
-
-Bob created PR #247 for statemate benchmark:
+Dana merged PR #247:
 - statemate: ~1.04M instructions (automotive window lift control)
 - Per Eric's analysis: easiest remaining Embench benchmark
 - Source patched to remove FP literals (M2Sim lacks scalar FP)
-- Pending Cathy's review
+- **79 PRs merged total!** 🎉
 
-### 📊 Benchmark Inventory Status
+### 📈 Benchmark Inventory Status
 
 | Suite | Ready | Status |
 |-------|-------|--------|
 | PolyBench | **4** (gemm, atax, 2mm, mvt) | ✅ Complete |
-| Embench | 6 (aha-mont64, crc32, matmult-int, primecount, edn, statemate*) | ⏳ PR pending |
+| Embench | **6** (aha-mont64, crc32, matmult-int, primecount, edn, statemate) | ✅ Complete |
 | CoreMark | 1 | ⚠️ Impractical (>50M instr) |
 | **Total** | **11 ready** | Need 15+ for publication |
 
-*statemate pending PR #247 merge
+### 🔜 Next: huffbench
+
+Bob has huffbench port ready locally with beebs heap library support. Will create PR after cycle completion.
 
 ---
 
@@ -67,9 +61,7 @@ All 4 PolyBench benchmarks ready for M2 baseline capture and timing validation.
 
 ## Open PRs
 
-| PR | Author | Description | Status |
-|----|--------|-------------|--------|
-| #247 | Bob | statemate benchmark port | Awaiting Cathy review |
+None — PR queue is clean! 🎉
 
 ## ⚠️ Critical Blockers
 
@@ -86,17 +78,22 @@ Per issue #141, microbenchmark accuracy (20.2%) does NOT count for M6 validation
 
 | Action | New Total | Status |
 |--------|-----------|--------|
-| Current state | 10 | ✅ |
-| +statemate (#247) | 11 | PR pending |
-| +huffbench | 12 | Needs heap support |
-| +3 more PolyBench | 15 | Future |
+| Current state | 11 | ✅ |
+| +huffbench | 12 | Bob has local port ready |
+| +jacobi-1d | 13 | Easy PolyBench stencil |
+| +3mm/bicg | 15 | Future PolyBench |
 
 ---
 
 ## Key Achievements
 
-**78 PRs Merged!** 🎉🎉🎉
+**79 PRs Merged!** 🎉🎉🎉
 
 **Both Coverage Targets MET!**
 - emu: 79.9% ✅ (exceeded)
 - pipeline: 70.5% ✅ (achieved!)
+
+**11 Intermediate Benchmarks Ready!**
+- PolyBench: 4 kernels (gemm, atax, 2mm, mvt)
+- Embench: 6 benchmarks (aha-mont64, crc32, matmult-int, primecount, edn, statemate)
+- CoreMark: 1 (impractical for emulation)
