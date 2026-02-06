@@ -73,7 +73,7 @@ var _ = Describe("FDTable", func() {
 		})
 
 		AfterEach(func() {
-			os.RemoveAll(tempDir)
+			_ = os.RemoveAll(tempDir)
 		})
 
 		It("should open a file and return FD >= 3", func() {
@@ -100,8 +100,10 @@ var _ = Describe("FDTable", func() {
 		It("should allocate sequential FDs", func() {
 			testFile1 := filepath.Join(tempDir, "test1.txt")
 			testFile2 := filepath.Join(tempDir, "test2.txt")
-			os.WriteFile(testFile1, []byte("1"), 0644)
-			os.WriteFile(testFile2, []byte("2"), 0644)
+			err := os.WriteFile(testFile1, []byte("1"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+			err = os.WriteFile(testFile2, []byte("2"), 0644)
+			Expect(err).ToNot(HaveOccurred())
 
 			fd1, err := table.Open(testFile1, os.O_RDONLY, 0)
 			Expect(err).ToNot(HaveOccurred())
@@ -111,8 +113,10 @@ var _ = Describe("FDTable", func() {
 
 			Expect(fd2).To(Equal(fd1 + 1))
 
-			table.Close(fd1)
-			table.Close(fd2)
+			err = table.Close(fd1)
+			Expect(err).ToNot(HaveOccurred())
+			err = table.Close(fd2)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should read from opened file", func() {
@@ -130,7 +134,8 @@ var _ = Describe("FDTable", func() {
 			Expect(n).To(Equal(11))
 			Expect(string(buf)).To(Equal(content))
 
-			table.Close(fd)
+			err = table.Close(fd)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should write to opened file", func() {
@@ -144,7 +149,8 @@ var _ = Describe("FDTable", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(n).To(Equal(len(content)))
 
-			table.Close(fd)
+			err = table.Close(fd)
+			Expect(err).ToNot(HaveOccurred())
 
 			// Verify file was written
 			data, err := os.ReadFile(testFile)
@@ -167,7 +173,8 @@ var _ = Describe("FDTable", func() {
 		})
 
 		It("should return false for closed FD", func() {
-			table.Close(0)
+			err := table.Close(0)
+			Expect(err).ToNot(HaveOccurred())
 			_, ok := table.Get(0)
 			Expect(ok).To(BeFalse())
 		})
