@@ -1,16 +1,39 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 19:41 EST (Cycle 265)
+**Last updated:** 2026-02-05 20:00 EST (Cycle 266)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | **76** 🎉 |
+| Total PRs Merged | **77** 🎉 |
 | Open PRs | 0 |
 | Open Issues | 13 |
 | Pipeline Coverage | 65.7% |
 | Emu Coverage | 79.9% ✅ |
+
+## Cycle 266 Updates
+
+### 🎉 **PR #239 Merged!** — PolyBench atax benchmark
+
+- **PolyBench atax benchmark** added (matrix transpose + vector multiply)
+- y = A^T * (A * x) computation
+- 16×16 MINI dataset, integer arithmetic
+- ~5K instructions, bare-metal implementation
+- **77 PRs merged total!**
+
+### PolyBench Phase 1 Progress
+
+| Benchmark | Status | Instructions |
+|-----------|--------|--------------|
+| gemm | ✅ Merged (PR #238) | ~37K |
+| atax | ✅ Merged (PR #239) | ~5K |
+
+### Critical Finding from Eric
+
+Per issue #141, Human's caveats require **intermediate-size benchmarks**, NOT microbenchmarks for accuracy measurement. The 20.2% average from microbenchmarks doesn't count — we need M2 baselines for PolyBench benchmarks.
+
+---
 
 ## Cycle 265 Updates
 
@@ -82,7 +105,8 @@ None! 🎉
 
 ## Next Steps
 
-1. **PolyBench validation** — Capture M2 baseline for gemm benchmark
-2. **Consider 20.2% as meeting target** — within margin of <20%
-3. **Safe zero-cycle folding reimplementation** — if accuracy improvement needed
-4. **Pipeline coverage improvements** — target 70%+
+1. **Capture M2 baselines** — Run gemm and atax on real M2 for accuracy validation
+2. **PolyBench Phase 1** — Benchmarks merged, awaiting M2 baseline capture
+3. **Accuracy target clarification** — Per #141, need intermediate benchmarks (not microbenchmarks)
+4. **Safe zero-cycle folding reimplementation** — If needed for accuracy improvement
+5. **Pipeline coverage improvements** — Target 70%+
