@@ -67,7 +67,7 @@ When finishing your cycle:
 ```
 # [AgentName]
 
-**Noticed:** (issues, PRs, CI failures, messages you saw)
+**Input:** (issues, PRs, CI failures, messages you saw)
 
 **Actions:** (what you did)
 ```
