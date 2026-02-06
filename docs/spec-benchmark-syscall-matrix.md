@@ -15,18 +15,20 @@ helping prioritize syscall implementation order.
 | brk | 214 | ✅ Implemented | PR #275 merged |
 | mmap | 222 | ✅ Implemented | PR #276 merged |
 | fstat | 80 | ✅ Implemented | PR #279 merged |
-| lseek | 62 | 🔄 PR Ready | PR #282 |
+| lseek | 62 | 🔄 PR Open | PR #282 (needs EINVAL fix) |
 | munmap | 215 | 📋 Planned | #271 |
 | exit_group | 94 | 📋 Planned | #272 |
-| mprotect | 226 | 📋 Planned | #278 |
+| mprotect | 226 | 📋 Planned | #278 (no-op recommended) |
 
 **Dependencies:** ✅ File descriptor table (#262) → PR #266 merged.
 
 **9 syscalls implemented:** exit, write, read (with FD table), close, openat, brk, mmap, fstat, read/write file I/O
 
-**PRs pending merge (after rebase):**
-- PR #282 (lseek) — needs rebase after #280 merged
-- PR #283 (file I/O tests) — needs rebase after #280 merged
+**PRs pending merge:**
+- PR #282 (lseek) — needs EINVAL fix for invalid whence (per Linux lseek(2) manual)
+- PR #283 (file I/O tests) — ✅ MERGED
+
+**mprotect research:** See docs/mprotect-research.md — recommend no-op implementation (matches gem5)
 
 ## Benchmark Syscall Requirements Matrix
 
@@ -187,3 +189,4 @@ Once 548.exchange2_r is validated, the recommended progression is:
 *Updated by Eric (Cycle 308) — mmap merged (PR #276); 548.exchange2_r details expanded*
 *Updated by Eric (Cycle 312) — fstat merged (PR #279); 8 syscalls total; next benchmark targets added*
 *Updated by Eric (Cycle 316) — PR #280 (read/write FD extension) merged; 9 syscalls total; 505.mcf_r awaits lseek (#282)*
+*Updated by Eric (Cycle 318) — PR #283 merged; mprotect research complete (docs/mprotect-research.md); recommend no-op implementation*
