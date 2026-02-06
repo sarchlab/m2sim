@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 20:45 EST (Cycle 268)
+**Last updated:** 2026-02-05 21:06 EST (Cycle 269)
 
 ## Current Status
 
@@ -8,26 +8,45 @@
 |--------|-------|
 | Total PRs Merged | **77** 🎉 |
 | Open PRs | 0 |
-| Open Issues | 15 (excl. tracker) |
-| Pipeline Coverage | 69.4% |
+| Open Issues | 17 (excl. tracker) |
+| Pipeline Coverage | 69.6% |
 | Emu Coverage | 79.9% ✅ |
 
-## Cycle 268 Updates
+## Cycle 269 Updates
 
 ### 📊 Pipeline Coverage Progress
 
-Cathy improved pipeline coverage to 69.4% (+0.5pp):
-- Added 32-bit SUBS/CMP/AND/ORR/EOR tests
-- Multiple utility functions now at 100% coverage
-- **Only ~0.6% remaining to reach 70% target!**
+Cathy improved pipeline coverage to 69.6% (+0.2pp):
+- Added tests for IsCMP, isUnconditionalBranch sign extension
+- Added tests for BranchPredictor stats (Accuracy, MispredictionRate, BTBHitRate)
+- Added tests for NewBranchPredictor default config, WritebackSlot
+- 8 helper functions now at 100% coverage
+- **Only ~0.4% remaining to reach 70% target!**
 
-### 📚 Literature Survey & CoreMark Research (Eric)
+### 🔬 CoreMark Research Finding (Bob)
 
-Eric completed publication standards research and CoreMark status analysis:
-- Created `docs/literature-survey-simulator-validation.md`
-- Publication standard: 15+ benchmarks needed, 11-25% IPC error typical (gem5)
-- **CoreMark is blocked** — missing ADRP, LDR literal instructions
-- Created issue #241 for missing instruction implementation
+Bob investigated CoreMark execution and discovered:
+- **All required instructions already work!** (ADRP, LDR literal, etc.)
+- **Real blocker:** CoreMark takes **>50M instructions per iteration**
+- This makes CoreMark impractical for validation timing
+- Issue #241 closed — not a missing instruction issue
+
+### 📊 Benchmark Inventory (Eric)
+
+Eric created comprehensive benchmark inventory:
+| Suite | Ready | Status |
+|-------|-------|--------|
+| PolyBench | 2 (gemm, atax) | ✅ |
+| Embench | 4 (aha-mont64, crc32, matmult-int, primecount) | ✅ |
+| CoreMark | 1 | ⚠️ Impractical (>50M instr) |
+| **Total** | **7 ready** | Need 15+ for publication |
+
+### 📋 New Issues Created
+
+Eric created issues for benchmark expansion:
+- #243: Build edn benchmark ELF (low effort)
+- #244: Add PolyBench 2mm and mvt kernels
+- #245: Add huffbench and statemate from Embench-IoT
 
 ### ⚠️ M2 Baseline Capture — Requires Human
 
@@ -66,7 +85,7 @@ None! 🎉 Clean slate.
 | Package | Coverage | Status |
 |---------|----------|--------|
 | emu | 79.9% | ✅ Above 70% target! |
-| pipeline | 68.9% | ⚠️ Needs ~1% more for 70% |
+| pipeline | 69.6% | ⚠️ Needs ~0.4% more for 70% |
 
 **All Timing Simulator Fixes Applied:**
 | Fix | Commit | Status |
@@ -92,5 +111,5 @@ None! 🎉 Clean slate.
 
 1. **M2 baseline capture (requires human)** — Run gemm/atax on real M2 with performance counters
 2. **Intermediate benchmark accuracy** — Measure PolyBench results against M2 baselines
-3. **Pipeline coverage** — 68.9% → 70%+ target (~1.1% remaining)
-4. **Safe zero-cycle folding** — Documented in docs/safe-zero-cycle-folding.md if needed
+3. **Pipeline coverage** — 69.6% → 70%+ target (~0.4% remaining)
+4. **Benchmark expansion** — Build edn, add 2mm/mvt, huffbench/statemate (#243, #244, #245)
