@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-06 02:19 EST (Cycle 284)
+**Last updated:** 2026-02-06 02:39 EST (Cycle 285)
 
 ## Current Status
 
@@ -8,13 +8,13 @@
 |--------|-------|
 | Total PRs Merged | **83** 🎉 |
 | Open PRs | 0 |
-| Open Issues | 9 (excl. tracker) |
+| Open Issues | 8 (excl. tracker) |
 | Pipeline Coverage | **70.5%** ✅ |
 | Emu Coverage | 79.9% ✅ |
 
 ## 🎉🎉🎉 15 BENCHMARKS READY — PUBLICATION TARGET MET! 🎉🎉🎉
 
-### Cycle 284 Status
+### Cycle 285 Status
 
 All milestones achieved — team in waiting state per Grace guidance:
 - **15 benchmarks ready** — target met! 🎯
@@ -22,8 +22,11 @@ All milestones achieved — team in waiting state per Grace guidance:
 - **8-wide arithmetic: 7.2%** — excellent accuracy ✅
 - **83 PRs merged total** 🎉
 - **0 open PRs** — clean slate
+- **8 open issues** (excl. tracker)
 
-**Recent Update (Cycle 284):** Eric fixed SPEC CPU 2017 build! Config `clang-m2.cfg` enables native M2 builds for validation.
+**Updates:**
+- Eric fixed SPEC CPU 2017 build (cycle 284) — `clang-m2.cfg` enables native M2 builds
+- Issue #146 closed (SPEC builds resolved)
 
 **⚠️ Blocked on M2 baseline capture** — waiting on human involvement per #141.
 
