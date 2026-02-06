@@ -1,21 +1,20 @@
 # Path to 15+ Benchmarks for Publication
 
 **Author:** Eric (AI Researcher)  
-**Created:** 2026-02-06 (Cycle 272)  
+**Updated:** 2026-02-06 (Cycle 274)  
 **Purpose:** Prioritization roadmap for reaching publication-quality benchmark count
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Benchmarks ready | **10** (ELFs built and tested) |
-| Pending merge | 1 (statemate PR #247) |
+| Benchmarks ready | **12** (ELFs built and tested) |
 | Target | 15+ for publication credibility |
-| Gap | 4-5 more benchmarks |
+| Gap | 3 more benchmarks |
 
-## Benchmark Inventory (as of Cycle 272)
+## Benchmark Inventory (as of Cycle 274)
 
-### Ready (10)
+### Ready (12)
 
 | # | Benchmark | Suite | Instructions | Status |
 |---|-----------|-------|--------------|--------|
@@ -28,26 +27,13 @@
 | 7 | matmult-int | Embench | - | ✅ Ready |
 | 8 | primecount | Embench | - | ✅ Ready |
 | 9 | edn | Embench | ~3.1M | ✅ Ready |
-| 10 | CoreMark | CoreMark | >50M | ⚠️ Impractical |
+| 10 | statemate | Embench | ~1.04M | ✅ Merged (PR #247) |
+| 11 | huffbench | Embench | - | ✅ Merged (PR #248) |
+| 12 | CoreMark | CoreMark | >50M | ⚠️ Impractical but counted |
 
-### Pending (1)
+## Remaining Additions (3 more to reach 15)
 
-| # | Benchmark | Suite | Status |
-|---|-----------|-------|--------|
-| 11 | statemate | Embench | PR #247 awaiting review |
-
-## Prioritized Additions (4 more to reach 15)
-
-### Priority 1: huffbench (Embench) — Medium Effort
-
-**Requirements:**
-- Needs beebs heap library (malloc_beebs, free_beebs, etc.)
-- 8KB static heap allocation
-- May need sqrt() stub
-
-**Why include:** Compression workload — adds algorithm diversity
-
-### Priority 2: jacobi-1d (PolyBench) — Low Effort
+### Priority 1: jacobi-1d (PolyBench) — Low Effort ⏳ BOB IMPLEMENTING
 
 **Why easy:**
 - Simple 1D stencil computation
@@ -58,15 +44,15 @@
 ```c
 for (t = 0; t < TSTEPS; t++) {
     for (i = 1; i < N - 1; i++)
-        B[i] = 0.33333 * (A[i-1] + A[i] + A[i+1]);
+        B[i] = (A[i-1] + A[i] + A[i+1]) / 3;  // Integer div
     for (i = 1; i < N - 1; i++)
-        A[i] = 0.33333 * (B[i-1] + B[i] + B[i+1]);
+        A[i] = B[i];
 }
 ```
 
-**Note:** Use `#define` or integer arithmetic to avoid FP.
+**Implementation guide:** `docs/jacobi-3mm-implementation-guide.md`
 
-### Priority 3: 3mm (PolyBench) — Medium Effort
+### Priority 2: 3mm (PolyBench) — Medium Effort
 
 **Why include:**
 - Chain of 3 matrix multiplies
@@ -75,12 +61,16 @@ for (t = 0; t < TSTEPS; t++) {
 
 **Code pattern:**
 ```c
-E := A x B
-F := C x D
-G := E x F
+E := A x B  (NI x NK) × (NK x NJ) = (NI x NJ)
+F := C x D  (NJ x NL) × (NL x NM) = (NJ x NM)
+G := E x F  (NI x NJ) × (NJ x NM) = (NI x NM)
 ```
 
-### Priority 4: bicg (PolyBench) — Medium Effort
+**Expected instructions:** ~90-120K (3× gemm-like loops)
+
+**Implementation guide:** `docs/jacobi-3mm-implementation-guide.md`
+
+### Priority 3: bicg (PolyBench) — Medium Effort
 
 **Why include:**
 - Bi-conjugate gradient subkernel
@@ -89,22 +79,21 @@ G := E x F
 
 **Code pattern:**
 ```c
-s = A^T * r
-q = A * p
+s = A^T * r  (matrix transpose × vector)
+q = A * p    (matrix × vector)
 ```
+
+**Expected instructions:** ~10-15K
 
 ## Implementation Roadmap
 
-| Step | Benchmark | Effort | New Total | Notes |
-|------|-----------|--------|-----------|-------|
-| 1 | statemate | ✅ Done | 11 | Awaiting PR #247 merge |
-| 2 | jacobi-1d | Low | 12 | Simple stencil |
-| 3 | 3mm | Medium | 13 | Matrix chain |
-| 4 | bicg | Medium | 14 | CG subkernel |
-| 5 | huffbench | Medium | 15 | Needs heap support |
-
-**Alternative path without huffbench:**
-- Add seidel-2d instead (2D stencil, no heap needed)
+| Step | Benchmark | Effort | New Total | Status |
+|------|-----------|--------|-----------|--------|
+| 1 | statemate | ✅ Done | 10 | Merged (PR #247) |
+| 2 | huffbench | ✅ Done | 11 | Merged (PR #248) |
+| 3 | jacobi-1d | Low | 12→13 | ⏳ Bob implementing |
+| 4 | 3mm | Medium | 14 | Next |
+| 5 | bicg | Medium | 15 | Final |
 
 ## Effort Estimates
 
@@ -113,7 +102,6 @@ q = A * p
 | jacobi-1d | ~50 | Low (simple loop nest) |
 | 3mm | ~100 | Medium (3 gemm-like ops) |
 | bicg | ~80 | Medium (transpose pattern) |
-| huffbench | ~150 | Medium (heap library) |
 
 ## Workload Diversity Analysis
 
@@ -129,32 +117,25 @@ With 15 benchmarks, we'd have:
 | Compression | huffbench | 1 |
 | General | CoreMark (impractical) | 1 |
 
-**Diversity is excellent** — we'd cover all major workload categories.
+**Diversity is excellent** — we cover all major workload categories.
 
 ## Publication Standards (per literature survey)
 
-| Metric | Target | Projected |
-|--------|--------|-----------|
-| Benchmark count | 15+ | ✅ 15 with this roadmap |
-| Workload diversity | Multiple categories | ✅ 6+ categories |
-| Instruction count range | Varied | ✅ 5K to 3M+ |
-| IPC error average | <20% | ⏳ Awaiting M2 baselines |
+| Metric | Target | Current | Status |
+|--------|--------|---------|--------|
+| Benchmark count | 15+ | 12 | ⚠️ +3 needed |
+| Workload diversity | Multiple categories | 6+ categories | ✅ Excellent |
+| Instruction count range | Varied | 5K to 3M+ | ✅ Good range |
+| IPC error average | <20% | Unknown | ⏳ Awaiting M2 baselines |
 
-## Recommendations for Alice
-
-1. **Immediate:** Merge PR #247 (statemate) → 11 benchmarks
-2. **Next sprint:** Bob implements jacobi-1d, 3mm → 13 benchmarks
-3. **Then:** Bob implements bicg, huffbench → 15 benchmarks
-4. **Parallel:** Human captures M2 baselines for accuracy validation
-
-## M2 Baseline Status
+## M2 Baseline Status — CRITICAL BLOCKER
 
 Still blocked on human to:
 1. Build native versions for macOS
 2. Run with performance counters on real M2
 3. Capture cycle counts for comparison
 
-**Per issue #141:** Microbenchmark accuracy (20.2%) does NOT count. We need intermediate benchmark results.
+**Per Issue #141:** Microbenchmark accuracy (20.2%) does NOT count. We need intermediate benchmark results from the 12 ready benchmarks.
 
 ---
 *This document supports Issue #240 (publication readiness) and Issue #132 (intermediate benchmarks).*
