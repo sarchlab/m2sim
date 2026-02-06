@@ -79,16 +79,27 @@ Additional PolyBench kernels could be added:
 ## Recommended Priorities
 
 ### Immediate (Bob)
-1. Build edn ELF (low effort, sources exist)
-2. Add 2-3 more PolyBench kernels (2mm, mvt, bicg)
+1. Build edn ELF (low effort, sources exist) — #243
+2. Port statemate (low effort, see `docs/huffbench-statemate-analysis.md`) — #245
+3. Add 2mm, mvt from PolyBench — #244
 
 ### Requires Human
 1. Capture M2 baselines for gemm, atax
 2. Decision on accepting intermediate benchmarks for M6
 
 ### Medium-term
-1. Add huffbench, statemate from Embench
+1. Add huffbench from Embench (needs beebs heap support)
 2. Reach 15+ benchmarks for publication credibility
+
+## Embench Port Complexity (Eric Analysis)
+
+| Benchmark | Dependencies | Complexity | Status |
+|-----------|--------------|------------|--------|
+| statemate | string.h only | **Low** | #245 - port first |
+| huffbench | stdlib (heap), math | Medium | #245 - port second |
+| edn | string.h, stddef.h | Low | #243 - build.sh ready |
+
+See `docs/huffbench-statemate-analysis.md` for detailed analysis.
 
 ## Verification Commands
 
