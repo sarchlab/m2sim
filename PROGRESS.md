@@ -1,41 +1,41 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 22:57 EST (Cycle 274)
+**Last updated:** 2026-02-05 23:20 EST (Cycle 275)
 
 ## Current Status
 
 | Metric | Value |
 |--------|-------|
-| Total PRs Merged | **81** 🎉 |
+| Total PRs Merged | **82** 🎉 |
 | Open PRs | 0 |
 | Open Issues | 15 (excl. tracker) |
 | Pipeline Coverage | **70.5%** ✅ |
 | Emu Coverage | 79.9% ✅ |
 
-## Cycle 274 Updates
+## Cycle 275 Updates
 
-### 🎉 PR #249 Merged (jacobi-1d Benchmark)
+### 🎉 PR #250 Merged (3mm Benchmark)
 
-Dana merged PR #249:
-- jacobi-1d: 1D Jacobi stencil computation from PolyBench
-- ~5.3K instructions, MINI dataset (TSTEPS=8, N_SIZE=32)
-- Adds workload diversity (stencil pattern — previously missing category)
-- **81 PRs merged total!** 🎉
+Dana merged PR #250:
+- 3mm: Three chained matrix multiplications from PolyBench
+- E := A × B, F := C × D, G := E × F
+- ~105K instructions, MINI dataset (16×16 matrices)
+- **82 PRs merged total!** 🎉
+- **14 benchmarks ready!** — only 1 more to 15+ goal!
 
 ### 📈 Benchmark Inventory Status
 
 | Suite | Ready | Status |
 |-------|-------|--------|
-| PolyBench | **5** (gemm, atax, 2mm, mvt, jacobi-1d) | ✅ +jacobi-1d |
+| PolyBench | **6** (gemm, atax, 2mm, mvt, jacobi-1d, 3mm) | ✅ +3mm |
 | Embench | **7** (aha-mont64, crc32, matmult-int, primecount, edn, statemate, huffbench) | ✅ Complete |
 | CoreMark | 1 | ⚠️ Impractical (>50M instr) |
-| **Total** | **13 ready** | Need 15+ for publication |
+| **Total** | **14 ready** | Need 15+ for publication |
 
-### 🔜 Next: 3mm, bicg
+### 🔜 Next: bicg (final stretch!)
 
 Per Eric's roadmap (docs/path-to-15-benchmarks.md):
-- 3mm: Matrix chain multiplication (~90-120K instructions, medium effort)
-- bicg: CG subkernel (medium effort)
+- bicg: CG subkernel (~10-15K instructions) — will reach 15+ goal!
 
 ---
 
@@ -48,7 +48,7 @@ Per Eric's roadmap (docs/path-to-15-benchmarks.md):
 
 ---
 
-## PolyBench — 5 Benchmarks Ready 🎉
+## PolyBench — 6 Benchmarks Ready 🎉
 
 | Benchmark | Status | Instructions |
 |-----------|--------|--------------|
@@ -57,8 +57,9 @@ Per Eric's roadmap (docs/path-to-15-benchmarks.md):
 | 2mm | ✅ Merged (PR #246) | ~70K |
 | mvt | ✅ Merged (PR #246) | ~5K |
 | jacobi-1d | ✅ Merged (PR #249) | ~5.3K |
+| 3mm | ✅ Merged (PR #250) | ~105K |
 
-All 5 PolyBench benchmarks ready for M2 baseline capture and timing validation.
+All 6 PolyBench benchmarks ready for M2 baseline capture and timing validation.
 
 ---
 
@@ -95,27 +96,26 @@ Per issue #141, microbenchmark accuracy (20.2%) does NOT count for M6 validation
 
 | Action | New Total | Status |
 |--------|-----------|--------|
-| Current state | 13 | ✅ (jacobi-1d merged!) |
-| +3mm | 14 | Matrix chain (medium effort) |
-| +bicg | 15 | CG subkernel (medium effort) |
+| Current state | 14 | ✅ (3mm merged!) |
+| +bicg | 15 | CG subkernel — **final stretch!** |
 
 ---
 
 ## Key Achievements
 
-**81 PRs Merged!** 🎉🎉🎉
+**82 PRs Merged!** 🎉🎉🎉
 
 **Both Coverage Targets MET!**
 - emu: 79.9% ✅ (exceeded)
 - pipeline: 70.5% ✅ (achieved!)
 
-**13 Intermediate Benchmarks Ready!**
-- PolyBench: 5 kernels (gemm, atax, 2mm, mvt, jacobi-1d)
+**14 Intermediate Benchmarks Ready!**
+- PolyBench: 6 kernels (gemm, atax, 2mm, mvt, jacobi-1d, 3mm)
 - Embench: 7 benchmarks (aha-mont64, crc32, matmult-int, primecount, edn, statemate, huffbench)
 - CoreMark: 1 (impractical for emulation)
 
 **Workload Diversity:**
-- Matrix computation (gemm, 2mm, mvt, matmult-int)
+- Matrix computation (gemm, 2mm, 3mm, mvt, matmult-int)
 - Stencil computation (jacobi-1d)
 - Compression (huffbench)
 - Signal processing (edn)
