@@ -13,19 +13,22 @@ helping prioritize syscall implementation order.
 | close | 57 | ✅ Implemented | PR #267 merged |
 | openat | 56 | ✅ Implemented | PR #268 merged |
 | brk | 214 | ✅ Implemented | PR #275 merged |
-| mmap | 222 | ✅ Ready to Merge | PR #276 (cathy-approved) |
-| fstat | 80 | ✅ Ready to Merge | PR #279 (cathy-approved) |
-| lseek | 62 | 📋 Planned | #270 |
+| mmap | 222 | ✅ Implemented | PR #276 merged |
+| fstat | 80 | 🔄 PR Ready | PR #279 (needs rebase) |
+| lseek | 62 | 🔄 PR Ready | PR #282 (needs rebase) |
 | munmap | 215 | 📋 Planned | #271 |
 | exit_group | 94 | 📋 Planned | #272 |
 | mprotect | 226 | 📋 Planned | #278 |
 
 **Dependencies:** ✅ File descriptor table (#262) → PR #266 merged.
 
-**Ready to Merge:**
-- PR #276 (mmap) — CI passing, cathy-approved
-- PR #279 (fstat) — CI passing, cathy-approved
-- PR #280 (read/write FD extension) — needs lint fix
+**7 syscalls implemented:** exit, write, read, close, openat, brk, mmap
+
+**PRs with merge conflicts (need rebase):**
+- PR #279 (fstat)
+- PR #280 (read/write FD extension)
+- PR #282 (lseek)
+- PR #283 (file I/O tests)
 
 ## Benchmark Syscall Requirements Matrix
 
@@ -82,9 +85,16 @@ Based on the matrix above, recommended implementation order:
 
 ### 548.exchange2_r (Sudoku Solver)
 - **Why simplest:** Pure computation, no file I/O
-- **Memory:** Uses stack + heap for puzzle state
+- **Language:** Fortran 95 (~1,600 lines)
+- **Memory:** Uses stack + heap for puzzle state; minimal memory pressure (fits in cache)
+- **Execution profile:** "Strongly execution bound" — 60% useful work, 20% backend stalls, 15% frontend stalls
+- **Hotspot:** `digits_2` function accounts for ~80% execution time (recursive, up to 8 levels)
+- **Arithmetic:** Integer-only (no floating-point!)
+- **Input:** Sudoku puzzles as 81-digit strings (embedded in initialization)
+- **Output:** Results to s.txt file
 - **Critical syscalls:** brk (heap), mmap (large allocations)
 - **Testing:** Can run without any file I/O infrastructure
+- **Validation status:** Syscalls ready (brk, mmap merged); blocked on SPEC compilation
 
 ### 505.mcf_r (Vehicle Scheduling)
 - **Input:** Single network specification file (~500KB)
@@ -154,3 +164,4 @@ Most SPEC benchmarks don't require actual protection enforcement to run correctl
 *Updated by Eric (Cycle 304) — FD table, close, openat merged*
 *Updated by Eric (Cycle 305) — brk merged (PR #275), mmap in review (PR #276)*
 *Updated by Eric (Cycle 306) — PRs #276, #279, #280 ready to merge; mprotect research added*
+*Updated by Eric (Cycle 308) — mmap merged (PR #276); 548.exchange2_r details expanded*
