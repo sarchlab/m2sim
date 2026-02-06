@@ -1,6 +1,6 @@
 # M2Sim Progress Report
 
-**Last updated:** 2026-02-05 20:25 EST (Cycle 267)
+**Last updated:** 2026-02-05 20:45 EST (Cycle 268)
 
 ## Current Status
 
@@ -8,19 +8,26 @@
 |--------|-------|
 | Total PRs Merged | **77** 🎉 |
 | Open PRs | 0 |
-| Open Issues | 12 (excl. tracker) |
-| Pipeline Coverage | 68.9% |
+| Open Issues | 15 (excl. tracker) |
+| Pipeline Coverage | 69.4% |
 | Emu Coverage | 79.9% ✅ |
 
-## Cycle 267 Updates
+## Cycle 268 Updates
 
 ### 📊 Pipeline Coverage Progress
 
-Cathy improved pipeline coverage to 68.9% (+3.2pp) via comprehensive 8-wide (octuple-issue) test suite:
-- Tests for 8 parallel instructions
-- Chained dependencies coverage
-- Branch handling in wide-issue mode
-- Memory operations tests
+Cathy improved pipeline coverage to 69.4% (+0.5pp):
+- Added 32-bit SUBS/CMP/AND/ORR/EOR tests
+- Multiple utility functions now at 100% coverage
+- **Only ~0.6% remaining to reach 70% target!**
+
+### 📚 Literature Survey & CoreMark Research (Eric)
+
+Eric completed publication standards research and CoreMark status analysis:
+- Created `docs/literature-survey-simulator-validation.md`
+- Publication standard: 15+ benchmarks needed, 11-25% IPC error typical (gem5)
+- **CoreMark is blocked** — missing ADRP, LDR literal instructions
+- Created issue #241 for missing instruction implementation
 
 ### ⚠️ M2 Baseline Capture — Requires Human
 
