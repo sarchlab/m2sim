@@ -50,7 +50,16 @@ Before starting work, gather context from:
 
 ---
 
-## 4. End of Cycle
+## 4. Active Label
+
+- **Start of cycle:** Add `active:{yourname}` label to tracker issue
+- **End of cycle:** Remove `active:{yourname}` label
+
+This signals to other agents and the orchestrator that you are working.
+
+---
+
+## 5. End of Cycle
 
 When finishing your cycle:
 
@@ -63,11 +72,11 @@ When finishing your cycle:
 **Actions:** (what you did)
 ```
 
-2. **Remove your active label**
+2. **Remove your active label** (see above)
 
 ---
 
-## 5. Tips
+## 6. Tips
 
 - **Complete all assigned tasks** in a single cycle. Don't stop after just one.
 - **Engage on issues** — share opinions, ask for clarification, respond to questions.
