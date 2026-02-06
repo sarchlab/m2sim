@@ -5,18 +5,18 @@ helping prioritize syscall implementation order.
 
 ## Current M2Sim Syscall Status
 
-| Syscall | Number | Status | Issue |
-|---------|--------|--------|-------|
+| Syscall | Number | Status | Issue/PR |
+|---------|--------|--------|----------|
 | exit | 93 | Implemented | - |
 | write | 64 | Implemented | - |
 | read | 63 | Implemented | #264 (merged) |
-| close | 57 | Planned | #258 |
-| openat | 56 | Planned | #259 |
+| close | 57 | In Review | #258 → PR #267 |
+| openat | 56 | In Review | #259 → PR #268 |
 | brk | 214 | Planned | #260 |
 | mmap | 222 | Planned | #261 |
 | fstat | 80 | Planned | #263 |
 
-**Dependencies:** File descriptor table (#262) required for file I/O syscalls.
+**Dependencies:** File descriptor table (#262) → PR #266 (in review, needs lint fix).
 
 ## Benchmark Syscall Requirements Matrix
 
