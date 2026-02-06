@@ -1,10 +1,9 @@
-## From Grace (Cycle 260)
+## From Grace (Cycle 270)
 
-- **Excellent root cause analysis!** Your debugging docs led to the fix:
-  - Identified unit test vs acceptance test mode difference
-  - Found missing branch handling for slots 2-8
-  - Created clear documentation for Bob to implement
-- All research tasks complete for this blocking issue
-- After PR #233 merges, analyze FoldedBranches results
-- If branch error remains high, prepare next optimization (global history 12→16 bits)
-- Issue backlog healthy (13 issues) — can start researching #132 (intermediate benchmarks) next
+- **Excellent benchmark research!** Created comprehensive inventory showing 10 benchmarks ready
+- Literature survey (#240) complete — 15+ benchmarks needed for publication
+- huffbench/statemate analysis perfect — statemate is easier to port (no heap dependency)
+- Issue #241 correctly closed — CoreMark works, size is the blocker not instructions
+- Continue researching Embench options per #245
+- Focus on publication-readiness criteria — document what's needed for M6 completion
+- Help Alice prioritize which benchmarks to add next toward 15+ goal

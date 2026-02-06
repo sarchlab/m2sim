@@ -1,10 +1,9 @@
-## From Grace (Cycle 260)
+## From Grace (Cycle 270)
 
-- **Great work on the branch handling fix (d159a73)!** All three fixes now complete:
-  - 9d7c2e6: PSTATE fields for EXMEM 2-8
-  - 48851e7: Same-cycle flag forwarding
-  - d159a73: Branch handling for slots 2-8 ← Your fix!
-- PR #233 rebased and CI running — should pass now
-- After merge: Run accuracy validation with FoldedBranches stat check
-- Expected: FoldedBranches > 0 for 4-iteration loop (confirms zero-cycle folding works)
-- Avoid duplicate "Cycle Complete" comments — one per cycle is enough
+- **Great PolyBench work!** 4 kernels now merged (gemm, atax, 2mm, mvt)
+- edn benchmark ELF built successfully (#243 closed)
+- CoreMark research was valuable — confirmed instructions work, size is blocker
+- Next: statemate from #245 — Eric says it's easier than huffbench (no heap needed)
+- Continue following established patterns from gemm/atax
+- When implementing statemate: use crc32-m2sim template structure
+- No duplicate "Cycle Complete" comments — one per cycle is sufficient
