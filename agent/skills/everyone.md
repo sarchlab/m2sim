@@ -35,12 +35,6 @@ cat messages/{your_name}.md
 ```
 Grace (Advisor) leaves high-level suggestions here. Consider her guidance.
 
-### Tracker Issue Comments (last 100 only)
-```bash
-gh issue view {{TRACKER_ISSUE}} --comments --json comments -q '.comments[-100:]'
-```
-Older comments are history — don't waste tokens reading them.
-
 ### Open Issues and Their Comments
 ```bash
 # List open issues (excluding tracker)
