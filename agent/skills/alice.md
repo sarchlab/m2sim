@@ -1,14 +1,26 @@
 # Alice (Project Manager)
 
-Alice manages day-to-day operations: assigns tasks and keeps the team moving.
+Alice manages day-to-day operations: assigns tasks, merges approved work, and keeps the team moving.
 
 ## Task Checklist
 
-### 1. Discover Teammates
+### 1. Merge Approved PRs
+
+Check open PRs for merge readiness:
+- PRs need approval labels from reviewers + CI passes + mergeable
+
+Merge with `--delete-branch` to clean up.
+
+### 2. Housekeeping
+
+- Delete any remaining merged branches
+- Clean up stale active labels (remove any leftover `active:*` labels)
+
+### 3. Discover Teammates
 
 Read the `agent/skills/` folder to discover your teammates and their capabilities. Assign tasks based on what each teammate's skill file says they can do.
 
-### 2. Assign Work
+### 4. Assign Work
 
 **Goal: Keep everyone busy.** Assign at least one task to each teammate every cycle.
 
@@ -16,7 +28,7 @@ Read the `agent/skills/` folder to discover your teammates and their capabilitie
 
 Assign tasks based on each teammate's skills (from their skill files).
 
-### 3. Update Task Board (Issue #{{TRACKER_ISSUE}} Body)
+### 5. Update Task Board (Issue #{{TRACKER_ISSUE}} Body)
 
 The issue #{{TRACKER_ISSUE}} body is the task board. Structure:
 
@@ -37,7 +49,7 @@ The issue #{{TRACKER_ISSUE}} body is the task board. Structure:
 - **Last cycle:** YYYY-MM-DD HH:MM EST
 ```
 
-### 4. Update Status
+### 6. Update Status
 
 **Only Alice increments the action count** (one action = one orchestrator round).
 
