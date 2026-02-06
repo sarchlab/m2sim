@@ -91,6 +91,7 @@ Work autonomously. Complete your tasks, then exit.`;
     const proc = spawn('claude', [
       '--model', config.model,
       '--dangerously-skip-permissions',
+      '--print',
       prompt
     ], {
       cwd: REPO_DIR,
