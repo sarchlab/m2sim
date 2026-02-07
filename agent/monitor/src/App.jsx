@@ -78,12 +78,12 @@ function App() {
       setConfig(configData)
       if (!configDirtyRef.current && configData.config) {
         setConfigForm({
-          cycleIntervalMs: configData.config.cycleIntervalMs || 1800000,
-          agentTimeoutMs: configData.config.agentTimeoutMs || 900000,
+          cycleIntervalMs: configData.config.cycleIntervalMs ?? 1800000,
+          agentTimeoutMs: configData.config.agentTimeoutMs ?? 900000,
           model: configData.config.model || 'claude-opus-4-5',
-          trackerIssue: configData.config.trackerIssue || 1,
-          athenaCycleInterval: configData.config.athenaCycleInterval || 1,
-          apolloCycleInterval: configData.config.apolloCycleInterval || 1
+          trackerIssue: configData.config.trackerIssue ?? 1,
+          athenaCycleInterval: configData.config.athenaCycleInterval ?? 1,
+          apolloCycleInterval: configData.config.apolloCycleInterval ?? 1
         })
       }
       setLastUpdate(new Date())
@@ -138,12 +138,12 @@ apolloCycleInterval: ${configForm.apolloCycleInterval}
   const resetConfig = () => {
     if (config.config) {
       setConfigForm({
-        cycleIntervalMs: config.config.cycleIntervalMs || 1800000,
-        agentTimeoutMs: config.config.agentTimeoutMs || 900000,
+        cycleIntervalMs: config.config.cycleIntervalMs ?? 1800000,
+        agentTimeoutMs: config.config.agentTimeoutMs ?? 900000,
         model: config.config.model || 'claude-opus-4-5',
-        trackerIssue: config.config.trackerIssue || 1,
-        athenaCycleInterval: config.config.athenaCycleInterval || 1,
-        apolloCycleInterval: config.config.apolloCycleInterval || 1
+        trackerIssue: config.config.trackerIssue ?? 1,
+        athenaCycleInterval: config.config.athenaCycleInterval ?? 1,
+        apolloCycleInterval: config.config.apolloCycleInterval ?? 1
       })
     }
     configDirtyRef.current = false
