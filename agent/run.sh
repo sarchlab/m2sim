@@ -1,7 +1,5 @@
 #!/bin/bash
 # Wrapper script for orchestrator with hot reload support
-# Exit code 75 = reload requested, restart immediately
-# Any other non-zero = error, wait before retry
 
 cd "$(dirname "$0")"
 

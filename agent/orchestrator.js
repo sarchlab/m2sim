@@ -1,29 +1,38 @@
 #!/usr/bin/env node
 /**
- * M2Sim Multi-Agent Orchestrator (Standalone)
- * Runs all agents sequentially in one cycle, then waits before next cycle.
- * Config is reloaded at the start of each cycle.
+ * ML Performance Survey - Multi-Agent Orchestrator
+ * Manager agents (Athena, Apollo, Hermes) run periodically.
+ * Worker agents are discovered from agent/workers/ folder.
  */
 
 import { spawn, execSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, watch } from 'fs';
-import { dirname, join } from 'path';
+import { existsSync, readFileSync, writeFileSync, readdirSync, watch } from 'fs';
+import { dirname, join, basename } from 'path';
 import { fileURLToPath } from 'url';
+import { createServer } from 'http';
 import YAML from 'yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = join(__dirname, '..');
-const SKILL_PATH = join(__dirname, 'skills');
+const MANAGERS_PATH = join(__dirname, 'managers');
+const WORKERS_PATH = join(__dirname, 'workers');
+const SKILLS_PATH = join(__dirname, 'skills');
 const CONFIG_PATH = join(__dirname, 'config.yaml');
 const ORCHESTRATOR_PATH = join(__dirname, 'orchestrator.js');
 const STATE_PATH = join(__dirname, 'state.json');
+const CONTROL_PORT = 3002;
 
-// Track currently running agent
 let currentAgentProcess = null;
 let currentAgentName = null;
+let currentAgentStartTime = null;
 let cycleCount = 0;
 let currentAgentIndex = 0;
+let managersRun = []; // Track which managers have run this cycle
 let pendingReload = false;
+let isPaused = false;
+let wakeNow = false;
+let startTime = Date.now();
+let sleepUntil = null; // Timestamp when sleep ends
 
 function loadState() {
   try {
@@ -31,16 +40,18 @@ function loadState() {
     const state = JSON.parse(raw);
     cycleCount = state.cycleCount || 0;
     currentAgentIndex = state.currentAgentIndex || 0;
-    log(`State loaded: cycle=${cycleCount}, agentIndex=${currentAgentIndex}`);
+    managersRun = state.managersRun || [];
+    isPaused = state.isPaused || false;
+    log(`State loaded: cycle=${cycleCount}, agentIndex=${currentAgentIndex}, managersRun=[${managersRun.join(',')}], paused=${isPaused}`);
     return state;
   } catch (e) {
     log('No saved state, starting fresh');
-    return { cycleCount: 0, currentAgentIndex: 0 };
+    return { cycleCount: 0, currentAgentIndex: 0, managersRun: [], isPaused: false };
   }
 }
 
 function saveState() {
-  writeFileSync(STATE_PATH, JSON.stringify({ cycleCount, currentAgentIndex }, null, 2));
+  writeFileSync(STATE_PATH, JSON.stringify({ cycleCount, currentAgentIndex, managersRun, isPaused }, null, 2));
 }
 
 function log(message) {
@@ -48,11 +59,11 @@ function log(message) {
   console.log(`[${timestamp}] ${message}`);
 }
 
-function loadConfig() {
+function loadConfig(silent = false) {
   try {
     const raw = readFileSync(CONFIG_PATH, 'utf-8');
     const config = YAML.parse(raw);
-    log(`Config: interval=${config.cycleIntervalMs/1000}s, model=${config.model}`);
+    if (!silent) log(`Config: interval=${config.cycleIntervalMs/1000}s, model=${config.model}`);
     return config;
   } catch (e) {
     log(`Error loading config: ${e.message}, using defaults`);
@@ -60,10 +71,22 @@ function loadConfig() {
       cycleIntervalMs: 600_000,
       agentTimeoutMs: 900_000,
       model: 'claude-opus-4-5',
-      agents: ['alice', 'eric', 'bob', 'cathy', 'dana'],
-      graceCycleInterval: 10,
-      trackerIssue: 45
+      athenaCycleInterval: 10,
+      apolloCycleInterval: 10,
+      trackerIssue: 1
     };
+  }
+}
+
+function discoverWorkers() {
+  try {
+    if (!existsSync(WORKERS_PATH)) return [];
+    return readdirSync(WORKERS_PATH)
+      .filter(f => f.endsWith('.md') && f !== 'everyone.md')
+      .map(f => basename(f, '.md'));
+  } catch (e) {
+    log(`Error discovering workers: ${e.message}`);
+    return [];
   }
 }
 
@@ -80,48 +103,73 @@ function exec(cmd, options = {}) {
   }
 }
 
+function postComment(config, body) {
+  try {
+    const escapedBody = body.replace(/'/g, "'\\''");
+    exec(`gh issue comment ${config.trackerIssue} --body '${escapedBody}'`);
+    log('Posted timeout comment to tracker');
+  } catch (e) {
+    log(`Failed to post comment: ${e.message}`);
+  }
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function loadSkill(filename) {
+function loadSkill(path) {
   try {
-    return readFileSync(join(SKILL_PATH, filename), 'utf-8');
+    return readFileSync(path, 'utf-8');
   } catch (e) {
-    log(`Warning: Could not load skill ${filename}: ${e.message}`);
+    log(`Warning: Could not load skill ${path}: ${e.message}`);
     return '';
   }
 }
 
-async function runAgent(agent, config) {
-  log(`Running: ${agent}`);
+function extractModel(skillContent) {
+  // Parse YAML frontmatter for model field
+  const match = skillContent.match(/^---\n([\s\S]*?)\n---/);
+  if (match) {
+    const frontmatter = match[1];
+    const modelMatch = frontmatter.match(/^model:\s*(.+)$/m);
+    if (modelMatch) {
+      return modelMatch[1].trim();
+    }
+  }
+  return null;
+}
+
+async function runAgent(agent, config, isManager = false) {
+  log(`Running: ${agent}${isManager ? ' (manager)' : ''}`);
   
-  // Pull latest before each agent
   exec('git pull --rebase --quiet');
   
-  // Load skills fresh each time
-  const everyoneSkill = loadSkill('everyone.md');
-  const agentSkill = loadSkill(`${agent}.md`);
+  const skillPath = isManager ? join(MANAGERS_PATH, `${agent}.md`) : join(WORKERS_PATH, `${agent}.md`);
+  const everyoneSkill = loadSkill(join(__dirname, 'everyone.md'));
+  const agentSkill = loadSkill(skillPath);
+  const agentModel = extractModel(agentSkill) || config.model;
   
-  const prompt = `You are ${agent} working on the M2Sim project.
+  const prompt = `You are ${agent} working on the ML Performance Survey project.
 
 **Config:**
-- GitHub Repo: sarchlab/m2sim  
+- GitHub Repo: syifan/ml-perf-survey
 - Local Path: ${REPO_DIR}
 - Tracker Issue: #${config.trackerIssue}
 
-**Shared Rules (everyone.md):**
+**Shared Rules:**
 ${everyoneSkill}
 
-**Your Role (${agent}.md):**
+**Your Role:**
 ${agentSkill}
 
 **Instructions:**
 Execute your full cycle as described above. Work autonomously. Complete your tasks, then exit.`;
 
+  log(`Using model: ${agentModel}`);
+  
   return new Promise((resolve) => {
     const proc = spawn('claude', [
-      '--model', config.model,
+      '--model', agentModel,
       '--dangerously-skip-permissions',
       '--print',
       prompt
@@ -132,22 +180,45 @@ Execute your full cycle as described above. Work autonomously. Complete your tas
 
     currentAgentProcess = proc;
     currentAgentName = agent;
+    currentAgentStartTime = Date.now();
+    let timedOut = false;
+    let timeout = null;
 
-    const timeout = setTimeout(() => {
-      log(`${agent} timed out, killing...`);
-      proc.kill('SIGTERM');
-    }, config.agentTimeoutMs);
+    // Only set timeout if agentTimeoutMs > 0 (0 = never timeout)
+    if (config.agentTimeoutMs > 0) {
+      timeout = setTimeout(() => {
+        timedOut = true;
+        log(`${agent} timed out, killing...`);
+        proc.kill('SIGTERM');
+      }, config.agentTimeoutMs);
+    }
 
     proc.on('close', (code) => {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
       currentAgentProcess = null;
+      currentAgentStartTime = null;
+      
+      // Post timeout comment to tracker
+      if (timedOut) {
+        const timeoutMin = Math.round(config.agentTimeoutMs / 60000);
+        postComment(config, `# [Orchestrator]
+
+⏱️ **Agent Timeout**
+
+**Agent:** ${agent}
+**Cycle:** ${cycleCount}
+**Timeout:** ${timeoutMin} minutes
+**Status:** Killed (SIGTERM)
+
+The agent exceeded the maximum allowed runtime and was terminated.`);
+      }
       currentAgentName = null;
       log(`${agent} done (code ${code})`);
       resolve(code);
     });
 
     proc.on('error', (err) => {
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
       currentAgentProcess = null;
       currentAgentName = null;
       log(`${agent} error: ${err.message}`);
@@ -157,56 +228,210 @@ Execute your full cycle as described above. Work autonomously. Complete your tas
 }
 
 async function runCycle() {
-  // Reload config at start of each cycle
-  const config = loadConfig();
-  
-  // If starting fresh (agentIndex=0), increment cycle
-  if (currentAgentIndex === 0) {
-    cycleCount++;
-    log(`===== CYCLE ${cycleCount} =====`);
-    
-    // Run Fiona (strategist) at cycle 1, 11, 21, etc.
-    if (cycleCount % (config.fionaCycleInterval || 10) === 1) {
-      await runAgent('fiona', config);
-      saveState();
-      if (pendingReload) return config;
-    }
-    
-    // Run Grace (advisor) at cycle 1, 11, 21, etc.
-    if (cycleCount % config.graceCycleInterval === 1) {
-      await runAgent('grace', config);
-      saveState();
-      if (pendingReload) return config;
-    }
-  } else {
-    log(`===== CYCLE ${cycleCount} (resuming ${currentAgentIndex}/${config.agents.length}) =====`);
+  // Check for STOP file
+  const stopFile = join(__dirname, 'STOP');
+  if (existsSync(stopFile)) {
+    log('🛑 STOP file found - halting orchestrator');
+    const reason = readFileSync(stopFile, 'utf-8');
+    log(reason);
+    process.exit(0);
   }
   
-  // Run agents sequentially, starting from saved index
-  while (currentAgentIndex < config.agents.length) {
-    const agent = config.agents[currentAgentIndex];
-    await runAgent(agent, config);
-    currentAgentIndex++;
+  const config = loadConfig();
+  const workers = discoverWorkers();
+  
+  // Check if starting fresh cycle (no managers run yet and no workers done)
+  const isNewCycle = managersRun.length === 0 && currentAgentIndex === 0;
+  if (isNewCycle) {
+    cycleCount++;
+    log(`===== CYCLE ${cycleCount} (${workers.length} workers) =====`);
+  } else {
+    log(`===== CYCLE ${cycleCount} (resuming: managers=[${managersRun.join(',')}], workers=${currentAgentIndex}/${workers.length}) =====`);
+  }
+  
+  // Athena (strategist) - runs on cycle 1, 1+interval, 1+2*interval, etc.
+  const athenaShould = (cycleCount - 1) % (config.athenaCycleInterval || 10) === 0;
+  if (athenaShould && !managersRun.includes('athena')) {
+    await runAgent('athena', config, true);
+    managersRun.push('athena');
     saveState();
-    
-    // Check for reload between agents
     if (pendingReload) return config;
   }
   
-  // Cycle complete, reset for next
+  // Apollo (HR) - runs on cycle 1, 1+interval, 1+2*interval, etc.
+  const apolloShould = (cycleCount - 1) % (config.apolloCycleInterval || 10) === 0;
+  if (apolloShould && !managersRun.includes('apollo')) {
+    await runAgent('apollo', config, true);
+    managersRun.push('apollo');
+    saveState();
+    if (pendingReload) return config;
+  }
+  
+  // Hermes (PM) every cycle
+  if (!managersRun.includes('hermes')) {
+    await runAgent('hermes', config, true);
+    managersRun.push('hermes');
+    saveState();
+    if (pendingReload) return config;
+  }
+  
+  // Run worker agents
+  while (currentAgentIndex < workers.length) {
+    const agent = workers[currentAgentIndex];
+    await runAgent(agent, config, false);
+    currentAgentIndex++;
+    saveState();
+    if (pendingReload) return config;
+  }
+  
+  // Cycle complete - reset for next cycle
   currentAgentIndex = 0;
+  managersRun = [];
   saveState();
   
   return config;
 }
 
+// ============ Control API Server ============
+
+function startControlServer() {
+  const server = createServer((req, res) => {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+    
+    const url = new URL(req.url, `http://localhost:${CONTROL_PORT}`);
+    const path = url.pathname;
+    
+    // GET /status
+    if (req.method === 'GET' && path === '/status') {
+      const config = loadConfig(true);  // silent
+      const workers = discoverWorkers();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        running: !isPaused,
+        paused: isPaused,
+        currentAgent: currentAgentName,
+        currentAgentStartTime,
+        currentAgentRuntime: currentAgentStartTime ? Math.floor((Date.now() - currentAgentStartTime) / 1000) : null,
+        currentAgentIndex,
+        cycleCount,
+        managersRun,
+        totalWorkers: workers.length,
+        pid: process.pid,
+        uptime: Math.floor((Date.now() - startTime) / 1000),
+        cycleIntervalMs: config.cycleIntervalMs,
+        pendingReload,
+        sleeping: sleepUntil !== null,
+        sleepUntil
+      }));
+      return;
+    }
+    
+    // GET /queue
+    if (req.method === 'GET' && path === '/queue') {
+      const workers = discoverWorkers();
+      const config = loadConfig(true);  // silent
+      const queue = [];
+      
+      // Add remaining workers in current cycle
+      for (let i = currentAgentIndex; i < workers.length; i++) {
+        queue.push({ name: workers[i], type: 'worker' });
+      }
+      
+      // Add managers for next cycle
+      const nextCycle = cycleCount + 1;
+      if ((nextCycle - 1) % (config.athenaCycleInterval || 10) === 0) {
+        queue.push({ name: 'athena', type: 'manager', nextCycle: true });
+      }
+      if ((nextCycle - 1) % (config.apolloCycleInterval || 10) === 0) {
+        queue.push({ name: 'apollo', type: 'manager', nextCycle: true });
+      }
+      queue.push({ name: 'hermes', type: 'manager', nextCycle: true });
+      
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ queue, workers }));
+      return;
+    }
+    
+    // POST /pause
+    if (req.method === 'POST' && path === '/pause') {
+      isPaused = true;
+      saveState();
+      log('⏸️  Paused via API');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, paused: true }));
+      return;
+    }
+    
+    // POST /resume
+    if (req.method === 'POST' && path === '/resume') {
+      isPaused = false;
+      wakeNow = true;
+      saveState();
+      log('▶️  Resumed via API');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, paused: false }));
+      return;
+    }
+    
+    // POST /skip
+    if (req.method === 'POST' && path === '/skip') {
+      if (currentAgentProcess) {
+        log(`⏭️  Skipping ${currentAgentName} via API`);
+        currentAgentProcess.kill('SIGTERM');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, skipped: currentAgentName }));
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: 'No agent running' }));
+      }
+      return;
+    }
+    
+    // POST /reload
+    if (req.method === 'POST' && path === '/reload') {
+      log('🔄 Reload requested via API');
+      pendingReload = true;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, pendingReload: true }));
+      return;
+    }
+    
+    // POST /stop
+    if (req.method === 'POST' && path === '/stop') {
+      log('🛑 Stop requested via API');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, stopping: true }));
+      if (currentAgentProcess) currentAgentProcess.kill('SIGTERM');
+      setTimeout(() => process.exit(0), 500);
+      return;
+    }
+    
+    // 404
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+  });
+  
+  server.listen(CONTROL_PORT, () => {
+    log(`Control API listening on http://localhost:${CONTROL_PORT}`);
+  });
+  
+  return server;
+}
+
 async function main() {
   log('Orchestrator started');
-  
-  // Load saved state (cycle count, agent index)
   loadState();
+  startControlServer();
   
-  // Watch orchestrator.js for changes (hot reload)
   let debounce = null;
   watch(ORCHESTRATOR_PATH, (eventType) => {
     if (eventType === 'change') {
@@ -218,22 +443,43 @@ async function main() {
     }
   });
   
-  // Main loop
   while (true) {
-    const config = await runCycle();
+    // Check pause state
+    while (isPaused) {
+      await sleep(1000);
+    }
     
-    // Check for pending reload
+    await runCycle();
+    
     if (pendingReload) {
       log('⚡ Reloading...');
       process.exit(75);
     }
     
-    log(`Sleeping ${config.cycleIntervalMs / 1000}s...`);
-    await sleep(config.cycleIntervalMs);
+    // Reload config right before sleep to get latest interval
+    const sleepConfig = loadConfig();
+    log(`Sleeping ${sleepConfig.cycleIntervalMs / 1000}s...`);
+    
+    // Interruptible sleep - check every 5s for wake signal
+    let sleptMs = 0;
+    wakeNow = false;
+    sleepUntil = Date.now() + sleepConfig.cycleIntervalMs;
+    while (sleptMs < sleepConfig.cycleIntervalMs && !wakeNow) {
+      await sleep(5000);
+      sleptMs += 5000;
+      // If paused during sleep, wait here
+      while (isPaused && !wakeNow) {
+        await sleep(1000);
+      }
+    }
+    sleepUntil = null;
+    if (wakeNow) {
+      log('⏰ Woke early via API');
+      wakeNow = false;
+    }
   }
 }
 
-// Handle graceful shutdown
 process.on('SIGINT', () => {
   log('Shutting down...');
   if (currentAgentProcess) currentAgentProcess.kill('SIGTERM');

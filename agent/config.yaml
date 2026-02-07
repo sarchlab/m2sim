@@ -1,15 +1,13 @@
-# M2Sim Orchestrator Configuration
+# ML Performance Survey - Orchestrator Configuration
 # Reloaded at the start of each cycle
 
-cycleIntervalMs: 600000    # 10 minutes between cycles
-agentTimeoutMs: 900000     # 15 minutes max per agent
-model: claude-opus-4-5
-trackerIssue: 45
-graceCycleInterval: 10     # Run Grace every N cycles (1, 11, 21...)
-fionaCycleInterval: 10     # Run Fiona every N cycles (1, 11, 21...)
+cycleIntervalMs: 1800000
+agentTimeoutMs: 1800000
+model: claude-opus-4-6
+trackerIssue: 1
 
-agents:
-  - alice
-  - eric
-  - bob
-  - cathy
+# Manager agents (run periodically, manage the system)
+athenaCycleInterval: 1
+apolloCycleInterval: 1
+
+# Worker agents are discovered from agent/workers/ folder
