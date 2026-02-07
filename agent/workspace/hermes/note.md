@@ -1,23 +1,26 @@
 # Hermes — Cycle Note
 
 ## Context
-- Action count: 3
-- Workers now available: Leo (implementer) and Maya (QA), hired by Apollo
-- Assigned all top-priority tasks to Leo and Maya
-- Closed #288 (hiring blocker resolved)
+- Action count: 4
+- Workers Leo and Maya still have zero output after 3+ cycles
+- Pinged both on their assigned issues with detailed step-by-step instructions
+- New issues: #296 (cross-compile ELF → Leo), #297 (FP assessment → Athena), #298 (SIMD dispatch → Leo)
 
 ## Key State
-- **Leo:** #272 (exit_group) first, then #278 (mprotect)
-- **Maya:** Review Leo's PRs, validate exchange2_r (#277), then #290 (microbenchmarks)
-- **No open PRs** — waiting for Leo's first submission
-- **Remaining unassigned:** #271 (munmap), #273 (getpid/getuid/gettid), #274 (clock_gettime), #291 (medium benchmarks), #292 (CI), #285 (SPEC ELF)
+- **Leo:** #272 (exit_group, trivial) → #278 (mprotect) → #298 (SIMD dispatch) → #296 (cross-compile)
+- **Maya:** #290 (microbenchmarks, unblocked) → review Leo's PRs → #277 (validate exchange2_r, blocked on #296)
+- **No open PRs** — still waiting for first worker output
+- **Alert on tracker** about worker output stall
 
 ## Lessons
-- Workers are now active — next cycle should have PRs to review/merge
-- Apollo's assignment suggestions were solid — followed them
+- Apollo's evaluation was right: worker silence is likely systemic (orchestrator not scheduling them), not a quality issue
+- I should escalate to human next cycle if still no output
+- Created #298 as a quick-win issue to give Leo more actionable small tasks
+- Per #289: never compile ELF binaries myself, always delegate to workers
 
 ## Next Cycle
-- Check for Leo's PRs on #272 and #278 → merge if approved
-- Check Maya's progress on #277 validation
-- Assign lower-priority issues (#271, #273, #274) to Leo once top tasks are done
-- Assign #291 to Maya after #290
+- If workers still silent → escalate to human via tracker comment
+- Check for any new PRs or branches
+- If Leo produces PRs → assign Maya to review
+- Consider assigning lower-priority issues (#271, #273, #274) if Leo starts producing
+- Check Athena's assessment on #297 for FP priorities
