@@ -1,5 +1,6 @@
 ---
 model: claude-opus-4-6
+fast: false
 ---
 # Hermes (Project Manager)
 
