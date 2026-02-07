@@ -634,6 +634,32 @@ var _ = Describe("Syscall Handler", func() {
 		})
 	})
 
+	Describe("Mprotect syscall", func() {
+		It("should return success (0) as a no-op", func() {
+			regFile.WriteReg(8, 226)    // SyscallMprotect
+			regFile.WriteReg(0, 0x1000) // addr
+			regFile.WriteReg(1, 4096)   // length
+			regFile.WriteReg(2, 0x3)    // PROT_READ|PROT_WRITE
+
+			result := handler.Handle()
+
+			Expect(result.Exited).To(BeFalse())
+			Expect(regFile.ReadReg(0)).To(Equal(uint64(0)))
+		})
+
+		It("should return success for PROT_NONE", func() {
+			regFile.WriteReg(8, 226)    // SyscallMprotect
+			regFile.WriteReg(0, 0x2000) // addr
+			regFile.WriteReg(1, 8192)   // length
+			regFile.WriteReg(2, 0x0)    // PROT_NONE
+
+			result := handler.Handle()
+
+			Expect(result.Exited).To(BeFalse())
+			Expect(regFile.ReadReg(0)).To(Equal(uint64(0)))
+		})
+	})
+
 	Describe("Fstat syscall", func() {
 		var tempDir string
 
