@@ -366,7 +366,7 @@ app.post('/api/issues/create', async (req, res) => {
 
 "${text}"
 
-SAFETY: First verify you are in the m2sim repo by checking the remote URL or repo name. If not, abort.
+SAFETY: First verify you are in the correct repo (${REPO}) by checking the remote URL. If not, abort.
 
 Create a well-formatted GitHub issue with:
 1. Title format: [Human] -> [Assignee] Description
