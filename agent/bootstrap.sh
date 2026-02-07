@@ -44,6 +44,27 @@ fi
 echo "Removing messages..."
 rm -rf messages/* 2>/dev/null && echo "  Cleared messages/" || mkdir -p messages && echo "  Created empty messages/"
 
+# 6. Create new tracker issue
+echo "Creating new tracker issue..."
+ISSUE_URL=$(gh issue create --title "Agent Tracker" --body "# Agent Tracker
+
+## 📋 Task Queues
+
+_(No workers hired yet — Athena will build the team)_
+
+## 📊 Status
+- **Action count:** 0
+- **Last cycle:** Not started
+")
+ISSUE_NUM=$(echo "$ISSUE_URL" | grep -oE '[0-9]+$')
+echo "  Created issue #$ISSUE_NUM"
+
+# 7. Update config with new issue number
+echo "Updating config.yaml..."
+sed -i '' "s/^trackerIssue:.*/trackerIssue: $ISSUE_NUM/" config.yaml
+echo "  Set trackerIssue: $ISSUE_NUM"
+
 echo ""
 echo "=== Bootstrap complete ==="
+echo "Tracker issue: $ISSUE_URL"
 echo "To start fresh: ./run.sh"
