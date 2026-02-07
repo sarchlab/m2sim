@@ -2,6 +2,6 @@
 cycleIntervalMs: 0
 agentTimeoutMs: 1800000
 model: claude-opus-4-6
-trackerIssue: 294
+trackerIssue: 295
 athenaCycleInterval: 1
 apolloCycleInterval: 1
