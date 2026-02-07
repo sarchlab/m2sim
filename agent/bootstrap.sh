@@ -63,7 +63,15 @@ echo "Updating config.yaml..."
 sed -i '' "s/^trackerIssue:.*/trackerIssue: $ISSUE_NUM/" config.yaml
 echo "  Set trackerIssue: $ISSUE_NUM"
 
-# 8. Recreate necessary folders and files
+# 8. Commit and push config change
+echo "Committing config change..."
+cd ..
+git add agent/config.yaml
+git commit -m "[Bootstrap] Set trackerIssue to $ISSUE_NUM" && echo "  Committed"
+git push && echo "  Pushed to main"
+cd agent
+
+# 9. Recreate necessary folders and files
 echo "Recreating folders and files..."
 mkdir -p workers
 echo "  Created workers/"
