@@ -7,10 +7,9 @@ cd "$(dirname "$0")"
 
 echo "=== M2Sim Agent Bootstrap ==="
 
-# 1. Stop any running processes
-echo "Stopping running processes..."
+# 1. Stop orchestrator (but NOT monitor - user may be running bootstrap from monitor UI)
+echo "Stopping orchestrator..."
 pkill -f "node orchestrator.js" 2>/dev/null && echo "  Killed orchestrator" || echo "  No orchestrator running"
-pkill -f "monitor/node_modules" 2>/dev/null && echo "  Killed monitor" || echo "  No monitor running"
 
 # 2. Remove temporary files
 echo "Removing temporary files..."
