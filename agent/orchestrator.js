@@ -171,11 +171,11 @@ Execute your full cycle as described above. Work autonomously. Complete your tas
     const proc = spawn('claude', [
       '--model', agentModel,
       '--dangerously-skip-permissions',
-      '--print',
+      '--output-format', 'json',
       prompt
     ], {
       cwd: REPO_DIR,
-      stdio: ['ignore', 'ignore', 'ignore']
+      stdio: ['ignore', 'pipe', 'ignore']
     });
 
     currentAgentProcess = proc;
@@ -183,6 +183,12 @@ Execute your full cycle as described above. Work autonomously. Complete your tas
     currentAgentStartTime = Date.now();
     let timedOut = false;
     let timeout = null;
+    let outputBuffer = '';
+
+    // Collect stdout for JSON parsing
+    proc.stdout.on('data', (data) => {
+      outputBuffer += data.toString();
+    });
 
     // Only set timeout if agentTimeoutMs > 0 (0 = never timeout)
     if (config.agentTimeoutMs > 0) {
@@ -213,6 +219,25 @@ Execute your full cycle as described above. Work autonomously. Complete your tas
 The agent exceeded the maximum allowed runtime and was terminated.`);
       }
       currentAgentName = null;
+      
+      // Parse JSON output for usage info
+      try {
+        // Find the last complete JSON object (result line)
+        const lines = outputBuffer.trim().split('\n');
+        for (let i = lines.length - 1; i >= 0; i--) {
+          try {
+            const json = JSON.parse(lines[i]);
+            if (json.type === 'result' && json.usage) {
+              const u = json.usage;
+              const cost = json.total_cost_usd ? `$${json.total_cost_usd.toFixed(4)}` : 'N/A';
+              log(`${agent} done (code ${code}) | tokens: in=${u.input_tokens || 0} out=${u.output_tokens || 0} cache_read=${u.cache_read_input_tokens || 0} | cost: ${cost}`);
+              resolve(code);
+              return;
+            }
+          } catch { /* not valid JSON, continue */ }
+        }
+      } catch { /* ignore parse errors */ }
+      
       log(`${agent} done (code ${code})`);
       resolve(code);
     });
