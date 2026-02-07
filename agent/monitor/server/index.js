@@ -216,6 +216,18 @@ app.post('/api/config', (req, res) => {
     yaml.load(content);
     const configPath = path.join(AGENT_DIR, 'config.yaml');
     fs.writeFileSync(configPath, content);
+    
+    // Commit and push the config change
+    const repoDir = path.resolve(AGENT_DIR, '..');
+    try {
+      execSync('git add agent/config.yaml', { cwd: repoDir, encoding: 'utf-8' });
+      execSync('git commit -m "[Monitor] Update config.yaml"', { cwd: repoDir, encoding: 'utf-8' });
+      execSync('git push', { cwd: repoDir, encoding: 'utf-8' });
+    } catch (gitErr) {
+      // If commit fails (e.g., no changes), that's okay
+      console.log('Git commit/push:', gitErr.message);
+    }
+    
     res.json({ success: true });
   } catch (error) {
     res.status(400).json({ error: `Invalid YAML: ${error.message}` });
