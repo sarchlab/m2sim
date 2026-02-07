@@ -102,6 +102,28 @@ var _ = Describe("Syscall Handler", func() {
 		})
 	})
 
+	Describe("Exit_group syscall", func() {
+		It("should exit with specified code", func() {
+			regFile.WriteReg(8, 94) // SyscallExitGroup
+			regFile.WriteReg(0, 7)  // Exit code
+
+			result := handler.Handle()
+
+			Expect(result.Exited).To(BeTrue())
+			Expect(result.ExitCode).To(Equal(int64(7)))
+		})
+
+		It("should handle zero exit code", func() {
+			regFile.WriteReg(8, 94) // SyscallExitGroup
+			regFile.WriteReg(0, 0)  // Exit code 0
+
+			result := handler.Handle()
+
+			Expect(result.Exited).To(BeTrue())
+			Expect(result.ExitCode).To(Equal(int64(0)))
+		})
+	})
+
 	Describe("Write syscall to stdout", func() {
 		It("should write buffer to stdout", func() {
 			// Store "hello" in memory

@@ -14,8 +14,9 @@ const (
 	SyscallRead   uint64 = 63  // read(fd, buf, count)
 	SyscallWrite  uint64 = 64  // write(fd, buf, count)
 	SyscallFstat  uint64 = 80  // fstat(fd, statbuf)
-	SyscallExit   uint64 = 93  // exit(status)
-	SyscallBrk    uint64 = 214 // brk(addr)
+	SyscallExit      uint64 = 93  // exit(status)
+	SyscallExitGroup uint64 = 94  // exit_group(status)
+	SyscallBrk       uint64 = 214 // brk(addr)
 	SyscallMmap   uint64 = 222 // mmap(addr, length, prot, flags, fd, offset)
 )
 
@@ -177,6 +178,8 @@ func (h *DefaultSyscallHandler) Handle() SyscallResult {
 	case SyscallFstat:
 		return h.handleFstat()
 	case SyscallExit:
+		return h.handleExit()
+	case SyscallExitGroup:
 		return h.handleExit()
 	case SyscallBrk:
 		return h.handleBrk()
