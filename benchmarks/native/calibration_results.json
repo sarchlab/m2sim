@@ -5,99 +5,99 @@
     {
       "benchmark": "arithmetic",
       "description": "20 independent ADDs per iteration (ALU throughput)",
-      "instruction_latency_ns": 0.0845121752522325,
-      "overhead_ms": 1.95736745580115,
-      "r_squared": 0.9999988229822168,
+      "instruction_latency_ns": 0.07715096342751522,
+      "overhead_ms": 2.303360903178008,
+      "r_squared": 0.9994377575610827,
       "data_points": [
         {
           "instructions": 20000000,
-          "time_ms": 3.6375369996272235
+          "time_ms": 4.626467558814006
         },
         {
           "instructions": 40000000,
-          "time_ms": 5.325328775345245
+          "time_ms": 5.298990778909582
         },
         {
           "instructions": 80000000,
-          "time_ms": 8.716856224863376
+          "time_ms": 8.06238888859904
         },
         {
           "instructions": 160000000,
-          "time_ms": 15.482272996450774
+          "time_ms": 14.336749887055097
         },
         {
           "instructions": 320000000,
-          "time_ms": 29.04243044516382
+          "time_ms": 26.83874977972462
         },
         {
           "instructions": 640000000,
-          "time_ms": 56.0251201111694
+          "time_ms": 51.86703244463489
         }
       ]
     },
     {
       "benchmark": "dependency",
       "description": "20 dependent ADDs per iteration (RAW hazards)",
-      "instruction_latency_ns": 0.31083896341552336,
-      "overhead_ms": 2.025789886572037,
-      "r_squared": 0.99999963308008,
+      "instruction_latency_ns": 0.28838124083665195,
+      "overhead_ms": 1.8558707189105992,
+      "r_squared": 0.9999984197553033,
       "data_points": [
         {
           "instructions": 20000000,
-          "time_ms": 8.214333555467116
+          "time_ms": 7.777203553511451
         },
         {
           "instructions": 40000000,
-          "time_ms": 14.419898107816051
+          "time_ms": 13.375263774327728
         },
         {
           "instructions": 80000000,
-          "time_ms": 26.902425777128276
+          "time_ms": 24.850620443531724
         },
         {
           "instructions": 160000000,
-          "time_ms": 51.78672666726116
+          "time_ms": 47.923958554747514
         },
         {
           "instructions": 320000000,
-          "time_ms": 101.56622211313031
+          "time_ms": 94.11171733194755
         },
         {
           "instructions": 640000000,
-          "time_ms": 200.92222700218878
+          "time_ms": 186.45682410957912
         }
       ]
     },
     {
       "benchmark": "branch",
       "description": "5 taken branches per iteration (branch predictor)",
-      "instruction_latency_ns": 0.37242962810330615,
-      "overhead_ms": 1.9855502084648744,
-      "r_squared": 0.9999953038741262,
+      "instruction_latency_ns": 0.3410341153668554,
+      "overhead_ms": 2.2586371464859574,
+      "r_squared": 0.9997886610865474,
       "data_points": [
         {
           "instructions": 5000000,
-          "time_ms": 3.846851888940566
+          "time_ms": 4.39175922171368
         },
         {
           "instructions": 10000000,
-          "time_ms": 5.669310221694307
+          "time_ms": 5.820129888080475
         },
         {
           "instructions": 20000000,
-          "time_ms": 9.404685110591041
+          "time_ms": 8.71789788814365
         },
         {
           "instructions": 40000000,
-          "time_ms": 16.916911994081197
+          "time_ms": 15.62509255664837
         },
         {
           "instructions": 80000000,
-          "time_ms": 31.857851887859095
+          "time_ms": 29.473652667042593
         },
         {
           "instructions": 160000000,
-          "time_ms": 61.53302300016448
+          "time_ms": 56.949036997846434
         }
       ]
     }

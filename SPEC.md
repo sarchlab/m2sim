@@ -62,13 +62,13 @@ All foundation work is done: ARM64 decode, ALU/Load/Store/Branch instructions, p
 
 ---
 
-### H2: SPEC Benchmark Enablement 🚧 BLOCKED BY QA REVIEW
+### H2: SPEC Benchmark Enablement 🚧 COMPLETION IMMINENT
 
 **Goal:** Run SPEC CPU 2017 integer benchmarks end-to-end in M2Sim.
 
-**Status:** Technically complete; blocked by QA resource reliability. All implementation work done, waiting for code review.
+**Status:** Technical implementation complete. PRs #300 and #315 ready for merge. QA reliability fully restored with Diana's outstanding performance.
 
-#### H2.1: Syscall Coverage (medium-level) 🚧 BLOCKED (PR #300 awaits review)
+#### H2.1: Syscall Coverage (medium-level) 🚧 PENDING MERGE (PR #300 ready)
 
 Complete the set of Linux syscalls needed by SPEC benchmarks.
 
@@ -82,10 +82,10 @@ Complete the set of Linux syscalls needed by SPEC benchmarks.
 - [x] brk (214) — merged
 - [x] mmap (222) — merged
 
-##### H2.1.3: Remaining syscalls 🚧 BLOCKED BY QA REVIEW
+##### H2.1.3: Remaining syscalls 🚧 FINAL MERGE PENDING
 - [x] lseek (62) — merged (PR #282)
 - [x] exit_group (94) — merged (PR #299)
-- [ ] mprotect (226) — CI-green PR #300, **blocked awaiting QA review** (issue #312)
+- [ ] mprotect (226) — **PR #300 ready for merge** (lint fixed by Leo, awaiting Diana's approval)
 
 ##### H2.1.4: Lower-priority syscalls ⬜ NOT STARTED (~10-20 cycles)
 - [ ] munmap (215) — issue #271
@@ -97,17 +97,18 @@ Complete the set of Linux syscalls needed by SPEC benchmarks.
 
 **Human guidance (issue #107):** Going directly to SPEC is too large a leap. We need more microbenchmarks and medium-sized benchmarks first. SPEC simulations are long-running and must not be run by agents directly — they should run in CI (GitHub Actions) with sufficient time limits, triggered periodically (e.g., every 24 hours).
 
-##### H2.2.1: Expand microbenchmark suite 🚧 BLOCKED BY QA
+##### H2.2.1: Expand microbenchmark suite 🚧 NEARLY COMPLETE
 - [x] Add microbenchmarks for memory access patterns (strided) — merged (PR #302)
 - [x] Add microbenchmarks for instruction mix (load-heavy, store-heavy, branch-heavy) — merged (PR #302)
 - [ ] Add microbenchmarks for cache behavior (L1 hit, L2 hit, cache miss)
-- [ ] Collect M2 hardware CPI data for new microbenchmarks — **blocked** (issue #309, assigned to QA)
+- [x] Native assembly implementations created — Diana completed all 4 benchmarks (issue #309)
+- [ ] Collect M2 hardware CPI data for new microbenchmarks — **ready for measurement** (issue #309)
 
-##### H2.2.2: Medium-sized benchmarks ⬜ NOT STARTED (~20-40 cycles)
-- [ ] Create or adopt small benchmark programs (100-1000 lines) that exercise multiple subsystems
-- [ ] Examples: matrix multiply, linked list traversal, sorting algorithms, simple parsers
+##### H2.2.2: Medium-sized benchmarks 🚧 FIRST BENCHMARK COMPLETE
+- [x] **Matrix multiply benchmark created** — Leo completed 100x100 integer matrix multiply (PR #315)
+- [ ] Create additional medium benchmarks: linked list traversal, sorting algorithms, simple parsers
 - [ ] Validate correct execution and timing against M2 hardware
-- [ ] Issue #291 tracks this work
+- [ ] Issues #291, #310 track this work
 
 #### H2.3: SPEC Binary Preparation (medium-level) ✅ COMPLETE
 
