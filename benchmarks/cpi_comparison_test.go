@@ -3,7 +3,6 @@ package benchmarks
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 
@@ -14,7 +13,7 @@ import (
 
 // CPIComparison holds CPI data for a single benchmark across modes.
 type CPIComparison struct {
-	Name           string  `json:"name"`
+	Name            string  `json:"name"`
 	FullPipelineCPI float64 `json:"full_pipeline_cpi"`
 	FastTimingCPI   float64 `json:"fast_timing_cpi"`
 	Divergence      float64 `json:"divergence_pct"`
@@ -122,9 +121,9 @@ func TestCPIComparison_FastVsFullPipeline(t *testing.T) {
 
 	// Print the 3 core calibration benchmarks separately
 	coreNames := map[string]bool{
-		"arithmetic_sequential":       true,
-		"dependency_chain":            true,
-		"branch_taken_conditional":    true,
+		"arithmetic_sequential":    true,
+		"dependency_chain":         true,
+		"branch_taken_conditional": true,
 	}
 	t.Log("\nCore calibration benchmarks (mapped to M2 hardware baselines):")
 	for _, c := range comparisons {
@@ -141,7 +140,7 @@ func TestCPIComparison_ThreeWay(t *testing.T) {
 	// M2 hardware CPI baselines (from calibration_results.json, at 3.5 GHz)
 	// CPI = latency_ns * frequency_GHz
 	m2Baselines := map[string]float64{
-		"arithmetic": 0.0845121752522325 * 3.5, // 0.296
+		"arithmetic": 0.0845121752522325 * 3.5,  // 0.296
 		"dependency": 0.31083896341552336 * 3.5, // 1.088
 		"branch":     0.37242962810330615 * 3.5, // 1.304
 	}
@@ -196,8 +195,8 @@ func TestCPIComparison_ThreeWay(t *testing.T) {
 			ftCPI = float64(ftCycles) / float64(ftInstrs)
 		}
 
-		fullErr := errorPct(fullCPI, m2CPI)
-		fastErr := errorPct(ftCPI, m2CPI)
+		fullErr := calculateError(fullCPI, m2CPI)
+		fastErr := calculateError(ftCPI, m2CPI)
 
 		t.Logf("%-15s %10.3f %10.3f %10.3f %11.1f%% %11.1f%%",
 			calibName, m2CPI, fullCPI, ftCPI, fullErr, fastErr)
@@ -221,26 +220,4 @@ func TestCPIComparison_ThreeWay(t *testing.T) {
 	}
 }
 
-// errorPct computes: abs(sim - real) / min(sim, real) * 100
-func errorPct(sim, real float64) float64 {
-	if sim == 0 && real == 0 {
-		return 0
-	}
-	minVal := sim
-	if real < minVal {
-		minVal = real
-	}
-	if minVal == 0 {
-		return 0
-	}
-	diff := sim - real
-	if diff < 0 {
-		diff = -diff
-	}
-	return diff / minVal * 100
-}
 
-func init() {
-	// Suppress unused import warning if fmt is not used elsewhere
-	_ = fmt.Sprintf
-}
