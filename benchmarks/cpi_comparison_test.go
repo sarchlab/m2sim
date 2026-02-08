@@ -219,5 +219,3 @@ func TestCPIComparison_ThreeWay(t *testing.T) {
 		}
 	}
 }
-
-
