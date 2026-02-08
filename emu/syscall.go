@@ -179,8 +179,6 @@ func (h *DefaultSyscallHandler) Handle() SyscallResult {
 		return h.handleFstat()
 	case SyscallExit:
 		return h.handleExit()
-	case SyscallExitGroup:
-		return h.handleExit()
 	case SyscallBrk:
 		return h.handleBrk()
 	case SyscallMmap:
