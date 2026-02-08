@@ -102,7 +102,6 @@ var _ = Describe("Syscall Handler", func() {
 		})
 	})
 
-
 	Describe("Write syscall to stdout", func() {
 		It("should write buffer to stdout", func() {
 			// Store "hello" in memory
