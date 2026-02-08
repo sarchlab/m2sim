@@ -178,15 +178,15 @@ The full pipeline timing simulation is ~30,000x slower than emulation, making it
 - [ ] Compare fast timing CPI vs full timing CPI vs M2 hardware CPI
 - [ ] Clearly label outputs: simulation speed vs virtual (predicted) time (issue #354)
 
-#### H3.3: Parameter Tuning 🚧 UNBLOCKED — READY TO START
+#### H3.3: Parameter Tuning 🚧 IN PROGRESS
 Root cause analysis complete (PR #367). Key tuning targets identified:
-- **Arithmetic (49.3% error):** RAW hazard blocking in `canIssueWith()` at `superscalar.go` — M2 uses register renaming, simulator doesn't
-- **Branch (34.5% error):** `BranchMispredictPenalty=14` in `config.go` but M2 is ~12 cycles; cold-start predictor penalty
+- **Arithmetic (49.3% error):** RAW hazard blocking in `canIssueWith()` at `superscalar.go` — M2 uses register renaming, simulator doesn't. Leo investigated (#370): requires same-cycle forwarding implementation, not a simple config change.
+- **Branch (34.5% error):** ~~`BranchMispredictPenalty=14`~~ Fixed to 12 cycles (PR #372 merged). CI accuracy report running — expect branch error to drop to ~25%.
 - **Dependency (18.9% error):** Near theoretical minimum, low priority
 
 **Work items:**
-- [ ] Fix branch misprediction penalty (14 → 12 cycles)
-- [ ] Reduce RAW hazard over-blocking (model register renaming)
+- [x] Fix branch misprediction penalty (14 → 12 cycles) — PR #372 merged
+- [ ] Reduce RAW hazard over-blocking via same-cycle forwarding (issue #370) — Leo implementing
 - [ ] Multi-scale validation (64x64 → 256x256 matrix multiply)
 - [ ] Target: <20% average error on microbenchmarks + medium benchmarks
 
