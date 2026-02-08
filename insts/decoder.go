@@ -85,7 +85,7 @@ const (
 	// Extract register opcode
 	OpEXTR // Extract register (bitfield from register pair)
 	// System register opcodes
-	OpMRS  // Move from system register
+	OpMRS // Move from system register
 )
 
 // Format represents an instruction encoding format.
@@ -688,7 +688,7 @@ func (d *Decoder) decodeSIMDLoadStore(word uint32, inst *Instruction) {
 // bits [31] = 0, bits [28:24] = 0b01110, bit [21] = 1
 func (d *Decoder) isSIMDThreeSame(word uint32) bool {
 	bit31 := (word >> 31) & 0x1
-	op := (word >> 24) & 0x1F // bits [28:24]
+	op := (word >> 24) & 0x1F   // bits [28:24]
 	bit21 := (word >> 21) & 0x1 // bit 21 must be 1 for three-same
 	return bit31 == 0 && op == 0b01110 && bit21 == 1
 }
@@ -1619,9 +1619,9 @@ func (d *Decoder) decodeCompareBranch(word uint32, inst *Instruction) {
 // DUP (general register): 0 | Q | 001110 | 0 | 0 | 0 | imm5 | 000011 | Rn | Rd
 // bits [31:24] == 0b01001110, bit 21 == 0, bits [15:10] == 0b000011
 func (d *Decoder) isSIMDCopy(word uint32) bool {
-	op := (word >> 24) & 0xFF    // bits [31:24]
-	bit21 := (word >> 21) & 0x1  // bit 21
-	op2 := (word >> 10) & 0x3F   // bits [15:10]
+	op := (word >> 24) & 0xFF   // bits [31:24]
+	bit21 := (word >> 21) & 0x1 // bit 21
+	op2 := (word >> 10) & 0x3F  // bits [15:10]
 	return op == 0b01001110 && bit21 == 0 && op2 == 0b000011
 }
 
@@ -1636,14 +1636,14 @@ func (d *Decoder) decodeSIMDCopy(word uint32, inst *Instruction) {
 	inst.IsSIMD = true
 	inst.Op = OpDUP
 
-	q := (word >> 30) & 0x1       // bit 30: 0=64-bit, 1=128-bit
-	imm5 := (word >> 16) & 0x1F   // bits [20:16]
-	rn := (word >> 5) & 0x1F      // bits [9:5]
-	rd := word & 0x1F             // bits [4:0]
+	q := (word >> 30) & 0x1     // bit 30: 0=64-bit, 1=128-bit
+	imm5 := (word >> 16) & 0x1F // bits [20:16]
+	rn := (word >> 5) & 0x1F    // bits [9:5]
+	rd := word & 0x1F           // bits [4:0]
 
-	inst.Rd = uint8(rd)    // SIMD destination register
-	inst.Rn = uint8(rn)    // General purpose source register
-	inst.Is64Bit = q == 1  // 128-bit (Q) vs 64-bit (D)
+	inst.Rd = uint8(rd)   // SIMD destination register
+	inst.Rn = uint8(rn)   // General purpose source register
+	inst.Is64Bit = q == 1 // 128-bit (Q) vs 64-bit (D)
 
 	// Decode element size from imm5
 	// imm5[0]: if 1, then 8-bit elements (byte)
@@ -1656,7 +1656,7 @@ func (d *Decoder) decodeSIMDCopy(word uint32, inst *Instruction) {
 		if q == 1 {
 			inst.Arrangement = Arr16B // 16 bytes for Q register
 		} else {
-			inst.Arrangement = Arr8B  // 8 bytes for D register
+			inst.Arrangement = Arr8B // 8 bytes for D register
 		}
 	} else if imm5&0x2 != 0 {
 		// 16-bit elements (halfword)
@@ -1694,7 +1694,7 @@ func (d *Decoder) decodeSIMDCopy(word uint32, inst *Instruction) {
 // bits [31:21] == 0b11010101001 and L=1 for MRS (0xD53)
 func (d *Decoder) isSystemReg(word uint32) bool {
 	op := (word >> 20) & 0xFFF // bits [31:20]
-	return op == 0xD53 // MRS has L=1, so 0xD53 instead of 0xD51
+	return op == 0xD53         // MRS has L=1, so 0xD53 instead of 0xD51
 }
 
 // decodeSystemReg decodes system register instructions (MRS).
@@ -1705,8 +1705,8 @@ func (d *Decoder) decodeSystemReg(word uint32, inst *Instruction) {
 	inst.Is64Bit = true // MRS always operates on 64-bit X registers
 
 	// Extract fields
-	rt := word & 0x1F                // bits [4:0] - destination register
-	sysreg := (word >> 5) & 0x7FFF   // bits [19:5] - system register encoding
+	rt := word & 0x1F              // bits [4:0] - destination register
+	sysreg := (word >> 5) & 0x7FFF // bits [19:5] - system register encoding
 
 	inst.Rd = uint8(rt)
 	inst.SysReg = uint16(sysreg)
