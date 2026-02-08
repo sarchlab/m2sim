@@ -23,10 +23,9 @@ jobs:
           go-version: '1.25'
 
       - name: Run matmul calibration
+        continue-on-error: true
         run: |
           go test -v -run TestMatmulCalibration -timeout 5m ./benchmarks/ 2>&1 | tee matmul_output.txt
-          # Allow test to fail (calibration data is still captured)
-          exit 0
 
       - name: Post summary
         if: always()
