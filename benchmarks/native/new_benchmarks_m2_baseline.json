@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "date": "2026-02-07",
+    "hardware": "Apple M2 (P-core @ 3.5 GHz)",
+    "methodology": "Direct timing with outlier removal",
+    "benchmarks_measured": 1
+  },
+  "baselines": [
+    {
+      "name": "memory_strided",
+      "description": "10 store/load pairs with stride-4 access (strided memory pattern)",
+      "instructions_per_iteration": 20,
+      "latency_ns_per_instruction": 86630.75770108172,
+      "cpi_at_3_5_ghz": 303.207651953786,
+      "ipc_at_3_5_ghz": 0.003298069799875687,
+      "mean_time_ms": 1.7326151540216346,
+      "std_time_ms": 0.03888341161446382,
+      "runs_used": 13
+    }
+  ]
+}

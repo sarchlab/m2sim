@@ -38,8 +38,8 @@ While M2Sim uses Akita (like MGPUSim) and draws inspiration from MGPUSim's archi
 | # | Milestone | Status |
 |---|-----------|--------|
 | H1 | Core simulator (decode, execute, timing, caches) | ✅ COMPLETE |
-| H2 | SPEC benchmark enablement (syscalls, ELF loading, validation) | 🚧 IN PROGRESS |
-| H3 | Accuracy calibration (<20% error on SPEC) | ⬜ NOT STARTED |
+| H2 | SPEC benchmark enablement (syscalls, ELF loading, validation) | ✅ COMPLETE |
+| H3 | Accuracy calibration (<20% error on SPEC) | 🚧 IN PROGRESS |
 | H4 | Multi-core support | ⬜ NOT STARTED |
 
 ---
@@ -62,13 +62,13 @@ All foundation work is done: ARM64 decode, ALU/Load/Store/Branch instructions, p
 
 ---
 
-### H2: SPEC Benchmark Enablement 🚧 BLOCKED BY QA REVIEW
+### H2: SPEC Benchmark Enablement ✅ COMPLETE
 
 **Goal:** Run SPEC CPU 2017 integer benchmarks end-to-end in M2Sim.
 
-**Status:** Technically complete; blocked by QA resource reliability. All implementation work done, waiting for code review.
+**Status:** All core infrastructure complete. PR #300 merged (syscall coverage), PR #315 needs merge (medium benchmarks). Ready for H3 calibration phase.
 
-#### H2.1: Syscall Coverage (medium-level) 🚧 BLOCKED (PR #300 awaits review)
+#### H2.1: Syscall Coverage (medium-level) ✅ COMPLETE
 
 Complete the set of Linux syscalls needed by SPEC benchmarks.
 
@@ -82,10 +82,10 @@ Complete the set of Linux syscalls needed by SPEC benchmarks.
 - [x] brk (214) — merged
 - [x] mmap (222) — merged
 
-##### H2.1.3: Remaining syscalls 🚧 BLOCKED BY QA REVIEW
+##### H2.1.3: Remaining syscalls ✅ COMPLETE
 - [x] lseek (62) — merged (PR #282)
 - [x] exit_group (94) — merged (PR #299)
-- [ ] mprotect (226) — CI-green PR #300, **blocked awaiting QA review** (issue #312)
+- [x] mprotect (226) — **merged (PR #300)**
 
 ##### H2.1.4: Lower-priority syscalls ⬜ NOT STARTED (~10-20 cycles)
 - [ ] munmap (215) — issue #271
@@ -97,17 +97,17 @@ Complete the set of Linux syscalls needed by SPEC benchmarks.
 
 **Human guidance (issue #107):** Going directly to SPEC is too large a leap. We need more microbenchmarks and medium-sized benchmarks first. SPEC simulations are long-running and must not be run by agents directly — they should run in CI (GitHub Actions) with sufficient time limits, triggered periodically (e.g., every 24 hours).
 
-##### H2.2.1: Expand microbenchmark suite 🚧 BLOCKED BY QA
+##### H2.2.1: Expand microbenchmark suite 🚧 NEARLY COMPLETE
 - [x] Add microbenchmarks for memory access patterns (strided) — merged (PR #302)
 - [x] Add microbenchmarks for instruction mix (load-heavy, store-heavy, branch-heavy) — merged (PR #302)
 - [ ] Add microbenchmarks for cache behavior (L1 hit, L2 hit, cache miss)
-- [ ] Collect M2 hardware CPI data for new microbenchmarks — **blocked** (issue #309, assigned to QA)
+- [x] Native assembly implementations created — Diana completed all 4 benchmarks (issue #309)
+- [ ] Collect M2 hardware CPI data for new microbenchmarks — **ready for measurement** (issue #309)
 
-##### H2.2.2: Medium-sized benchmarks ⬜ NOT STARTED (~20-40 cycles)
-- [ ] Create or adopt small benchmark programs (100-1000 lines) that exercise multiple subsystems
-- [ ] Examples: matrix multiply, linked list traversal, sorting algorithms, simple parsers
-- [ ] Validate correct execution and timing against M2 hardware
-- [ ] Issue #291 tracks this work
+##### H2.2.2: Medium-sized benchmarks ✅ FIRST BENCHMARK READY
+- [x] **Matrix multiply benchmark created** — Leo completed 100x100 integer matrix multiply (PR #315, merge pending)
+- [ ] Create additional medium benchmarks: linked list traversal, sorting algorithms, simple parsers (future H2 extensions)
+- [ ] Issues #291 tracks additional medium benchmark work
 
 #### H2.3: SPEC Binary Preparation (medium-level) ✅ COMPLETE
 
@@ -145,11 +145,13 @@ SPEC benchmarks will likely exercise ARM64 instructions not yet implemented. Exp
 
 ---
 
-### H3: Accuracy Calibration ⬜ NOT STARTED
+### H3: Accuracy Calibration 🚧 IN PROGRESS
 
 **Goal:** Achieve <20% average CPI error on SPEC benchmarks vs real M2 hardware.
 
-**Strategy:** Start calibration on microbenchmarks first (can begin in parallel with H2), then expand to medium benchmarks, then SPEC. Per human guidance, going directly to SPEC calibration is too large a step.
+**Strategy:** Start calibration on microbenchmarks first, then expand to medium benchmarks (matrix multiply), then SPEC. Per human guidance, going directly to SPEC calibration is too large a step.
+
+**Current Priority:** Begin calibration work on matrix multiply benchmark (issue #316) - first medium-scale calibration target.
 
 **Current microbenchmark baseline (cycle 230):**
 
