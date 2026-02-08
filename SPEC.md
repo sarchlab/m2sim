@@ -178,8 +178,9 @@ The full pipeline timing simulation is ~30,000x slower than emulation, making it
 - [x] Profile tool merged (`cmd/profile/main.go` — PR #361)
 - [x] CI blockers fixed (PR #368 — gofmt + acceptance test timeout)
 - [x] Root cause analysis merged (PR #367) — identifies arithmetic over-blocking as dominant error source
-- [ ] CPI comparison framework (PR #376) — lint failure needs fix, then merge
-- [ ] Run matrix multiply with fast timing via GitHub Actions, collect CPI data (issue #359)
+- [x] CPI comparison framework merged (PR #376)
+- [ ] Run matrix multiply with fast timing via GitHub Actions, collect CPI data (issue #359, PR #379 open)
+- [ ] Fix fast timing decoder: add MADD/UBFM instruction support (issue #380) — blocks matmul CPI data
 - [ ] Clearly label outputs: simulation speed vs virtual (predicted) time (issue #354)
 
 **Key insight from CPI comparison (PR #376):** Fast timing is closer to M2 hardware on branch (4.3% error) and dependency (8.8% error) than the full pipeline (22.7% and 10.3%), confirming that the full pipeline's RAW hazard over-blocking is the primary accuracy bottleneck.
@@ -193,8 +194,8 @@ Root cause analysis complete (PR #367 merged). Confirmed accuracy after branch p
 **Work items:**
 - [x] Fix branch misprediction penalty (14 → 12 cycles) — PR #372 merged
 - [x] Root cause analysis with tuning recommendations — PR #367 merged
-- [ ] **Reduce RAW hazard over-blocking via same-cycle forwarding (issue #370) — Leo implementing, HIGHEST PRIORITY**
-- [ ] Merge CPI comparison framework (PR #376) after lint fix
+- [ ] **Reduce RAW hazard over-blocking via same-cycle forwarding (issue #370) — HIGHEST PRIORITY, detailed impl guide posted**
+- [x] Merge CPI comparison framework (PR #376) — merged
 - [ ] Multi-scale validation (64x64 → 256x256 matrix multiply)
 - [ ] Target: <20% average error on microbenchmarks + medium benchmarks
 
