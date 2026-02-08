@@ -109,22 +109,31 @@ func canDualIssue(first, second *IDEXRegister) bool {
 		return false
 	}
 
-	// Check for RAW hazard: second reads register that first writes
+	// Check for RAW hazard: second reads register that first writes.
+	// Allow co-issue when the producer is a non-memory ALU op, since the
+	// execute stage already has forwarding paths that provide the result
+	// in the same cycle. Load results are not available until after MEM,
+	// so load-dependent co-issue is still blocked.
 	if first.RegWrite && first.Rd != 31 {
+		hasRAW := false
 		// Second instruction uses first's destination as source
 		if second.Rn == first.Rd && first.Rd != 31 {
-			return false
+			hasRAW = true
 		}
 		// Only check Rm for register-format instructions.
 		// Immediate-format instructions (like ADD Xd, Xn, #imm) don't use Rm,
 		// but Rm defaults to 0, causing false RAW hazards when first.Rd == 0.
 		if second.Inst != nil && second.Inst.Format == insts.FormatDPReg {
 			if second.Rm == first.Rd && first.Rd != 31 {
-				return false
+				hasRAW = true
 			}
 		}
 		// For stores, the value register might also conflict
 		if second.MemWrite && second.Inst != nil && second.Inst.Rd == first.Rd {
+			hasRAW = true
+		}
+
+		if hasRAW && first.MemRead {
 			return false
 		}
 	}
@@ -1080,19 +1089,26 @@ func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 			memOpCount++
 		}
 
-		// Check for RAW hazard: new reads register that prev writes
+		// Check for RAW hazard: new reads register that prev writes.
+		// Allow co-issue when the producer is a non-memory ALU op, since
+		// forwarding paths provide the result in the same cycle.
 		if prev.RegWrite && prev.Rd != 31 {
+			hasRAW := false
 			if newInst.Rn == prev.Rd {
-				return false
+				hasRAW = true
 			}
 			// Only check Rm for register-format instructions
 			if newInst.Inst != nil && newInst.Inst.Format == insts.FormatDPReg {
 				if newInst.Rm == prev.Rd {
-					return false
+					hasRAW = true
 				}
 			}
 			// For stores, the value register might also conflict
 			if newInst.MemWrite && newInst.Inst != nil && newInst.Inst.Rd == prev.Rd {
+				hasRAW = true
+			}
+
+			if hasRAW && prev.MemRead {
 				return false
 			}
 		}
