@@ -12,6 +12,9 @@ import (
 // TestMatrixMultiplyBenchmark tests the matrix multiply benchmark execution.
 // Now enabled after implementing DUP SIMD instruction and MRS system instruction support.
 func TestMatrixMultiplyBenchmark(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping long-running matrix multiply benchmark in short mode")
+	}
 
 	// Load the matrix multiply benchmark
 	prog, err := loader.Load("medium/matmul")
