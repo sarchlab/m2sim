@@ -66,9 +66,9 @@ All foundation work is done: ARM64 decode, ALU/Load/Store/Branch instructions, p
 
 **Goal:** Run SPEC CPU 2017 integer benchmarks end-to-end in M2Sim.
 
-**Status:** All core infrastructure complete. PR #300 merged (syscall coverage), PR #315 needs lint fix (medium benchmarks). Ready for H3 calibration phase.
+**Status:** All core infrastructure complete. PR #300 merged (syscall coverage), PR #315 needs merge (medium benchmarks). Ready for H3 calibration phase.
 
-#### H2.1: Syscall Coverage (medium-level) 🚧 PENDING MERGE (PR #300 ready)
+#### H2.1: Syscall Coverage (medium-level) ✅ COMPLETE
 
 Complete the set of Linux syscalls needed by SPEC benchmarks.
 
@@ -105,7 +105,7 @@ Complete the set of Linux syscalls needed by SPEC benchmarks.
 - [ ] Collect M2 hardware CPI data for new microbenchmarks — **ready for measurement** (issue #309)
 
 ##### H2.2.2: Medium-sized benchmarks ✅ FIRST BENCHMARK READY
-- [x] **Matrix multiply benchmark created** — Leo completed 100x100 integer matrix multiply (PR #315, lint fix pending)
+- [x] **Matrix multiply benchmark created** — Leo completed 100x100 integer matrix multiply (PR #315, merge pending)
 - [ ] Create additional medium benchmarks: linked list traversal, sorting algorithms, simple parsers (future H2 extensions)
 - [ ] Issues #291 tracks additional medium benchmark work
 
