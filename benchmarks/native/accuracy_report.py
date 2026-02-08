@@ -111,7 +111,7 @@ def get_simulator_cpi_for_benchmarks(repo_root: Path) -> dict:
     name_mapping = {
         'arithmetic_sequential': 'arithmetic',
         'dependency_chain': 'dependency',
-        'branch_taken': 'branch',
+        'branch_taken_conditional': 'branch',
     }
     
     # Fallback CPI values if test can't run
