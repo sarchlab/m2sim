@@ -110,13 +110,14 @@ func canDualIssue(first, second *IDEXRegister) bool {
 	}
 
 	// Check for RAW hazard: second reads register that first writes.
-	// Allow co-issue when the producer is a non-memory ALU op, since the
-	// execute stage already has forwarding paths that provide the result
-	// in the same cycle. Load results are not available until after MEM,
-	// so load-dependent co-issue is still blocked.
+	// Allow co-issue when the producer is a non-memory ALU op AND the
+	// dependency is on Rn/Rm (which have forwarding paths). Block if:
+	// - Producer is a load (result not available until MEM stage)
+	// - Consumer is a store whose value register depends on producer
+	//   (store value path doesn't support same-cycle forwarding)
 	if first.RegWrite && first.Rd != 31 {
 		hasRAW := false
-		// Second instruction uses first's destination as source
+		// Second instruction uses first's destination as source (Rn/Rm)
 		if second.Rn == first.Rd && first.Rd != 31 {
 			hasRAW = true
 		}
@@ -128,9 +129,11 @@ func canDualIssue(first, second *IDEXRegister) bool {
 				hasRAW = true
 			}
 		}
-		// For stores, the value register might also conflict
+		// For stores, the value register (Inst.Rd) is read through a
+		// separate path that does NOT support same-cycle forwarding.
+		// Always block co-issue for this dependency.
 		if second.MemWrite && second.Inst != nil && second.Inst.Rd == first.Rd {
-			hasRAW = true
+			return false
 		}
 
 		if hasRAW && first.MemRead {
@@ -1090,8 +1093,11 @@ func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 		}
 
 		// Check for RAW hazard: new reads register that prev writes.
-		// Allow co-issue when the producer is a non-memory ALU op, since
-		// forwarding paths provide the result in the same cycle.
+		// Allow co-issue when the producer is a non-memory ALU op AND the
+		// dependency is on Rn/Rm (which have forwarding paths). Block if:
+		// - Producer is a load (result not available until MEM stage)
+		// - Consumer is a store whose value register depends on producer
+		//   (store value path doesn't support same-cycle forwarding)
 		if prev.RegWrite && prev.Rd != 31 {
 			hasRAW := false
 			if newInst.Rn == prev.Rd {
@@ -1103,9 +1109,11 @@ func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 					hasRAW = true
 				}
 			}
-			// For stores, the value register might also conflict
+			// For stores, the value register (Inst.Rd) is read through a
+			// separate path that does NOT support same-cycle forwarding.
+			// Always block co-issue for this dependency.
 			if newInst.MemWrite && newInst.Inst != nil && newInst.Inst.Rd == prev.Rd {
-				hasRAW = true
+				return false
 			}
 
 			if hasRAW && prev.MemRead {
