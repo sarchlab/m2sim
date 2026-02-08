@@ -1,0 +1,58 @@
+name: Matmul Calibration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  matmul-calibration:
+    name: Fast Timing Matrix Multiply CPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Run matmul calibration
+        continue-on-error: true
+        run: |
+          go test -v -run TestMatmulCalibration -timeout 5m ./benchmarks/ 2>&1 | tee matmul_output.txt
+
+      - name: Post summary
+        if: always()
+        run: |
+          echo "## Matrix Multiply Fast Timing Calibration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f benchmarks/matmul_calibration_results.json ]; then
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat benchmarks/matmul_calibration_results.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No results JSON produced." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Output" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -E "(Benchmark:|Mode:|Instructions:|Cycles:|CPI:|Exit code|Exit code mismatch)" matmul_output.txt >> $GITHUB_STEP_SUMMARY || echo "No calibration output found" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matmul-calibration
+          path: |
+            benchmarks/matmul_calibration_results.json
+            matmul_output.txt
+          retention-days: 90
