@@ -170,10 +170,12 @@ SPEC benchmarks will likely exercise ARM64 instructions not yet implemented. Exp
 The full pipeline timing simulation is ~30,000x slower than emulation, making iterative calibration impractical. A "fast timing" mode was developed locally (unmerged) to approximate cycle counts without full pipeline simulation.
 
 **Status:**
-- [x] Fast timing prototype created (`timing/pipeline/fast_timing.go` — local, not yet in a PR)
+- [x] Fast timing prototype created (`timing/pipeline/fast_timing.go`)
 - [x] Instruction limit support added
-- [ ] **Submit fast timing as PR and get it merged** (blocking all calibration work)
-- [ ] Run matrix multiply with fast timing, collect CPI data
+- [x] Fast timing PR submitted (PR #361)
+- [ ] **Fix CI on main: gofmt lint failure (#365) + acceptance test timeout (#363)** — blocking all merges
+- [ ] Merge fast timing PR #361 after CI is green
+- [ ] Run matrix multiply with fast timing via GitHub Actions, collect CPI data
 - [ ] Compare fast timing CPI vs full timing CPI vs M2 hardware CPI
 - [ ] Clearly label outputs: simulation speed vs virtual (predicted) time (issue #354)
 
