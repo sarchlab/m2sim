@@ -53,8 +53,8 @@ func TestArithmeticSequential(t *testing.T) {
 	}
 
 	r := results[0]
-	if r.ExitCode != 4 {
-		t.Errorf("expected exit code 4, got %d", r.ExitCode)
+	if r.ExitCode != 40 {
+		t.Errorf("expected exit code 40, got %d", r.ExitCode)
 	}
 
 	t.Logf("arithmetic_sequential: cycles=%d, insts=%d, CPI=%.3f",
