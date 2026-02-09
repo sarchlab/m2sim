@@ -340,6 +340,9 @@ type TertiaryIFIDRegister struct {
 	Valid           bool
 	PC              uint64
 	InstructionWord uint32
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // TertiaryIDEXRegister holds the third decoded instruction for 4-wide issue.
@@ -400,6 +403,9 @@ func (r *TertiaryIFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the tertiary ID/EX register.
@@ -522,6 +528,9 @@ type QuaternaryIFIDRegister struct {
 	Valid           bool
 	PC              uint64
 	InstructionWord uint32
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // QuaternaryIDEXRegister holds the fourth decoded instruction for 4-wide issue.
@@ -582,6 +591,9 @@ func (r *QuaternaryIFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the quaternary ID/EX register.
@@ -704,6 +716,9 @@ type QuinaryIFIDRegister struct {
 	Valid           bool
 	PC              uint64
 	InstructionWord uint32
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // QuinaryIDEXRegister holds the decoded instruction for wide issue.
@@ -764,6 +779,9 @@ func (r *QuinaryIFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the quinary ID/EX register.
@@ -884,6 +902,9 @@ type SenaryIFIDRegister struct {
 	Valid           bool
 	PC              uint64
 	InstructionWord uint32
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // SenaryIDEXRegister holds the decoded instruction for wide issue.
@@ -944,6 +965,9 @@ func (r *SenaryIFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the senary ID/EX register.
@@ -1255,6 +1279,9 @@ type SeptenaryIFIDRegister struct {
 	Valid           bool
 	PC              uint64
 	InstructionWord uint32
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // SeptenaryIDEXRegister holds the decoded instruction for wide issue.
@@ -1315,6 +1342,9 @@ func (r *SeptenaryIFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the septenary ID/EX register.
@@ -1458,6 +1488,9 @@ type OctonaryIFIDRegister struct {
 	Valid           bool
 	PC              uint64
 	InstructionWord uint32
+	PredictedTaken  bool
+	PredictedTarget uint64
+	EarlyResolved   bool
 }
 
 // OctonaryIDEXRegister holds the decoded instruction for wide issue.
@@ -1518,6 +1551,9 @@ func (r *OctonaryIFIDRegister) Clear() {
 	r.Valid = false
 	r.PC = 0
 	r.InstructionWord = 0
+	r.PredictedTaken = false
+	r.PredictedTarget = 0
+	r.EarlyResolved = false
 }
 
 // Clear resets the octonary ID/EX register.

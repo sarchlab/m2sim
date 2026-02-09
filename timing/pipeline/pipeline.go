@@ -2003,19 +2003,22 @@ func (p *Pipeline) tickQuadIssue() {
 		if p.ifid2.Valid {
 			decResult2 := p.decodeStage.Decode(p.ifid2.InstructionWord, p.ifid2.PC)
 			tempIDEX2 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid2.PC,
-				Inst:     decResult2.Inst,
-				RnValue:  decResult2.RnValue,
-				RmValue:  decResult2.RmValue,
-				Rd:       decResult2.Rd,
-				Rn:       decResult2.Rn,
-				Rm:       decResult2.Rm,
-				MemRead:  decResult2.MemRead,
-				MemWrite: decResult2.MemWrite,
-				RegWrite: decResult2.RegWrite,
-				MemToReg: decResult2.MemToReg,
-				IsBranch: decResult2.IsBranch,
+				Valid:           true,
+				PC:              p.ifid2.PC,
+				Inst:            decResult2.Inst,
+				RnValue:         decResult2.RnValue,
+				RmValue:         decResult2.RmValue,
+				Rd:              decResult2.Rd,
+				Rn:              decResult2.Rn,
+				Rm:              decResult2.Rm,
+				MemRead:         decResult2.MemRead,
+				MemWrite:        decResult2.MemWrite,
+				RegWrite:        decResult2.RegWrite,
+				MemToReg:        decResult2.MemToReg,
+				IsBranch:        decResult2.IsBranch,
+				PredictedTaken:  p.ifid2.PredictedTaken,
+				PredictedTarget: p.ifid2.PredictedTarget,
+				EarlyResolved:   p.ifid2.EarlyResolved,
 			}
 
 			if canIssueWith(&tempIDEX2, issuedInsts) {
@@ -2028,19 +2031,22 @@ func (p *Pipeline) tickQuadIssue() {
 		if p.ifid3.Valid && nextIDEX2.Valid {
 			decResult3 := p.decodeStage.Decode(p.ifid3.InstructionWord, p.ifid3.PC)
 			tempIDEX3 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid3.PC,
-				Inst:     decResult3.Inst,
-				RnValue:  decResult3.RnValue,
-				RmValue:  decResult3.RmValue,
-				Rd:       decResult3.Rd,
-				Rn:       decResult3.Rn,
-				Rm:       decResult3.Rm,
-				MemRead:  decResult3.MemRead,
-				MemWrite: decResult3.MemWrite,
-				RegWrite: decResult3.RegWrite,
-				MemToReg: decResult3.MemToReg,
-				IsBranch: decResult3.IsBranch,
+				Valid:           true,
+				PC:              p.ifid3.PC,
+				Inst:            decResult3.Inst,
+				RnValue:         decResult3.RnValue,
+				RmValue:         decResult3.RmValue,
+				Rd:              decResult3.Rd,
+				Rn:              decResult3.Rn,
+				Rm:              decResult3.Rm,
+				MemRead:         decResult3.MemRead,
+				MemWrite:        decResult3.MemWrite,
+				RegWrite:        decResult3.RegWrite,
+				MemToReg:        decResult3.MemToReg,
+				IsBranch:        decResult3.IsBranch,
+				PredictedTaken:  p.ifid3.PredictedTaken,
+				PredictedTarget: p.ifid3.PredictedTarget,
+				EarlyResolved:   p.ifid3.EarlyResolved,
 			}
 
 			if canIssueWith(&tempIDEX3, issuedInsts) {
@@ -2053,19 +2059,22 @@ func (p *Pipeline) tickQuadIssue() {
 		if p.ifid4.Valid && nextIDEX3.Valid {
 			decResult4 := p.decodeStage.Decode(p.ifid4.InstructionWord, p.ifid4.PC)
 			tempIDEX4 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid4.PC,
-				Inst:     decResult4.Inst,
-				RnValue:  decResult4.RnValue,
-				RmValue:  decResult4.RmValue,
-				Rd:       decResult4.Rd,
-				Rn:       decResult4.Rn,
-				Rm:       decResult4.Rm,
-				MemRead:  decResult4.MemRead,
-				MemWrite: decResult4.MemWrite,
-				RegWrite: decResult4.RegWrite,
-				MemToReg: decResult4.MemToReg,
-				IsBranch: decResult4.IsBranch,
+				Valid:           true,
+				PC:              p.ifid4.PC,
+				Inst:            decResult4.Inst,
+				RnValue:         decResult4.RnValue,
+				RmValue:         decResult4.RmValue,
+				Rd:              decResult4.Rd,
+				Rn:              decResult4.Rn,
+				Rm:              decResult4.Rm,
+				MemRead:         decResult4.MemRead,
+				MemWrite:        decResult4.MemWrite,
+				RegWrite:        decResult4.RegWrite,
+				MemToReg:        decResult4.MemToReg,
+				IsBranch:        decResult4.IsBranch,
+				PredictedTaken:  p.ifid4.PredictedTaken,
+				PredictedTarget: p.ifid4.PredictedTarget,
+				EarlyResolved:   p.ifid4.EarlyResolved,
 			}
 
 			if canIssueWith(&tempIDEX4, issuedInsts) {
@@ -2142,12 +2151,28 @@ func (p *Pipeline) tickQuadIssue() {
 					fetchPC = pred.Target
 					branchPredictedTaken = true
 				}
-			case 1:
-				nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 2:
-				nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 3:
-				nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
+			default:
+				isUncondBranch, uncondTarget := isUnconditionalBranch(pending.Word, pending.PC)
+				pred := p.branchPredictor.Predict(pending.PC)
+				earlyResolved := false
+				if isUncondBranch {
+					pred.Taken = true
+					pred.Target = uncondTarget
+					pred.TargetKnown = true
+					earlyResolved = true
+				}
+				switch slotIdx {
+				case 1:
+					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 2:
+					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 3:
+					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				}
+				if pred.Taken && pred.TargetKnown {
+					fetchPC = pred.Target
+					branchPredictedTaken = true
+				}
 			}
 			slotIdx++
 		}
@@ -2210,13 +2235,27 @@ func (p *Pipeline) tickQuadIssue() {
 					continue
 				}
 			} else {
+				isUncondBranch, uncondTarget := isUnconditionalBranch(word, fetchPC)
+				pred := p.branchPredictor.Predict(fetchPC)
+				earlyResolved := false
+				if isUncondBranch {
+					pred.Taken = true
+					pred.Target = uncondTarget
+					pred.TargetKnown = true
+					earlyResolved = true
+				}
 				switch slotIdx {
 				case 1:
-					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 2:
-					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 3:
-					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				}
+				if pred.Taken && pred.TargetKnown {
+					fetchPC = pred.Target
+					slotIdx++
+					continue
 				}
 			}
 			fetchPC += 4
@@ -3157,19 +3196,22 @@ func (p *Pipeline) tickSextupleIssue() {
 		if p.ifid2.Valid && !ifid2ConsumedByFusion {
 			decResult2 := p.decodeStage.Decode(p.ifid2.InstructionWord, p.ifid2.PC)
 			tempIDEX2 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid2.PC,
-				Inst:     decResult2.Inst,
-				RnValue:  decResult2.RnValue,
-				RmValue:  decResult2.RmValue,
-				Rd:       decResult2.Rd,
-				Rn:       decResult2.Rn,
-				Rm:       decResult2.Rm,
-				MemRead:  decResult2.MemRead,
-				MemWrite: decResult2.MemWrite,
-				RegWrite: decResult2.RegWrite,
-				MemToReg: decResult2.MemToReg,
-				IsBranch: decResult2.IsBranch,
+				Valid:           true,
+				PC:              p.ifid2.PC,
+				Inst:            decResult2.Inst,
+				RnValue:         decResult2.RnValue,
+				RmValue:         decResult2.RmValue,
+				Rd:              decResult2.Rd,
+				Rn:              decResult2.Rn,
+				Rm:              decResult2.Rm,
+				MemRead:         decResult2.MemRead,
+				MemWrite:        decResult2.MemWrite,
+				RegWrite:        decResult2.RegWrite,
+				MemToReg:        decResult2.MemToReg,
+				IsBranch:        decResult2.IsBranch,
+				PredictedTaken:  p.ifid2.PredictedTaken,
+				PredictedTarget: p.ifid2.PredictedTarget,
+				EarlyResolved:   p.ifid2.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX2, issuedInsts) {
 				nextIDEX2.fromIDEX(&tempIDEX2)
@@ -3181,19 +3223,22 @@ func (p *Pipeline) tickSextupleIssue() {
 		if p.ifid3.Valid && nextIDEX2.Valid {
 			decResult3 := p.decodeStage.Decode(p.ifid3.InstructionWord, p.ifid3.PC)
 			tempIDEX3 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid3.PC,
-				Inst:     decResult3.Inst,
-				RnValue:  decResult3.RnValue,
-				RmValue:  decResult3.RmValue,
-				Rd:       decResult3.Rd,
-				Rn:       decResult3.Rn,
-				Rm:       decResult3.Rm,
-				MemRead:  decResult3.MemRead,
-				MemWrite: decResult3.MemWrite,
-				RegWrite: decResult3.RegWrite,
-				MemToReg: decResult3.MemToReg,
-				IsBranch: decResult3.IsBranch,
+				Valid:           true,
+				PC:              p.ifid3.PC,
+				Inst:            decResult3.Inst,
+				RnValue:         decResult3.RnValue,
+				RmValue:         decResult3.RmValue,
+				Rd:              decResult3.Rd,
+				Rn:              decResult3.Rn,
+				Rm:              decResult3.Rm,
+				MemRead:         decResult3.MemRead,
+				MemWrite:        decResult3.MemWrite,
+				RegWrite:        decResult3.RegWrite,
+				MemToReg:        decResult3.MemToReg,
+				IsBranch:        decResult3.IsBranch,
+				PredictedTaken:  p.ifid3.PredictedTaken,
+				PredictedTarget: p.ifid3.PredictedTarget,
+				EarlyResolved:   p.ifid3.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX3, issuedInsts) {
 				nextIDEX3.fromIDEX(&tempIDEX3)
@@ -3205,19 +3250,22 @@ func (p *Pipeline) tickSextupleIssue() {
 		if p.ifid4.Valid && nextIDEX3.Valid {
 			decResult4 := p.decodeStage.Decode(p.ifid4.InstructionWord, p.ifid4.PC)
 			tempIDEX4 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid4.PC,
-				Inst:     decResult4.Inst,
-				RnValue:  decResult4.RnValue,
-				RmValue:  decResult4.RmValue,
-				Rd:       decResult4.Rd,
-				Rn:       decResult4.Rn,
-				Rm:       decResult4.Rm,
-				MemRead:  decResult4.MemRead,
-				MemWrite: decResult4.MemWrite,
-				RegWrite: decResult4.RegWrite,
-				MemToReg: decResult4.MemToReg,
-				IsBranch: decResult4.IsBranch,
+				Valid:           true,
+				PC:              p.ifid4.PC,
+				Inst:            decResult4.Inst,
+				RnValue:         decResult4.RnValue,
+				RmValue:         decResult4.RmValue,
+				Rd:              decResult4.Rd,
+				Rn:              decResult4.Rn,
+				Rm:              decResult4.Rm,
+				MemRead:         decResult4.MemRead,
+				MemWrite:        decResult4.MemWrite,
+				RegWrite:        decResult4.RegWrite,
+				MemToReg:        decResult4.MemToReg,
+				IsBranch:        decResult4.IsBranch,
+				PredictedTaken:  p.ifid4.PredictedTaken,
+				PredictedTarget: p.ifid4.PredictedTarget,
+				EarlyResolved:   p.ifid4.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX4, issuedInsts) {
 				nextIDEX4.fromIDEX(&tempIDEX4)
@@ -3229,19 +3277,22 @@ func (p *Pipeline) tickSextupleIssue() {
 		if p.ifid5.Valid && nextIDEX4.Valid {
 			decResult5 := p.decodeStage.Decode(p.ifid5.InstructionWord, p.ifid5.PC)
 			tempIDEX5 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid5.PC,
-				Inst:     decResult5.Inst,
-				RnValue:  decResult5.RnValue,
-				RmValue:  decResult5.RmValue,
-				Rd:       decResult5.Rd,
-				Rn:       decResult5.Rn,
-				Rm:       decResult5.Rm,
-				MemRead:  decResult5.MemRead,
-				MemWrite: decResult5.MemWrite,
-				RegWrite: decResult5.RegWrite,
-				MemToReg: decResult5.MemToReg,
-				IsBranch: decResult5.IsBranch,
+				Valid:           true,
+				PC:              p.ifid5.PC,
+				Inst:            decResult5.Inst,
+				RnValue:         decResult5.RnValue,
+				RmValue:         decResult5.RmValue,
+				Rd:              decResult5.Rd,
+				Rn:              decResult5.Rn,
+				Rm:              decResult5.Rm,
+				MemRead:         decResult5.MemRead,
+				MemWrite:        decResult5.MemWrite,
+				RegWrite:        decResult5.RegWrite,
+				MemToReg:        decResult5.MemToReg,
+				IsBranch:        decResult5.IsBranch,
+				PredictedTaken:  p.ifid5.PredictedTaken,
+				PredictedTarget: p.ifid5.PredictedTarget,
+				EarlyResolved:   p.ifid5.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX5, issuedInsts) {
 				nextIDEX5.fromIDEX(&tempIDEX5)
@@ -3253,19 +3304,22 @@ func (p *Pipeline) tickSextupleIssue() {
 		if p.ifid6.Valid && nextIDEX5.Valid {
 			decResult6 := p.decodeStage.Decode(p.ifid6.InstructionWord, p.ifid6.PC)
 			tempIDEX6 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid6.PC,
-				Inst:     decResult6.Inst,
-				RnValue:  decResult6.RnValue,
-				RmValue:  decResult6.RmValue,
-				Rd:       decResult6.Rd,
-				Rn:       decResult6.Rn,
-				Rm:       decResult6.Rm,
-				MemRead:  decResult6.MemRead,
-				MemWrite: decResult6.MemWrite,
-				RegWrite: decResult6.RegWrite,
-				MemToReg: decResult6.MemToReg,
-				IsBranch: decResult6.IsBranch,
+				Valid:           true,
+				PC:              p.ifid6.PC,
+				Inst:            decResult6.Inst,
+				RnValue:         decResult6.RnValue,
+				RmValue:         decResult6.RmValue,
+				Rd:              decResult6.Rd,
+				Rn:              decResult6.Rn,
+				Rm:              decResult6.Rm,
+				MemRead:         decResult6.MemRead,
+				MemWrite:        decResult6.MemWrite,
+				RegWrite:        decResult6.RegWrite,
+				MemToReg:        decResult6.MemToReg,
+				IsBranch:        decResult6.IsBranch,
+				PredictedTaken:  p.ifid6.PredictedTaken,
+				PredictedTarget: p.ifid6.PredictedTarget,
+				EarlyResolved:   p.ifid6.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX6, issuedInsts) {
 				nextIDEX6.fromIDEX(&tempIDEX6)
@@ -3352,16 +3406,32 @@ func (p *Pipeline) tickSextupleIssue() {
 					fetchPC = pred.Target
 					branchPredictedTaken = true
 				}
-			case 1:
-				nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 2:
-				nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 3:
-				nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 4:
-				nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 5:
-				nextIFID6 = SenaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
+			default:
+				isUncondBranch, uncondTarget := isUnconditionalBranch(pending.Word, pending.PC)
+				pred := p.branchPredictor.Predict(pending.PC)
+				earlyResolved := false
+				if isUncondBranch {
+					pred.Taken = true
+					pred.Target = uncondTarget
+					pred.TargetKnown = true
+					earlyResolved = true
+				}
+				switch slotIdx {
+				case 1:
+					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 2:
+					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 3:
+					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 4:
+					nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 5:
+					nextIFID6 = SenaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				}
+				if pred.Taken && pred.TargetKnown {
+					fetchPC = pred.Target
+					branchPredictedTaken = true
+				}
 			}
 			slotIdx++
 		}
@@ -3420,17 +3490,31 @@ func (p *Pipeline) tickSextupleIssue() {
 					continue
 				}
 			} else {
+				isUncondBranch, uncondTarget := isUnconditionalBranch(word, fetchPC)
+				pred := p.branchPredictor.Predict(fetchPC)
+				earlyResolved := false
+				if isUncondBranch {
+					pred.Taken = true
+					pred.Target = uncondTarget
+					pred.TargetKnown = true
+					earlyResolved = true
+				}
 				switch slotIdx {
 				case 1:
-					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 2:
-					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 3:
-					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 4:
-					nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 5:
-					nextIFID6 = SenaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID6 = SenaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				}
+				if pred.Taken && pred.TargetKnown {
+					fetchPC = pred.Target
+					slotIdx++
+					continue
 				}
 			}
 			fetchPC += 4
@@ -5248,19 +5332,22 @@ func (p *Pipeline) tickOctupleIssue() {
 		if p.ifid2.Valid && !ifid2ConsumedByFusion {
 			decResult2 := p.decodeStage.Decode(p.ifid2.InstructionWord, p.ifid2.PC)
 			tempIDEX2 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid2.PC,
-				Inst:     decResult2.Inst,
-				RnValue:  decResult2.RnValue,
-				RmValue:  decResult2.RmValue,
-				Rd:       decResult2.Rd,
-				Rn:       decResult2.Rn,
-				Rm:       decResult2.Rm,
-				MemRead:  decResult2.MemRead,
-				MemWrite: decResult2.MemWrite,
-				RegWrite: decResult2.RegWrite,
-				MemToReg: decResult2.MemToReg,
-				IsBranch: decResult2.IsBranch,
+				Valid:           true,
+				PC:              p.ifid2.PC,
+				Inst:            decResult2.Inst,
+				RnValue:         decResult2.RnValue,
+				RmValue:         decResult2.RmValue,
+				Rd:              decResult2.Rd,
+				Rn:              decResult2.Rn,
+				Rm:              decResult2.Rm,
+				MemRead:         decResult2.MemRead,
+				MemWrite:        decResult2.MemWrite,
+				RegWrite:        decResult2.RegWrite,
+				MemToReg:        decResult2.MemToReg,
+				IsBranch:        decResult2.IsBranch,
+				PredictedTaken:  p.ifid2.PredictedTaken,
+				PredictedTarget: p.ifid2.PredictedTarget,
+				EarlyResolved:   p.ifid2.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX2, issuedInsts) {
 				nextIDEX2.fromIDEX(&tempIDEX2)
@@ -5272,19 +5359,22 @@ func (p *Pipeline) tickOctupleIssue() {
 		if p.ifid3.Valid && nextIDEX2.Valid {
 			decResult3 := p.decodeStage.Decode(p.ifid3.InstructionWord, p.ifid3.PC)
 			tempIDEX3 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid3.PC,
-				Inst:     decResult3.Inst,
-				RnValue:  decResult3.RnValue,
-				RmValue:  decResult3.RmValue,
-				Rd:       decResult3.Rd,
-				Rn:       decResult3.Rn,
-				Rm:       decResult3.Rm,
-				MemRead:  decResult3.MemRead,
-				MemWrite: decResult3.MemWrite,
-				RegWrite: decResult3.RegWrite,
-				MemToReg: decResult3.MemToReg,
-				IsBranch: decResult3.IsBranch,
+				Valid:           true,
+				PC:              p.ifid3.PC,
+				Inst:            decResult3.Inst,
+				RnValue:         decResult3.RnValue,
+				RmValue:         decResult3.RmValue,
+				Rd:              decResult3.Rd,
+				Rn:              decResult3.Rn,
+				Rm:              decResult3.Rm,
+				MemRead:         decResult3.MemRead,
+				MemWrite:        decResult3.MemWrite,
+				RegWrite:        decResult3.RegWrite,
+				MemToReg:        decResult3.MemToReg,
+				IsBranch:        decResult3.IsBranch,
+				PredictedTaken:  p.ifid3.PredictedTaken,
+				PredictedTarget: p.ifid3.PredictedTarget,
+				EarlyResolved:   p.ifid3.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX3, issuedInsts) {
 				nextIDEX3.fromIDEX(&tempIDEX3)
@@ -5296,19 +5386,22 @@ func (p *Pipeline) tickOctupleIssue() {
 		if p.ifid4.Valid && nextIDEX3.Valid {
 			decResult4 := p.decodeStage.Decode(p.ifid4.InstructionWord, p.ifid4.PC)
 			tempIDEX4 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid4.PC,
-				Inst:     decResult4.Inst,
-				RnValue:  decResult4.RnValue,
-				RmValue:  decResult4.RmValue,
-				Rd:       decResult4.Rd,
-				Rn:       decResult4.Rn,
-				Rm:       decResult4.Rm,
-				MemRead:  decResult4.MemRead,
-				MemWrite: decResult4.MemWrite,
-				RegWrite: decResult4.RegWrite,
-				MemToReg: decResult4.MemToReg,
-				IsBranch: decResult4.IsBranch,
+				Valid:           true,
+				PC:              p.ifid4.PC,
+				Inst:            decResult4.Inst,
+				RnValue:         decResult4.RnValue,
+				RmValue:         decResult4.RmValue,
+				Rd:              decResult4.Rd,
+				Rn:              decResult4.Rn,
+				Rm:              decResult4.Rm,
+				MemRead:         decResult4.MemRead,
+				MemWrite:        decResult4.MemWrite,
+				RegWrite:        decResult4.RegWrite,
+				MemToReg:        decResult4.MemToReg,
+				IsBranch:        decResult4.IsBranch,
+				PredictedTaken:  p.ifid4.PredictedTaken,
+				PredictedTarget: p.ifid4.PredictedTarget,
+				EarlyResolved:   p.ifid4.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX4, issuedInsts) {
 				nextIDEX4.fromIDEX(&tempIDEX4)
@@ -5320,19 +5413,22 @@ func (p *Pipeline) tickOctupleIssue() {
 		if p.ifid5.Valid && nextIDEX4.Valid {
 			decResult5 := p.decodeStage.Decode(p.ifid5.InstructionWord, p.ifid5.PC)
 			tempIDEX5 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid5.PC,
-				Inst:     decResult5.Inst,
-				RnValue:  decResult5.RnValue,
-				RmValue:  decResult5.RmValue,
-				Rd:       decResult5.Rd,
-				Rn:       decResult5.Rn,
-				Rm:       decResult5.Rm,
-				MemRead:  decResult5.MemRead,
-				MemWrite: decResult5.MemWrite,
-				RegWrite: decResult5.RegWrite,
-				MemToReg: decResult5.MemToReg,
-				IsBranch: decResult5.IsBranch,
+				Valid:           true,
+				PC:              p.ifid5.PC,
+				Inst:            decResult5.Inst,
+				RnValue:         decResult5.RnValue,
+				RmValue:         decResult5.RmValue,
+				Rd:              decResult5.Rd,
+				Rn:              decResult5.Rn,
+				Rm:              decResult5.Rm,
+				MemRead:         decResult5.MemRead,
+				MemWrite:        decResult5.MemWrite,
+				RegWrite:        decResult5.RegWrite,
+				MemToReg:        decResult5.MemToReg,
+				IsBranch:        decResult5.IsBranch,
+				PredictedTaken:  p.ifid5.PredictedTaken,
+				PredictedTarget: p.ifid5.PredictedTarget,
+				EarlyResolved:   p.ifid5.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX5, issuedInsts) {
 				nextIDEX5.fromIDEX(&tempIDEX5)
@@ -5344,19 +5440,22 @@ func (p *Pipeline) tickOctupleIssue() {
 		if p.ifid6.Valid && nextIDEX5.Valid {
 			decResult6 := p.decodeStage.Decode(p.ifid6.InstructionWord, p.ifid6.PC)
 			tempIDEX6 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid6.PC,
-				Inst:     decResult6.Inst,
-				RnValue:  decResult6.RnValue,
-				RmValue:  decResult6.RmValue,
-				Rd:       decResult6.Rd,
-				Rn:       decResult6.Rn,
-				Rm:       decResult6.Rm,
-				MemRead:  decResult6.MemRead,
-				MemWrite: decResult6.MemWrite,
-				RegWrite: decResult6.RegWrite,
-				MemToReg: decResult6.MemToReg,
-				IsBranch: decResult6.IsBranch,
+				Valid:           true,
+				PC:              p.ifid6.PC,
+				Inst:            decResult6.Inst,
+				RnValue:         decResult6.RnValue,
+				RmValue:         decResult6.RmValue,
+				Rd:              decResult6.Rd,
+				Rn:              decResult6.Rn,
+				Rm:              decResult6.Rm,
+				MemRead:         decResult6.MemRead,
+				MemWrite:        decResult6.MemWrite,
+				RegWrite:        decResult6.RegWrite,
+				MemToReg:        decResult6.MemToReg,
+				IsBranch:        decResult6.IsBranch,
+				PredictedTaken:  p.ifid6.PredictedTaken,
+				PredictedTarget: p.ifid6.PredictedTarget,
+				EarlyResolved:   p.ifid6.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX6, issuedInsts) {
 				nextIDEX6.fromIDEX(&tempIDEX6)
@@ -5368,19 +5467,22 @@ func (p *Pipeline) tickOctupleIssue() {
 		if p.ifid7.Valid && nextIDEX6.Valid {
 			decResult7 := p.decodeStage.Decode(p.ifid7.InstructionWord, p.ifid7.PC)
 			tempIDEX7 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid7.PC,
-				Inst:     decResult7.Inst,
-				RnValue:  decResult7.RnValue,
-				RmValue:  decResult7.RmValue,
-				Rd:       decResult7.Rd,
-				Rn:       decResult7.Rn,
-				Rm:       decResult7.Rm,
-				MemRead:  decResult7.MemRead,
-				MemWrite: decResult7.MemWrite,
-				RegWrite: decResult7.RegWrite,
-				MemToReg: decResult7.MemToReg,
-				IsBranch: decResult7.IsBranch,
+				Valid:           true,
+				PC:              p.ifid7.PC,
+				Inst:            decResult7.Inst,
+				RnValue:         decResult7.RnValue,
+				RmValue:         decResult7.RmValue,
+				Rd:              decResult7.Rd,
+				Rn:              decResult7.Rn,
+				Rm:              decResult7.Rm,
+				MemRead:         decResult7.MemRead,
+				MemWrite:        decResult7.MemWrite,
+				RegWrite:        decResult7.RegWrite,
+				MemToReg:        decResult7.MemToReg,
+				IsBranch:        decResult7.IsBranch,
+				PredictedTaken:  p.ifid7.PredictedTaken,
+				PredictedTarget: p.ifid7.PredictedTarget,
+				EarlyResolved:   p.ifid7.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX7, issuedInsts) {
 				nextIDEX7.fromIDEX(&tempIDEX7)
@@ -5392,19 +5494,22 @@ func (p *Pipeline) tickOctupleIssue() {
 		if p.ifid8.Valid && nextIDEX7.Valid {
 			decResult8 := p.decodeStage.Decode(p.ifid8.InstructionWord, p.ifid8.PC)
 			tempIDEX8 := IDEXRegister{
-				Valid:    true,
-				PC:       p.ifid8.PC,
-				Inst:     decResult8.Inst,
-				RnValue:  decResult8.RnValue,
-				RmValue:  decResult8.RmValue,
-				Rd:       decResult8.Rd,
-				Rn:       decResult8.Rn,
-				Rm:       decResult8.Rm,
-				MemRead:  decResult8.MemRead,
-				MemWrite: decResult8.MemWrite,
-				RegWrite: decResult8.RegWrite,
-				MemToReg: decResult8.MemToReg,
-				IsBranch: decResult8.IsBranch,
+				Valid:           true,
+				PC:              p.ifid8.PC,
+				Inst:            decResult8.Inst,
+				RnValue:         decResult8.RnValue,
+				RmValue:         decResult8.RmValue,
+				Rd:              decResult8.Rd,
+				Rn:              decResult8.Rn,
+				Rm:              decResult8.Rm,
+				MemRead:         decResult8.MemRead,
+				MemWrite:        decResult8.MemWrite,
+				RegWrite:        decResult8.RegWrite,
+				MemToReg:        decResult8.MemToReg,
+				IsBranch:        decResult8.IsBranch,
+				PredictedTaken:  p.ifid8.PredictedTaken,
+				PredictedTarget: p.ifid8.PredictedTarget,
+				EarlyResolved:   p.ifid8.EarlyResolved,
 			}
 			if canIssueWith(&tempIDEX8, issuedInsts) {
 				nextIDEX8.fromIDEX(&tempIDEX8)
@@ -5501,20 +5606,36 @@ func (p *Pipeline) tickOctupleIssue() {
 					fetchPC = pred.Target
 					branchPredictedTaken = true
 				}
-			case 1:
-				nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 2:
-				nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 3:
-				nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 4:
-				nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 5:
-				nextIFID6 = SenaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 6:
-				nextIFID7 = SeptenaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
-			case 7:
-				nextIFID8 = OctonaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word}
+			default:
+				isUncondBranch, uncondTarget := isUnconditionalBranch(pending.Word, pending.PC)
+				pred := p.branchPredictor.Predict(pending.PC)
+				earlyResolved := false
+				if isUncondBranch {
+					pred.Taken = true
+					pred.Target = uncondTarget
+					pred.TargetKnown = true
+					earlyResolved = true
+				}
+				switch slotIdx {
+				case 1:
+					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 2:
+					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 3:
+					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 4:
+					nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 5:
+					nextIFID6 = SenaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 6:
+					nextIFID7 = SeptenaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				case 7:
+					nextIFID8 = OctonaryIFIDRegister{Valid: true, PC: pending.PC, InstructionWord: pending.Word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				}
+				if pred.Taken && pred.TargetKnown {
+					fetchPC = pred.Target
+					branchPredictedTaken = true
+				}
 			}
 			slotIdx++
 		}
@@ -5588,21 +5709,35 @@ func (p *Pipeline) tickOctupleIssue() {
 					continue
 				}
 			} else {
+				isUncondBranch, uncondTarget := isUnconditionalBranch(word, fetchPC)
+				pred := p.branchPredictor.Predict(fetchPC)
+				earlyResolved := false
+				if isUncondBranch {
+					pred.Taken = true
+					pred.Target = uncondTarget
+					pred.TargetKnown = true
+					earlyResolved = true
+				}
 				switch slotIdx {
 				case 1:
-					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID2 = SecondaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 2:
-					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID3 = TertiaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 3:
-					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID4 = QuaternaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 4:
-					nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID5 = QuinaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 5:
-					nextIFID6 = SenaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID6 = SenaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 6:
-					nextIFID7 = SeptenaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID7 = SeptenaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
 				case 7:
-					nextIFID8 = OctonaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word}
+					nextIFID8 = OctonaryIFIDRegister{Valid: true, PC: fetchPC, InstructionWord: word, PredictedTaken: pred.Taken, PredictedTarget: pred.Target, EarlyResolved: earlyResolved}
+				}
+				if pred.Taken && pred.TargetKnown {
+					fetchPC = pred.Target
+					slotIdx++
+					continue
 				}
 			}
 			fetchPC += 4
