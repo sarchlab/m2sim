@@ -112,13 +112,21 @@ def get_simulator_cpi_for_benchmarks(repo_root: Path) -> dict:
         'arithmetic_sequential': 'arithmetic',
         'dependency_chain': 'dependency',
         'branch_taken_conditional': 'branch',
+        'memory_strided': 'memorystrided',
+        'load_heavy': 'loadheavy',
+        'store_heavy': 'storeheavy',
+        'branch_heavy': 'branchheavy',
     }
-    
+
     # Fallback CPI values if test can't run
     fallback_cpis = {
         "arithmetic": 1.2,    # Independent ALU ops - low CPI
         "dependency": 2.2,    # Dependent ops - higher CPI due to RAW hazards
         "branch": 2.9,        # Branches - pipeline flushes
+        "memorystrided": 1.5, # Strided memory - moderate CPI
+        "loadheavy": 1.3,     # Load-heavy - moderate CPI
+        "storeheavy": 1.2,    # Store-heavy - moderate CPI
+        "branchheavy": 2.0,   # Branch-heavy - higher CPI
     }
     
     # Try to run the benchmark to get actual CPIs
