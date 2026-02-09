@@ -43,38 +43,27 @@ func GetCoreBenchmarks() []Benchmark {
 
 // 1. Arithmetic Sequential - Tests ALU throughput with independent operations
 func arithmeticSequential() Benchmark {
+	const numInstructions = 200
+	const numRegisters = 5
 	return Benchmark{
 		Name:        "arithmetic_sequential",
-		Description: "20 independent ADD operations - measures ALU throughput",
+		Description: "200 independent ADDs (5 registers) - measures ALU throughput",
 		Setup: func(regFile *emu.RegFile, memory *emu.Memory) {
 			regFile.WriteReg(8, 93) // X8 = 93 (exit syscall)
 		},
-		Program: BuildProgram(
-			// 20 independent ADDs to different registers
-			EncodeADDImm(0, 0, 1, false),
-			EncodeADDImm(1, 1, 1, false),
-			EncodeADDImm(2, 2, 1, false),
-			EncodeADDImm(3, 3, 1, false),
-			EncodeADDImm(4, 4, 1, false),
-			EncodeADDImm(0, 0, 1, false),
-			EncodeADDImm(1, 1, 1, false),
-			EncodeADDImm(2, 2, 1, false),
-			EncodeADDImm(3, 3, 1, false),
-			EncodeADDImm(4, 4, 1, false),
-			EncodeADDImm(0, 0, 1, false),
-			EncodeADDImm(1, 1, 1, false),
-			EncodeADDImm(2, 2, 1, false),
-			EncodeADDImm(3, 3, 1, false),
-			EncodeADDImm(4, 4, 1, false),
-			EncodeADDImm(0, 0, 1, false),
-			EncodeADDImm(1, 1, 1, false),
-			EncodeADDImm(2, 2, 1, false),
-			EncodeADDImm(3, 3, 1, false),
-			EncodeADDImm(4, 4, 1, false),
-			EncodeSVC(0),
-		),
-		ExpectedExit: 4, // X0 = 0 + 4*1 = 4
+		Program:      buildArithmeticSequential(numInstructions, numRegisters),
+		ExpectedExit: int64(numInstructions / numRegisters), // X0 incremented once per register cycle
 	}
+}
+
+func buildArithmeticSequential(n, numRegs int) []byte {
+	instrs := make([]uint32, 0, n+1)
+	for i := 0; i < n; i++ {
+		reg := uint8(i % numRegs)
+		instrs = append(instrs, EncodeADDImm(reg, reg, 1, false))
+	}
+	instrs = append(instrs, EncodeSVC(0))
+	return BuildProgram(instrs...)
 }
 
 // 1b. Arithmetic 6-Wide - Tests full 6-wide superscalar throughput
@@ -303,46 +292,32 @@ func branchTaken() Benchmark {
 // 5b. Branch Taken Conditional - Uses CMP + B.GE to match native benchmark pattern
 // This aligns with branch_taken_long.s which uses conditional branches
 func branchTakenConditional() Benchmark {
+	const numBranches = 50
 	return Benchmark{
 		Name:        "branch_taken_conditional",
-		Description: "5 conditional branches (CMP + B.GE) - matches native benchmark",
+		Description: "50 conditional branches (CMP + B.GE) - measures branch prediction",
 		Setup: func(regFile *emu.RegFile, memory *emu.Memory) {
 			regFile.WriteReg(8, 93) // X8 = 93 (exit syscall)
 			regFile.WriteReg(0, 0)  // X0 = 0 (result, always >= 0)
 		},
-		Program: BuildProgram(
-			// Pattern: CMP X0, #0; B.GE +8 (always taken since X0 >= 0)
-			// Then ADD X0, X0, #1 to track execution
+		Program:      buildBranchConditionalChain(numBranches),
+		ExpectedExit: int64(numBranches),
+	}
+}
 
+func buildBranchConditionalChain(n int) []byte {
+	// Each branch pattern: CMP X0, #0; B.GE +8 (skip 1); ADD X1 (skipped); ADD X0 += 1
+	instrs := make([]uint32, 0, n*4+1)
+	for i := 0; i < n; i++ {
+		instrs = append(instrs,
 			EncodeCMPImm(0, 0),            // CMP X0, #0
 			EncodeBCond(8, 10),            // B.GE +8 (CondGE = 10, always taken)
 			EncodeADDImm(1, 1, 99, false), // skipped
 			EncodeADDImm(0, 0, 1, false),  // X0 += 1
-
-			EncodeCMPImm(0, 0),            // CMP X0, #0
-			EncodeBCond(8, 10),            // B.GE +8
-			EncodeADDImm(1, 1, 99, false), // skipped
-			EncodeADDImm(0, 0, 1, false),  // X0 += 1
-
-			EncodeCMPImm(0, 0),            // CMP X0, #0
-			EncodeBCond(8, 10),            // B.GE +8
-			EncodeADDImm(1, 1, 99, false), // skipped
-			EncodeADDImm(0, 0, 1, false),  // X0 += 1
-
-			EncodeCMPImm(0, 0),            // CMP X0, #0
-			EncodeBCond(8, 10),            // B.GE +8
-			EncodeADDImm(1, 1, 99, false), // skipped
-			EncodeADDImm(0, 0, 1, false),  // X0 += 1
-
-			EncodeCMPImm(0, 0),            // CMP X0, #0
-			EncodeBCond(8, 10),            // B.GE +8
-			EncodeADDImm(1, 1, 99, false), // skipped
-			EncodeADDImm(0, 0, 1, false),  // X0 += 1
-
-			EncodeSVC(0), // exit with X0 = 5
-		),
-		ExpectedExit: 5,
+		)
 	}
+	instrs = append(instrs, EncodeSVC(0))
+	return BuildProgram(instrs...)
 }
 
 // 5c. Branch Hot Loop - Tests zero-cycle branch folding with hot branches

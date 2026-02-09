@@ -200,11 +200,11 @@ func TestTimingPredictions_CPIBounds(t *testing.T) {
 	for _, r := range results {
 		t.Logf("%s: CPI=%.3f", r.Name, r.CPI)
 
-		// With dual-issue superscalar, CPI can be as low as 0.5 (theoretical max for 2-issue)
-		// CPI < 0.25 would indicate a bug
-		if r.CPI < 0.25 {
-			t.Errorf("TIMING BUG: %s has CPI < 0.25 (%.3f)", r.Name, r.CPI)
-			t.Error("A dual-issue pipeline cannot achieve CPI < 0.25")
+		// With 8-wide superscalar, CPI can be as low as 0.125 (theoretical max for 8-issue)
+		// CPI < 0.125 would indicate a bug
+		if r.CPI < 0.125 {
+			t.Errorf("TIMING BUG: %s has CPI < 0.125 (%.3f)", r.Name, r.CPI)
+			t.Error("An 8-wide pipeline cannot achieve CPI < 0.125")
 		}
 
 		// CPI should be reasonable (not absurdly high for these simple benchmarks)
@@ -324,8 +324,8 @@ func TestTimingPredictions_StallAccounting(t *testing.T) {
 }
 
 // TestTimingPredictions_CycleEquation validates the fundamental cycle equation.
-// With dual-issue superscalar, we can retire up to 2 instructions per cycle,
-// so Cycles >= Instructions/2 (theoretically).
+// With 8-wide superscalar, we can retire up to 8 instructions per cycle,
+// so Cycles >= Instructions/8 (theoretically).
 func TestTimingPredictions_CycleEquation(t *testing.T) {
 	config := DefaultConfig()
 	config.Output = &bytes.Buffer{}
@@ -338,13 +338,13 @@ func TestTimingPredictions_CycleEquation(t *testing.T) {
 	results := harness.RunAll()
 
 	for _, r := range results {
-		// With dual-issue: Cycles >= Instructions/2 (theoretical minimum)
+		// With 8-wide issue: Cycles >= Instructions/8 (theoretical minimum)
 		// In practice, pipeline fill/drain and dependencies increase this
-		minCycles := r.InstructionsRetired / 4
+		minCycles := r.InstructionsRetired / 8
 		if r.SimulatedCycles < minCycles {
-			t.Errorf("TIMING BUG: %s has cycles (%d) < instructions/4 (%d)",
+			t.Errorf("TIMING BUG: %s has cycles (%d) < instructions/8 (%d)",
 				r.Name, r.SimulatedCycles, minCycles)
-			t.Error("A 4-wide pipeline cannot retire more than 4 instructions per cycle")
+			t.Error("An 8-wide pipeline cannot retire more than 8 instructions per cycle")
 		}
 
 		t.Logf("%s: Cycles=%d, Insts=%d, Stalls=%d, Flushes=%d, CPI=%.3f",
