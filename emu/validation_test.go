@@ -323,12 +323,12 @@ var _ = Describe("M2 Baseline Validation Suite", func() {
 				// ADD X2, X0, X1, LSL #3  => X2 = 100 + (5 << 3) = 100 + 40 = 140
 				// exit(X2)
 				program := []byte{}
-				program = append(program, uint32ToBytes(encodeADDImm(0, 31, 100, false))...)  // X0 = 100
-				program = append(program, uint32ToBytes(encodeADDImm(1, 31, 5, false))...)    // X1 = 5
+				program = append(program, uint32ToBytes(encodeADDImm(0, 31, 100, false))...)                 // X0 = 100
+				program = append(program, uint32ToBytes(encodeADDImm(1, 31, 5, false))...)                   // X1 = 5
 				program = append(program, uint32ToBytes(encodeADDRegShifted(2, 0, 1, 0, 3, true, false))...) // X2 = X0 + (X1 << 3)
-				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)    // X0 = X2
-				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)   // X8 = 93
-				program = append(program, uint32ToBytes(encodeSVC(0))...)                     // syscall
+				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)                   // X0 = X2
+				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)                  // X8 = 93
+				program = append(program, uint32ToBytes(encodeSVC(0))...)                                    // syscall
 
 				e.LoadProgram(0x1000, program)
 				exitCode := e.Run()
@@ -346,9 +346,9 @@ var _ = Describe("M2 Baseline Validation Suite", func() {
 
 				program := []byte{}
 				program = append(program, uint32ToBytes(encodeADDRegShifted(2, 0, 1, 1, 2, true, false))...) // X2 = X0 + (X1 >> 2)
-				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)    // X0 = X2
-				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)   // X8 = 93
-				program = append(program, uint32ToBytes(encodeSVC(0))...)                     // syscall
+				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)                   // X0 = X2
+				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)                  // X8 = 93
+				program = append(program, uint32ToBytes(encodeSVC(0))...)                                    // syscall
 
 				e.LoadProgram(0x1000, program)
 				exitCode := e.Run()
@@ -366,9 +366,9 @@ var _ = Describe("M2 Baseline Validation Suite", func() {
 
 				program := []byte{}
 				program = append(program, uint32ToBytes(encodeADDRegShifted(2, 0, 1, 2, 4, true, false))...) // X2 = X0 + (X1 ASR 4)
-				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)    // X0 = X2
-				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)   // X8 = 93
-				program = append(program, uint32ToBytes(encodeSVC(0))...)                     // syscall
+				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)                   // X0 = X2
+				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)                  // X8 = 93
+				program = append(program, uint32ToBytes(encodeSVC(0))...)                                    // syscall
 
 				e.LoadProgram(0x1000, program)
 				exitCode := e.Run()
@@ -382,12 +382,12 @@ var _ = Describe("M2 Baseline Validation Suite", func() {
 				// X0 = 100, X1 = 10
 				// SUB X2, X0, X1, LSL #2  => X2 = 100 - (10 << 2) = 100 - 40 = 60
 				program := []byte{}
-				program = append(program, uint32ToBytes(encodeADDImm(0, 31, 100, false))...)  // X0 = 100
-				program = append(program, uint32ToBytes(encodeADDImm(1, 31, 10, false))...)   // X1 = 10
+				program = append(program, uint32ToBytes(encodeADDImm(0, 31, 100, false))...)                 // X0 = 100
+				program = append(program, uint32ToBytes(encodeADDImm(1, 31, 10, false))...)                  // X1 = 10
 				program = append(program, uint32ToBytes(encodeSUBRegShifted(2, 0, 1, 0, 2, true, false))...) // X2 = X0 - (X1 << 2)
-				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)    // X0 = X2
-				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)   // X8 = 93
-				program = append(program, uint32ToBytes(encodeSVC(0))...)                     // syscall
+				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)                   // X0 = X2
+				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)                  // X8 = 93
+				program = append(program, uint32ToBytes(encodeSVC(0))...)                                    // syscall
 
 				e.LoadProgram(0x1000, program)
 				exitCode := e.Run()
@@ -405,9 +405,9 @@ var _ = Describe("M2 Baseline Validation Suite", func() {
 
 				program := []byte{}
 				program = append(program, uint32ToBytes(encodeLogicalRegShifted(2, 0, 1, 0, 0, 0, 8))...) // AND X2, X0, X1, LSL #8
-				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)    // X0 = X2
-				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)   // X8 = 93
-				program = append(program, uint32ToBytes(encodeSVC(0))...)                     // syscall
+				program = append(program, uint32ToBytes(encodeADDReg(0, 31, 2, false))...)                // X0 = X2
+				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)               // X8 = 93
+				program = append(program, uint32ToBytes(encodeSVC(0))...)                                 // syscall
 
 				e.LoadProgram(0x1000, program)
 				exitCode := e.Run()
@@ -428,9 +428,9 @@ var _ = Describe("M2 Baseline Validation Suite", func() {
 
 				program := []byte{}
 				program = append(program, uint32ToBytes(encodeADDRegShifted(3, 1, 2, 0, 3, true, false))...) // X3 = base + index*8
-				program = append(program, uint32ToBytes(encodeLDR64(0, 3, 0))...)             // X0 = [X3]
-				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)   // X8 = 93
-				program = append(program, uint32ToBytes(encodeSVC(0))...)                     // syscall
+				program = append(program, uint32ToBytes(encodeLDR64(0, 3, 0))...)                            // X0 = [X3]
+				program = append(program, uint32ToBytes(encodeADDImm(8, 31, 93, false))...)                  // X8 = 93
+				program = append(program, uint32ToBytes(encodeSVC(0))...)                                    // syscall
 
 				e.LoadProgram(0x1000, program)
 				exitCode := e.Run()
