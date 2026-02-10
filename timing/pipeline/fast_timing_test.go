@@ -354,7 +354,7 @@ var _ = Describe("FastTiming", func() {
 				memory.Write32(0x1000, 0xB4000040) // CBZ X0, +8
 				memory.Write32(0x1004, 0x910029E1) // ADD X1, XZR, #10 (skipped)
 				memory.Write32(0x1008, 0xD4000001) // SVC #0
-				regFile.WriteReg(0, 0) // X0 = 0 → branch taken
+				regFile.WriteReg(0, 0)             // X0 = 0 → branch taken
 				regFile.WriteReg(8, 93)
 
 				ft.Run()
@@ -369,7 +369,7 @@ var _ = Describe("FastTiming", func() {
 				memory.Write32(0x1000, 0xB4000040)
 				memory.Write32(0x1004, 0x910029E1) // ADD X1, XZR, #10
 				memory.Write32(0x1008, 0xD4000001) // SVC #0
-				regFile.WriteReg(0, 5) // X0 = 5 → branch not taken
+				regFile.WriteReg(0, 5)             // X0 = 5 → branch not taken
 				regFile.WriteReg(8, 93)
 
 				ft.Run()
@@ -384,7 +384,7 @@ var _ = Describe("FastTiming", func() {
 				memory.Write32(0x1000, 0xB5000040)
 				memory.Write32(0x1004, 0x910029E1) // ADD X1, XZR, #10 (skipped)
 				memory.Write32(0x1008, 0xD4000001) // SVC #0
-				regFile.WriteReg(0, 5) // X0 = 5 → branch taken
+				regFile.WriteReg(0, 5)             // X0 = 5 → branch taken
 				regFile.WriteReg(8, 93)
 
 				ft.Run()
@@ -556,7 +556,7 @@ var _ = Describe("FastTiming", func() {
 
 			// Non-exit syscall then exit syscall
 			memory.Write32(0x1000, 0xD4000001) // SVC #0 (write syscall)
-			regFile.WriteReg(8, 64)             // write syscall number
+			regFile.WriteReg(8, 64)            // write syscall number
 
 			// After the write syscall, modify X8 for exit
 			// But our mock will return non-exited for non-93 syscalls
