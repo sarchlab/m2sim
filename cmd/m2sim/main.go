@@ -161,10 +161,10 @@ func runTiming(prog *loader.Program, programPath string) int64 {
 	fmt.Printf("Program: %s\n", programPath)
 	fmt.Printf("Exit code: %d\n", exitCode)
 	fmt.Printf("Total Instructions: %d\n", stats.Instructions)
-	fmt.Printf("Total Cycles: %d\n", stats.Cycles)
-	fmt.Printf("CPI: %.2f\n", stats.CPI())
+	fmt.Printf("Virtual Time Cycles: %d (simulated M2 @ 3.5 GHz)\n", stats.Cycles)
+	fmt.Printf("Virtual Time CPI: %.2f\n", stats.CPI())
 	fmt.Printf("\n")
-	fmt.Printf("Breakdown:\n")
+	fmt.Printf("Virtual Time Breakdown:\n")
 	fmt.Printf("  Fetch/Decode stalls: %4d cycles (%5.1f%%)\n",
 		fetchDecodeStalls, 100.0*float64(fetchDecodeStalls)/float64(totalCycles))
 	fmt.Printf("  Execute:             %4d cycles (%5.1f%%)\n",
