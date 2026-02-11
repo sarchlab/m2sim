@@ -666,9 +666,10 @@ func buildMemoryRandomAccess(numPairs int) []byte {
 
 // 10. Load Heavy - Instruction mix dominated by loads
 // Tests load unit throughput and memory subsystem pressure.
-// Runs in a loop to amortize pipeline startup, matching native calibration.
-// Native calibration (linear_calibration.py) uses the same loop structure:
-// 20 LDR + SUB + CMP + B.NE per iteration, instructions_per_iter=20.
+// Runs in a 10-iteration loop to amortize pipeline startup/drain,
+// matching native calibration methodology. Each iteration:
+// 20 LDR + 3-instruction loop overhead (SUB + CMP + B.NE).
+// Total retired: 10*23 = 230 instructions (SVC terminates, not retired).
 func loadHeavy() Benchmark {
 	return Benchmark{
 		Name:        "load_heavy",
@@ -683,8 +684,8 @@ func loadHeavy() Benchmark {
 			}
 		},
 		Program: BuildProgram(
-			// loop: 20 loads to independent registers (no RAW hazards)
-			EncodeLDR64(0, 1, 0),
+			// loop: 20 loads to distinct registers (no WAW/RAW hazards)
+			EncodeLDR64(22, 1, 0),
 			EncodeLDR64(2, 1, 1),
 			EncodeLDR64(3, 1, 2),
 			EncodeLDR64(4, 1, 3),
@@ -715,7 +716,10 @@ func loadHeavy() Benchmark {
 
 // 11. Store Heavy - Instruction mix dominated by stores
 // Tests store unit throughput and write buffer behavior.
-// Runs in a loop to amortize pipeline startup, matching native calibration.
+// Runs in a 10-iteration loop to amortize pipeline startup/drain,
+// matching native calibration methodology. Each iteration:
+// 20 STR + 3-instruction loop overhead (SUB + CMP + B.NE).
+// Total retired: 10*23 = 230 instructions (SVC terminates, not retired).
 func storeHeavy() Benchmark {
 	return Benchmark{
 		Name:        "store_heavy",

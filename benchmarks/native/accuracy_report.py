@@ -224,11 +224,12 @@ def compare_benchmarks(
     comparisons = []
 
     # Benchmarks where calibration counts only core instructions per iteration,
-    # but simulator benchmark includes loop overhead (SUB, CMP, B.NE).
+    # but simulator CPI is over ALL retired instructions including loop overhead.
+    # SVC is NOT retired (terminates pipeline), so total = 10 iters * 23 = 230.
     # Map: benchmark -> (core_insts_per_iter, total_insts_per_iter)
     loop_overhead_adjustment = {
-        'loadheavy': (20, 23),   # 20 loads + SUB + CMP + B.NE
-        'storeheavy': (20, 23),  # 20 stores + SUB + CMP + B.NE
+        'loadheavy': (20, 23),   # 20 loads + 3-instruction loop overhead
+        'storeheavy': (20, 23),  # 20 stores + 3-instruction loop overhead
     }
 
     for result in calibration_results.get('results', []):
