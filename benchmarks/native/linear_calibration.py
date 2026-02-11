@@ -445,7 +445,7 @@ _main:
 .align 4
 
 _main:
-    // Allocate array on stack (16 * 8 = 128 bytes)
+    // Allocate array on stack (16 * 8 = 128 bytes, 256 with alignment padding)
     sub sp, sp, #256
 
     // Initialize array: A[i] = i + 1
@@ -521,7 +521,7 @@ _main:
 .align 4
 
 _main:
-    // Allocate 3 arrays: A, B, C (each 128 bytes = 16*8)
+    // Allocate 3 arrays: A, B, C (each 128 bytes = 16*8 = 384, 512 with padding)
     sub sp, sp, #512
 
     // Initialize A[i] = i + 1
@@ -636,7 +636,7 @@ _main:
 .align 4
 
 _main:
-    // Allocate array on stack (16 * 8 = 128 bytes)
+    // Allocate array on stack (16 * 8 = 128 bytes, 256 with alignment padding)
     sub sp, sp, #256
 
     // Initialize array: A[i] = i + 1
@@ -738,7 +738,7 @@ _main:
 .align 4
 
 _main:
-    // Allocate index array on stack (8 * 8 = 64 bytes)
+    // Allocate index array on stack (8 * 8 = 64 bytes, 128 with alignment padding)
     sub sp, sp, #128
 
     // Build pointer chase chain: 0->3->1->5->2->7->4->6->0

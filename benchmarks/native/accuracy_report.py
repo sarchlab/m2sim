@@ -233,19 +233,20 @@ def compare_benchmarks(
     """
     comparisons = []
 
-    # Benchmarks where calibration counts only core instructions per iteration,
-    # but simulator CPI is over ALL retired instructions including loop overhead.
-    # SVC is NOT retired (terminates pipeline), so total = 10 iters * 23 = 230.
-    # Map: benchmark -> (sim_insts, calibration_insts_per_iter)
-    # Adjustment: real_latency_ns *= sim_insts / calibration_insts_per_iter
+    # Benchmarks where calibration and simulator have different instruction counts
+    # per equivalent unit of work. Calibration counts instructions_per_iter from
+    # the template; simulator CPI is over ALL retired instructions.
+    # Map: benchmark -> (calibration_insts_per_iter, simulator_insts_per_pass)
+    # Adjustment: real_latency_ns *= cal_insts / sim_insts
+    # This converts per-calibration-instruction latency to per-sim-instruction.
     loop_overhead_adjustment = {
-        'loadheavy': (20, 23),      # 20 loads + 3 loop overhead
-        'storeheavy': (20, 23),     # 20 stores + 3 loop overhead
-        'vectorsum': (96, 100),     # sim: 6×16=96; calib: 4 setup + 96 = 100
-        'vectoradd': (162, 165),    # sim: 10×16+2=162; calib: 5 setup + 160 = 165
-        'strideindirect': (65, 50), # sim: 8×8+1=65; calib: 2 setup + 6×8 = 50
-        # Note: strideindirect sim uses 3 ADDs to shift vs 1 LSL in calibration,
-        # so instruction counts differ (8 vs 6 per hop). Adjustment accounts for this.
+        'loadheavy': (20, 23),       # cal: 20 loads counted; sim: 20 + 3 loop overhead = 23
+        'storeheavy': (20, 23),      # cal: 20 stores counted; sim: 20 + 3 loop overhead = 23
+        'vectorsum': (100, 96),      # cal: 4 setup + 96 inner = 100; sim: 6×16 = 96
+        'vectoradd': (165, 162),     # cal: 5 setup + 160 inner = 165; sim: 10×16+2 = 162
+        'strideindirect': (50, 65),  # cal: 2 setup + 6×8 = 50; sim: 8×8+1 = 65
+        # Note: strideindirect sim uses 3 ADDs to shift vs 1 LSL in native calibration,
+        # so 8 insts/hop (sim) vs 6 insts/hop (native). High error expected.
         # reductiontree: no adjustment needed (31 flat insts in both sim and calib)
     }
 
@@ -260,12 +261,12 @@ def compare_benchmarks(
         real_r_squared = result['r_squared']
         calibrated = result.get('calibrated', True)
 
-        # Adjust real latency for loop overhead: calibration counts only core
-        # instructions, but simulator counts all instructions including loop
-        # overhead. Scale real latency to per-all-instruction basis.
+        # Adjust real latency when calibration and simulator have different
+        # instruction counts per equivalent work unit. Convert per-calibration-
+        # instruction latency to per-simulator-instruction latency.
         if bench_name in loop_overhead_adjustment:
-            core, total = loop_overhead_adjustment[bench_name]
-            real_latency_ns = real_latency_ns * core / total
+            cal_insts, sim_insts = loop_overhead_adjustment[bench_name]
+            real_latency_ns = real_latency_ns * cal_insts / sim_insts
 
         sim_cpi = simulator_cpis[bench_name]
         # Convert CPI to latency: latency_ns = CPI / frequency_GHz
@@ -447,9 +448,9 @@ def generate_markdown_report(
 
     # Status based on calibrated benchmarks only
     if cal_avg_error < 0.2:
-        status = "✅ **Good accuracy** - calibrated predictions within 20%"
+        status = "✅ **Good accuracy** - average calibrated error under 20%"
     elif cal_avg_error < 0.5:
-        status = "⚠️ **Moderate accuracy** - calibrated predictions within 50%"
+        status = "⚠️ **Moderate accuracy** - average calibrated error under 50%"
     else:
         status = "❌ **Poor accuracy** - simulator needs calibration improvements"
 
