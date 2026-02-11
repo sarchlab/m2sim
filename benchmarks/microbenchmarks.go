@@ -21,7 +21,9 @@ func GetMicrobenchmarks() []Benchmark {
 		memoryStridedScaled(),
 		memoryRandomAccess(),
 		loadHeavy(),
+		loadHeavyScaled(),
 		storeHeavy(),
+		storeHeavyScaled(),
 		branchTaken(),
 		branchTakenConditional(),
 		branchHotLoop(),
@@ -535,32 +537,29 @@ func loopSimulation() Benchmark {
 }
 
 // 9. Memory Strided - Tests strided access pattern (stride = 4 elements = 32 bytes)
-// Strided access is common in scientific code (e.g., column access in row-major arrays).
+// Matches native memory_strided_long.s: STR X0 → LDR X2 → ADD X0,X2,#1 chains
+// with stride-4 offsets (32 bytes between accesses).
+// This creates a serial dependency chain matching real hardware measurements.
 func memoryStrided() Benchmark {
 	return Benchmark{
 		Name:        "memory_strided",
-		Description: "10 store/load pairs with stride-4 access - measures strided memory latency",
+		Description: "5 store/load/add chains with stride-4 access - measures strided memory latency",
 		Setup: func(regFile *emu.RegFile, memory *emu.Memory) {
 			regFile.WriteReg(8, 93)     // X8 = 93 (exit syscall)
 			regFile.WriteReg(1, 0x8000) // X1 = base address
-			regFile.WriteReg(0, 7)      // X0 = value to store/load
+			regFile.WriteReg(0, 0)      // X0 = initial value
 		},
 		Program: BuildProgram(
-			// Store/load at offsets 0, 4, 8, 12, 16, 20, 24, 28, 32, 36
-			// (each offset unit = 8 bytes, so stride = 32 bytes between accesses)
-			EncodeSTR64(0, 1, 0), EncodeLDR64(0, 1, 0),
-			EncodeSTR64(0, 1, 4), EncodeLDR64(0, 1, 4),
-			EncodeSTR64(0, 1, 8), EncodeLDR64(0, 1, 8),
-			EncodeSTR64(0, 1, 12), EncodeLDR64(0, 1, 12),
-			EncodeSTR64(0, 1, 16), EncodeLDR64(0, 1, 16),
-			EncodeSTR64(0, 1, 20), EncodeLDR64(0, 1, 20),
-			EncodeSTR64(0, 1, 24), EncodeLDR64(0, 1, 24),
-			EncodeSTR64(0, 1, 28), EncodeLDR64(0, 1, 28),
-			EncodeSTR64(0, 1, 32), EncodeLDR64(0, 1, 32),
-			EncodeSTR64(0, 1, 36), EncodeLDR64(0, 1, 36),
+			// 5 chains of STR X0 → LDR X2 → ADD X0, X2, #1
+			// Matches native: str x0,[sp,#off]; ldr x2,[sp,#off]; add x0,x2,#1
+			EncodeSTR64(0, 1, 0), EncodeLDR64(2, 1, 0), EncodeADDImm(0, 2, 1, false),
+			EncodeSTR64(0, 1, 4), EncodeLDR64(2, 1, 4), EncodeADDImm(0, 2, 1, false),
+			EncodeSTR64(0, 1, 8), EncodeLDR64(2, 1, 8), EncodeADDImm(0, 2, 1, false),
+			EncodeSTR64(0, 1, 12), EncodeLDR64(2, 1, 12), EncodeADDImm(0, 2, 1, false),
+			EncodeSTR64(0, 1, 16), EncodeLDR64(2, 1, 16), EncodeADDImm(0, 2, 1, false),
 			EncodeSVC(0),
 		),
-		ExpectedExit: 7,
+		ExpectedExit: 5, // X0 = 0 + 5 increments = 5
 	}
 }
 
@@ -594,29 +593,31 @@ func buildMemorySequentialScaled(numPairs int) []byte {
 	return BuildProgram(instrs...)
 }
 
-// 9c. Memory Strided Scaled - 200 strided store/load pairs (stride = 4 elements = 32 bytes)
+// 9c. Memory Strided Scaled - 200 strided store/load/add chains (stride = 4 elements = 32 bytes)
+// Matches native memory_strided_long.s structure at scale.
 func memoryStridedScaled() Benchmark {
-	const numPairs = 200
+	const numChains = 200
 	return Benchmark{
 		Name:        "memory_strided_scaled",
-		Description: "200 strided store/load pairs (32-byte stride) - measures strided memory latency at scale",
+		Description: "200 strided store/load/add chains (32-byte stride) - measures strided memory latency at scale",
 		Setup: func(regFile *emu.RegFile, memory *emu.Memory) {
 			regFile.WriteReg(8, 93)     // X8 = 93 (exit syscall)
 			regFile.WriteReg(1, 0x8000) // X1 = base address
-			regFile.WriteReg(0, 7)      // X0 = value to store/load
+			regFile.WriteReg(0, 0)      // X0 = initial value
 		},
-		Program:      buildMemoryStridedScaled(numPairs),
-		ExpectedExit: 7,
+		Program:      buildMemoryStridedScaled(numChains),
+		ExpectedExit: int64(numChains), // X0 incremented once per chain
 	}
 }
 
-func buildMemoryStridedScaled(numPairs int) []byte {
-	instrs := make([]uint32, 0, numPairs*2+1)
-	for i := 0; i < numPairs; i++ {
+func buildMemoryStridedScaled(numChains int) []byte {
+	instrs := make([]uint32, 0, numChains*3+1)
+	for i := 0; i < numChains; i++ {
 		offset := uint16(i * 4) // stride-4 offsets: 0, 4, 8, 12, ... (each unit = 8 bytes)
 		instrs = append(instrs,
-			EncodeSTR64(0, 1, offset),
-			EncodeLDR64(0, 1, offset),
+			EncodeSTR64(0, 1, offset),    // STR X0, [X1, #offset]
+			EncodeLDR64(2, 1, offset),    // LDR X2, [X1, #offset]
+			EncodeADDImm(0, 2, 1, false), // ADD X0, X2, #1
 		)
 	}
 	instrs = append(instrs, EncodeSVC(0))
@@ -743,6 +744,64 @@ func storeHeavy() Benchmark {
 		),
 		ExpectedExit: 3,
 	}
+}
+
+// 10b. Load Heavy Scaled - 200 independent loads to amortize cold miss overhead
+func loadHeavyScaled() Benchmark {
+	const numLoads = 200
+	return Benchmark{
+		Name:        "load_heavy_scaled",
+		Description: "200 loads from sequential addresses - measures load throughput at scale",
+		Setup: func(regFile *emu.RegFile, memory *emu.Memory) {
+			regFile.WriteReg(8, 93)     // X8 = 93 (exit syscall)
+			regFile.WriteReg(1, 0x8000) // X1 = base address
+			for i := uint64(0); i < numLoads; i++ {
+				memory.Write64(0x8000+i*8, i+1)
+			}
+		},
+		Program:      buildLoadHeavyScaled(numLoads),
+		ExpectedExit: int64(numLoads),
+	}
+}
+
+func buildLoadHeavyScaled(n int) []byte {
+	// Use registers X0, X2-X7, X9-X20 (avoid X1=base, X8=syscall)
+	destRegs := []uint8{0, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+	instrs := make([]uint32, 0, n+1)
+	for i := 0; i < n; i++ {
+		reg := destRegs[i%len(destRegs)]
+		instrs = append(instrs, EncodeLDR64(reg, 1, uint16(i)))
+	}
+	// Final load into X0 for exit code
+	instrs[n-1] = EncodeLDR64(0, 1, uint16(n-1))
+	instrs = append(instrs, EncodeSVC(0))
+	return BuildProgram(instrs...)
+}
+
+// 11b. Store Heavy Scaled - 200 independent stores to amortize cold miss overhead
+func storeHeavyScaled() Benchmark {
+	const numStores = 200
+	return Benchmark{
+		Name:        "store_heavy_scaled",
+		Description: "200 stores to sequential addresses - measures store throughput at scale",
+		Setup: func(regFile *emu.RegFile, memory *emu.Memory) {
+			regFile.WriteReg(8, 93)     // X8 = 93 (exit syscall)
+			regFile.WriteReg(0, 3)      // X0 = exit code
+			regFile.WriteReg(1, 0x8000) // X1 = base address
+			regFile.WriteReg(2, 99)     // X2 = value to store
+		},
+		Program:      buildStoreHeavyScaled(numStores),
+		ExpectedExit: 3,
+	}
+}
+
+func buildStoreHeavyScaled(n int) []byte {
+	instrs := make([]uint32, 0, n+1)
+	for i := 0; i < n; i++ {
+		instrs = append(instrs, EncodeSTR64(2, 1, uint16(i)))
+	}
+	instrs = append(instrs, EncodeSVC(0))
+	return BuildProgram(instrs...)
 }
 
 // 12. Branch Heavy - High branch density to stress branch prediction

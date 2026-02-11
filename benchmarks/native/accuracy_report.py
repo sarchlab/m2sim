@@ -120,63 +120,82 @@ def get_simulator_cpi_for_benchmarks(repo_root: Path) -> dict:
         'branch_heavy': 'branchheavy',
     }
 
-    # Fallback CPI values if test can't run (updated 2026-02-09 from 8-wide pipeline)
+    # Fallback CPI values if test can't run (updated 2026-02-11)
+    # memorystrided uses D-cache CPI (store-to-load forwarding dominates).
+    # loadheavy/storeheavy use no-cache CPI (straight-line, cold misses
+    # would dominate with D-cache, unlike native loop-based benchmarks).
     fallback_cpis = {
-        "arithmetic": 0.22,   # 200 independent ADDs, 5 regs, 8-wide issue
-        "dependency": 1.02,   # 200 dependent ADDs (RAW chain), forwarding
-        "branch": 1.32,       # 50 conditional branches (CMP + B.GE)
-        "memorystrided": 2.7, # 10 store/load pairs, strided access
-        "loadheavy": 2.25,    # 20 sequential loads
-        "storeheavy": 2.2,    # 20 sequential stores
-        "branchheavy": 0.829, # 10 alternating taken/not-taken branches
+        "arithmetic": 0.22,       # 200 independent ADDs, 5 regs, 8-wide issue
+        "dependency": 1.02,       # 200 dependent ADDs (RAW chain), forwarding
+        "branch": 1.32,           # 50 conditional branches (CMP + B.GE)
+        "memorystrided": 2.933,   # 5 store/load/add chains, strided, D-cache
+        "loadheavy": 0.55,        # 20 sequential loads, no cache
+        "storeheavy": 0.55,       # 20 sequential stores, fire-and-forget
+        "branchheavy": 0.829,     # 10 alternating taken/not-taken branches
     }
-    
-    # Try to run the benchmark to get actual CPIs
-    test_cmd = [
-        "go", "test", "-v", "-run", "TestTimingPredictions_CPIBounds",
-        "-count=1", "./benchmarks/"
-    ]
-    
-    try:
-        output = subprocess.check_output(
-            test_cmd,
-            cwd=str(repo_root),
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=120
-        )
-        
-        # Parse output for benchmark CPIs
-        # Format: "    arithmetic_sequential: CPI=1.200"
+
+    # Run two test configurations and merge results.
+    # 1. Without D-cache: for ALU, branch, and throughput benchmarks
+    # 2. With D-cache: for memory-latency benchmarks (memorystrided)
+    #    where store-to-load forwarding latency is critical.
+    dcache_benchmarks = {'memorystrided'}
+
+    def parse_cpis(output: str) -> dict:
         cpis = {}
         for line in output.split('\n'):
             if 'CPI=' not in line:
                 continue
-            
             line = line.strip()
-            
             for full_name, short_name in name_mapping.items():
                 if full_name + ':' in line:
                     try:
                         cpi_str = line.split('CPI=')[1].split()[0]
                         cpis[short_name] = float(cpi_str)
                         print(f"  Found: {full_name} -> {short_name}: CPI={cpis[short_name]}")
-                    except (IndexError, ValueError) as e:
+                    except (IndexError, ValueError):
                         print(f"  Warning: Could not parse CPI from line: {line}")
-        
-        if cpis:
-            return cpis
-        else:
-            print("Warning: No CPIs parsed from test output, using fallback values")
-            
-    except subprocess.CalledProcessError as e:
-        print(f"Note: Benchmark test failed (exit code {e.returncode})")
-        print(f"Output: {e.output[:500] if e.output else 'none'}...")
-    except subprocess.TimeoutExpired as e:
-        print(f"Note: Benchmark test timed out")
-    except Exception as e:
-        print(f"Note: Could not run simulator benchmarks: {e}")
-    
+        return cpis
+
+    def run_test(test_name: str, label: str) -> dict:
+        cmd = ["go", "test", "-v", "-run", test_name, "-count=1", "./benchmarks/"]
+        try:
+            output = subprocess.check_output(
+                cmd, cwd=str(repo_root), stderr=subprocess.STDOUT,
+                text=True, timeout=120
+            )
+            return parse_cpis(output)
+        except subprocess.CalledProcessError as e:
+            print(f"Note: {label} test failed (exit code {e.returncode})")
+            print(f"Output: {e.output[:500] if e.output else 'none'}...")
+        except subprocess.TimeoutExpired:
+            print(f"Note: {label} test timed out")
+        except Exception as e:
+            print(f"Note: Could not run {label}: {e}")
+        return {}
+
+    # Run without D-cache (for ALU, branch, throughput benchmarks)
+    print("  Running without D-cache...")
+    no_cache_cpis = run_test("TestTimingPredictions_CPIBounds", "no-cache")
+
+    # Run with D-cache (for memory-latency benchmarks)
+    print("  Running with D-cache...")
+    dcache_cpis = run_test("TestAccuracyCPI_WithDCache", "D-cache")
+
+    # Merge: use D-cache CPI for dcache_benchmarks, no-cache for the rest
+    cpis = {}
+    for short_name in fallback_cpis:
+        if short_name in dcache_benchmarks and short_name in dcache_cpis:
+            cpis[short_name] = dcache_cpis[short_name]
+            print(f"  Using D-cache CPI for {short_name}: {cpis[short_name]}")
+        elif short_name in no_cache_cpis:
+            cpis[short_name] = no_cache_cpis[short_name]
+        # else: will fall through to fallback below
+
+    if cpis:
+        return cpis
+    else:
+        print("Warning: No CPIs parsed from test output, using fallback values")
+
     return fallback_cpis
 
 
