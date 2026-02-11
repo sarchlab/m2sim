@@ -125,13 +125,13 @@ def get_simulator_cpi_for_benchmarks(repo_root: Path) -> dict:
     # loadheavy/storeheavy use no-cache CPI (straight-line, cold misses
     # would dominate with D-cache, unlike native loop-based benchmarks).
     fallback_cpis = {
-        "arithmetic": 0.22,       # 200 independent ADDs, 5 regs, 8-wide issue
-        "dependency": 1.02,       # 200 dependent ADDs (RAW chain), forwarding
-        "branch": 1.32,           # 50 conditional branches (CMP + B.GE)
-        "memorystrided": 2.933,   # 5 store/load/add chains, strided, D-cache
-        "loadheavy": 0.55,        # 20 sequential loads, no cache
-        "storeheavy": 0.55,       # 20 sequential stores, fire-and-forget
-        "branchheavy": 0.829,     # 10 alternating taken/not-taken branches
+        "arithmetic": 0.27,   # 200 independent ADDs, 5 regs, 8-wide issue, 4 write ports
+        "dependency": 1.02,   # 200 dependent ADDs (RAW chain), forwarding
+        "branch": 1.32,       # 50 conditional branches (CMP + B.GE)
+        "memorystrided": 2.7, # 10 store/load pairs, strided access
+        "loadheavy": 0.55,    # 20 sequential loads, 3 mem ports
+        "storeheavy": 0.55,   # 20 sequential stores, fire-and-forget
+        "branchheavy": 0.829, # 10 alternating taken/not-taken branches
     }
 
     # Run two test configurations and merge results.
