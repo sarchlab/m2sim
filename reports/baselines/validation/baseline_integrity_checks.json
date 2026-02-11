@@ -1,0 +1,37 @@
+{
+  "validation_framework": {
+    "version": "1.0",
+    "created_date": "2026-02-11",
+    "purpose": "Prevent baseline staleness and false regression alarms per Issue #430"
+  },
+  "staleness_thresholds": {
+    "warning_days": 21,
+    "critical_days": 30,
+    "max_allowed_days": 45
+  },
+  "validation_rules": {
+    "commit_hash_required": true,
+    "measurement_date_required": true,
+    "environment_metadata_required": true,
+    "aggregate_metrics_required": true
+  },
+  "comparison_requirements": {
+    "baseline_version_specification": "mandatory",
+    "cross_validation_tools": ["TestCPIComparison", "accuracy_report.py"],
+    "minimum_benchmark_coverage": 3,
+    "error_threshold_documentation": "required"
+  },
+  "automated_checks": {
+    "ci_integration": "planned",
+    "pr_quality_gates": "planned",
+    "baseline_freshness_alerts": "planned"
+  },
+  "audit_trail": [
+    {
+      "action": "initial_framework_creation",
+      "date": "2026-02-11",
+      "agent": "Diana",
+      "context": "Implementing Issue #432 baseline versioning protocol"
+    }
+  ]
+}

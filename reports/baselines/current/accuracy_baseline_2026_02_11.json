@@ -1,0 +1,61 @@
+{
+  "baseline_metadata": {
+    "creation_date": "2026-02-11",
+    "commit_hash": "54f60c09e0567d9dda2f10fac2e11cd8a1fed351",
+    "measurement_source": "CI workflow accuracy reports",
+    "timing_model_version": "post-PR-429",
+    "notes": "Baseline after memory-strided accuracy breakthrough (21.9% -> 15.5%)",
+    "validation_status": "approved",
+    "created_by": "Diana",
+    "measurement_environment": {
+      "cache_settings": "default",
+      "benchmark_parameters": "standard",
+      "pipeline_config": "full_pipeline_enabled"
+    }
+  },
+  "benchmark_accuracy": [
+    {
+      "name": "dependency",
+      "full_pipeline_cpi": 1.0,
+      "fast_timing_cpi": 1.0,
+      "error_pct": 0.0,
+      "status": "calibrated"
+    },
+    {
+      "name": "branch",
+      "full_pipeline_cpi": 1.2,
+      "fast_timing_cpi": 1.2,
+      "error_pct": 0.0,
+      "status": "calibrated"
+    },
+    {
+      "name": "memory_strided",
+      "full_pipeline_cpi": 1.7,
+      "fast_timing_cpi": 2.4285714285714284,
+      "error_pct": 15.5,
+      "status": "calibrated_post_pr_429"
+    },
+    {
+      "name": "loadheavy",
+      "full_pipeline_cpi": 2.8,
+      "fast_timing_cpi": 2.0,
+      "error_pct": 28.1,
+      "status": "requires_calibration"
+    },
+    {
+      "name": "arithmetic",
+      "full_pipeline_cpi": 1.3,
+      "fast_timing_cpi": 1.8,
+      "error_pct": 34.5,
+      "status": "architectural_limitation"
+    }
+  ],
+  "aggregate_metrics": {
+    "average_error_pct": 15.5,
+    "h3_target_pct": 20.0,
+    "target_status": "achieved",
+    "outliers_above_20_pct": ["loadheavy", "arithmetic"],
+    "calibrated_benchmarks": 3,
+    "total_benchmarks": 5
+  }
+}
