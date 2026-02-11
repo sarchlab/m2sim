@@ -27,8 +27,13 @@ func GetPolybenchBenchmarks() []Benchmark {
 }
 
 // runPolybenchTest runs a single polybench benchmark and validates results.
+// All PolyBench tests are skipped in short mode — they exceed CI timeout.
 func runPolybenchTest(t *testing.T, name, elfName string) {
 	t.Helper()
+
+	if testing.Short() {
+		t.Skip("skipping PolyBench benchmark in short mode")
+	}
 
 	elfPath := polybenchELFPath(elfName)
 	if _, err := os.Stat(elfPath); os.IsNotExist(err) {
@@ -80,26 +85,14 @@ func TestPolybenchJacobi1D(t *testing.T) {
 	runPolybenchTest(t, "polybench_jacobi1d", "jacobi-1d")
 }
 
-// TestPolybenchGEMM is the O(n^3) GEMM benchmark. Skipped in short mode.
 func TestPolybenchGEMM(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping O(n^3) benchmark in short mode")
-	}
 	runPolybenchTest(t, "polybench_gemm", "gemm")
 }
 
-// TestPolybench2MM is the O(n^3) 2MM benchmark. Skipped in short mode.
 func TestPolybench2MM(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping O(n^3) benchmark in short mode")
-	}
 	runPolybenchTest(t, "polybench_2mm", "2mm")
 }
 
-// TestPolybench3MM is the O(n^3) 3MM benchmark. Skipped in short mode.
 func TestPolybench3MM(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping O(n^3) benchmark in short mode")
-	}
 	runPolybenchTest(t, "polybench_3mm", "3mm")
 }
