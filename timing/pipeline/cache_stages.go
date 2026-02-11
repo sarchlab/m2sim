@@ -179,22 +179,12 @@ func (s *CachedMemoryStage) Access(exmem *EXMEMRegister) (MemoryResult, bool) {
 	}
 
 	if exmem.MemWrite {
-		// Store through D-cache
-		cacheResult := s.cache.Write(addr, size, exmem.StoreValue)
-
-		// Both hits and misses have latency - set up pending state
-		s.pending = true
-		s.pendingPC = exmem.PC
-		s.pendingAddr = addr
-		s.latency = cacheResult.Latency - 1
-		s.result = nil
-		s.isHit = cacheResult.Hit
-
-		if s.latency > 0 {
-			return result, true // Stall for remaining latency
-		}
-
-		// Single-cycle latency
+		// Store through D-cache — fire-and-forget to store buffer.
+		// The cache is updated immediately (write-allocate), but the
+		// pipeline does not stall. Real M2 has a deep store queue that
+		// absorbs store latency; the store commits to the cache
+		// asynchronously.
+		s.cache.Write(addr, size, exmem.StoreValue)
 		s.pending = false
 		return result, false
 	}
@@ -261,17 +251,8 @@ func (s *CachedMemoryStage) AccessSlot(slot MemorySlot) (MemoryResult, bool) {
 	}
 
 	if slot.GetMemWrite() {
-		cacheResult := s.cache.Write(addr, size, slot.GetStoreValue())
-		s.pending = true
-		s.pendingPC = pc
-		s.pendingAddr = addr
-		s.latency = cacheResult.Latency - 1
-		s.result = nil
-		s.isHit = cacheResult.Hit
-
-		if s.latency > 0 {
-			return result, true
-		}
+		// Store through D-cache — fire-and-forget to store buffer.
+		s.cache.Write(addr, size, slot.GetStoreValue())
 		s.pending = false
 		return result, false
 	}
