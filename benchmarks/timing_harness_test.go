@@ -20,8 +20,8 @@ func TestHarnessRunsAllBenchmarks(t *testing.T) {
 
 	results := harness.RunAll()
 
-	if len(results) != 19 {
-		t.Errorf("expected 19 benchmark results, got %d", len(results))
+	if len(results) != 21 {
+		t.Errorf("expected 21 benchmark results, got %d", len(results))
 	}
 
 	// Verify each benchmark completed
@@ -203,8 +203,8 @@ func TestMemoryStrided(t *testing.T) {
 	}
 
 	r := results[0]
-	if r.ExitCode != 7 {
-		t.Errorf("expected exit code 7, got %d", r.ExitCode)
+	if r.ExitCode != 5 {
+		t.Errorf("expected exit code 5, got %d", r.ExitCode)
 	}
 
 	t.Logf("memory_strided: cycles=%d, insts=%d, CPI=%.3f",

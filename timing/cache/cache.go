@@ -91,6 +91,13 @@ type AccessResult struct {
 	EvictedAddr uint64
 }
 
+// StoreForwardLatency is the extra latency (in cycles) when a load must
+// forward data from a recent store to the same cache line. On Apple M2,
+// the store-to-load forwarding path through the store queue adds latency
+// compared to a normal L1 hit because the data must be checked against
+// pending stores in the store buffer.
+const StoreForwardLatency uint64 = 1
+
 // Cache represents an L1 cache using Akita cache components.
 type Cache struct {
 	// Configuration
@@ -107,6 +114,12 @@ type Cache struct {
 
 	// Backing store interface (for fetching on miss and writeback)
 	backing BackingStore
+
+	// Store buffer tracking for store-to-load forwarding detection.
+	// When a store writes to an address, we record it. A subsequent load
+	// to the same address incurs extra forwarding latency.
+	recentStoreAddr  uint64
+	recentStoreValid bool
 }
 
 // Statistics holds cache performance statistics.
@@ -192,9 +205,18 @@ func (c *Cache) Read(addr uint64, size int) AccessResult {
 		blockData := c.dataStore[c.blockIndex(block)]
 		data := extractData(blockData, offset, size)
 
+		latency := c.config.HitLatency
+		// Store-to-load forwarding: when a load reads from an address
+		// that was recently stored, the data must be forwarded from the
+		// store buffer. This adds extra latency over a normal cache hit.
+		if c.recentStoreValid && c.recentStoreAddr == addr {
+			latency += StoreForwardLatency
+			c.recentStoreValid = false // Consume the forwarding event
+		}
+
 		return AccessResult{
 			Hit:     true,
-			Latency: c.config.HitLatency,
+			Latency: latency,
 			Data:    data,
 		}
 	}
@@ -208,6 +230,10 @@ func (c *Cache) Read(addr uint64, size int) AccessResult {
 // Uses write-allocate policy: on miss, fetch the block first, then write.
 func (c *Cache) Write(addr uint64, size int, data uint64) AccessResult {
 	c.stats.Writes++
+
+	// Track this store address for store-to-load forwarding detection
+	c.recentStoreAddr = addr
+	c.recentStoreValid = true
 
 	// Compute block-aligned address for lookup
 	blockAddr := (addr / uint64(c.config.BlockSize)) * uint64(c.config.BlockSize)
