@@ -1119,10 +1119,11 @@ const maxALUPorts = 6
 const maxMemPorts = 3
 
 // maxWritePorts is the maximum number of register file write-back ports per
-// cycle. This limits how many register-writing instructions can retire
-// simultaneously, independent of execution unit count. Calibrated against
-// M2 hardware: arithmetic benchmark (5-register ALU cycling) shows CPI=0.296,
-// consistent with 4 write ports limiting sustained throughput.
+// cycle. This limits how many register-writing instructions can be issued in
+// the same cycle due to register-file write-back bandwidth, independent of
+// execution unit count. Calibrated against M2 hardware: arithmetic benchmark
+// (5-register ALU cycling) shows CPI=0.296, consistent with 4 write ports
+// limiting sustained throughput.
 const maxWritePorts = 4
 
 // isALUOp returns true if the instruction uses an integer ALU execution port.
