@@ -118,6 +118,10 @@ def get_simulator_cpi_for_benchmarks(repo_root: Path) -> dict:
         'load_heavy': 'loadheavy',
         'store_heavy': 'storeheavy',
         'branch_heavy': 'branchheavy',
+        'vector_sum': 'vectorsum',
+        'vector_add': 'vectoradd',
+        'reduction_tree': 'reductiontree',
+        'stride_indirect': 'strideindirect',
     }
 
     # Fallback CPI values if test can't run (updated 2026-02-11 with looped benchmarks)
@@ -129,12 +133,18 @@ def get_simulator_cpi_for_benchmarks(repo_root: Path) -> dict:
         "loadheavy": 0.361,   # 20 loads in 10-iter loop, 3 mem ports
         "storeheavy": 0.361,  # 20 stores in 10-iter loop, fire-and-forget
         "branchheavy": 0.829, # 10 alternating taken/not-taken branches
+        "vectorsum": 0.500,   # 16-element sum loop (load+accumulate)
+        "vectoradd": 0.401,   # 16-element vector add (2 loads+add+store)
+        "reductiontree": 0.452, # 16-element tree reduction (ILP-heavy)
+        "strideindirect": 0.708, # 8-hop pointer chase (dependent loads)
     }
 
     # Run two test configurations and merge results.
     # 1. Without D-cache: for ALU, branch, and throughput benchmarks
     # 2. With D-cache: for memory-latency benchmarks (memorystrided)
     #    where store-to-load forwarding latency is critical.
+    # Note: vectorsum, vectoradd, strideindirect involve loads but from
+    # stack memory that should be L1-hot. Use no-cache for now.
     dcache_benchmarks = {'memorystrided'}
 
     def parse_cpis(output: str) -> dict:
@@ -226,10 +236,17 @@ def compare_benchmarks(
     # Benchmarks where calibration counts only core instructions per iteration,
     # but simulator CPI is over ALL retired instructions including loop overhead.
     # SVC is NOT retired (terminates pipeline), so total = 10 iters * 23 = 230.
-    # Map: benchmark -> (core_insts_per_iter, total_insts_per_iter)
+    # Map: benchmark -> (sim_insts, calibration_insts_per_iter)
+    # Adjustment: real_latency_ns *= sim_insts / calibration_insts_per_iter
     loop_overhead_adjustment = {
-        'loadheavy': (20, 23),   # 20 loads + 3-instruction loop overhead
-        'storeheavy': (20, 23),  # 20 stores + 3-instruction loop overhead
+        'loadheavy': (20, 23),      # 20 loads + 3 loop overhead
+        'storeheavy': (20, 23),     # 20 stores + 3 loop overhead
+        'vectorsum': (96, 100),     # sim: 6×16=96; calib: 4 setup + 96 = 100
+        'vectoradd': (162, 165),    # sim: 10×16+2=162; calib: 5 setup + 160 = 165
+        'strideindirect': (65, 50), # sim: 8×8+1=65; calib: 2 setup + 6×8 = 50
+        # Note: strideindirect sim uses 3 ADDs to shift vs 1 LSL in calibration,
+        # so instruction counts differ (8 vs 6 per hop). Adjustment accounts for this.
+        # reductiontree: no adjustment needed (31 flat insts in both sim and calib)
     }
 
     for result in calibration_results.get('results', []):
