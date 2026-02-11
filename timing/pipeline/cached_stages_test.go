@@ -601,19 +601,38 @@ var _ = Describe("CachedMemoryStage", func() {
 				Inst:       &insts.Instruction{Is64Bit: true},
 			}
 
-			// Miss
-			for i := 0; i < 10; i++ {
-				memStage.Access(exmem)
-			}
-
+			// First store (miss)
+			memStage.Access(exmem)
 			memStage.Reset()
 
-			// Hit
+			// Second store to same address with different PC (hit)
 			exmem.PC = 0x1004
 			memStage.Access(exmem)
 
 			stats := memStage.CacheStats()
 			Expect(stats.Writes).To(BeNumerically(">", 0))
+		})
+
+		It("should issue store write only once on repeated calls (idempotency)", func() {
+			exmem := &pipeline.EXMEMRegister{
+				Valid:      true,
+				PC:         0x1000,
+				ALUResult:  0x3000,
+				StoreValue: 0xCAFEBABE,
+				MemWrite:   true,
+				Inst:       &insts.Instruction{Is64Bit: true},
+			}
+
+			// Call Access 5 times with identical store (simulating stall replay)
+			for i := 0; i < 5; i++ {
+				_, stall := memStage.Access(exmem)
+				Expect(stall).To(BeFalse())
+			}
+
+			// Only 1 write should have been issued to the cache
+			stats := memStage.CacheStats()
+			Expect(stats.Writes).To(Equal(uint64(1)),
+				"Repeated store with same PC/addr should only write once")
 		})
 	})
 })
@@ -642,7 +661,7 @@ var _ = Describe("CachedMemoryStage Integration", func() {
 
 	Describe("Cache coherence", func() {
 		It("should read back stored data", func() {
-			// Store data
+			// Store data — fire-and-forget, completes in 1 cycle
 			storeExmem := &pipeline.EXMEMRegister{
 				Valid:      true,
 				PC:         0x1000,
@@ -652,10 +671,8 @@ var _ = Describe("CachedMemoryStage Integration", func() {
 				Inst:       &insts.Instruction{Is64Bit: true},
 			}
 
-			// Wait for store to complete
-			for i := 0; i < 10; i++ {
-				memStage.Access(storeExmem)
-			}
+			_, stall := memStage.Access(storeExmem)
+			Expect(stall).To(BeFalse())
 			memStage.Reset()
 
 			// Read it back
