@@ -1118,6 +1118,14 @@ const maxALUPorts = 6
 // per cycle. Apple M2 Avalanche has 3 load/store units (2 load + 1 store).
 const maxMemPorts = 3
 
+// maxWritePorts is the maximum number of register file write-back ports per
+// cycle. This limits how many register-writing instructions can be issued in
+// the same cycle due to register-file write-back bandwidth, independent of
+// execution unit count. Calibrated against M2 hardware: arithmetic benchmark
+// (5-register ALU cycling) shows CPI=0.296, consistent with 4 write ports
+// limiting sustained throughput.
+const maxWritePorts = 4
+
 // isALUOp returns true if the instruction uses an integer ALU execution port.
 func isALUOp(inst *IDEXRegister) bool {
 	if inst == nil || !inst.Valid {
@@ -1172,6 +1180,12 @@ func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 		aluOpCount = 1
 	}
 
+	// Count register write-back ports
+	writePortCount := 0
+	if newInst.RegWrite {
+		writePortCount = 1
+	}
+
 	for _, prev := range earlier {
 		if prev == nil || !prev.Valid {
 			continue
@@ -1188,6 +1202,10 @@ func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 
 		if isALUOp(prev) {
 			aluOpCount++
+		}
+
+		if prev.RegWrite {
+			writePortCount++
 		}
 
 		// Check for RAW hazard: new reads register that prev writes.
@@ -1232,6 +1250,11 @@ func canIssueWith(newInst *IDEXRegister, earlier []*IDEXRegister) bool {
 
 	// Limit ALU operations to available execution ports
 	if aluOpCount > maxALUPorts {
+		return false
+	}
+
+	// Limit register write-back ports
+	if writePortCount > maxWritePorts {
 		return false
 	}
 
