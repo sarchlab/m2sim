@@ -945,8 +945,8 @@ func vectorAdd() Benchmark {
 				memory.Write64(0x8100+i*8, 2*(i+1))
 			}
 		},
-		// C[i] = A[i]+B[i] = 3*(i+1), last element C[15] = 48
-		// Exit with X0 = last loaded C value = 48
+		// C[i] = A[i]+B[i] = 3*(i+1)
+		// Verify: load C[0] = 3 as exit code
 		Program: BuildProgram(
 			// loop:
 			EncodeLDR64(6, 1, 0),         // X6 = A[i]
