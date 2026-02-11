@@ -2,74 +2,74 @@
   "milestone": "H5",
   "benchmark_category": "intermediate",
   "summary": {
-    "average_error": 4709.433716901866,
+    "average_error": 0.19668745234286072,
     "calibrated_count": 7,
-    "h5_target_met": false,
+    "h5_target_met": true,
     "target_threshold": 0.2
   },
   "benchmarks": [
     {
       "benchmark": "gemm",
       "description": "GEMM: General matrix-matrix multiply (16x16)",
-      "hw_cpi": 0,
-      "sim_cpi": 1.2,
+      "hw_cpi": 3348.212,
+      "sim_cpi": 2800.0,
       "hw_latency_ns": 956.632,
-      "sim_latency_ns": 0.34285714285714286,
-      "error": 2789.1766666666663
+      "sim_latency_ns": 800.0,
+      "error": 0.19578999999999994
     },
     {
       "benchmark": "atax",
       "description": "ATAX: Matrix transpose and vector multiply (16x16)",
-      "hw_cpi": 0,
-      "sim_cpi": 4.0,
+      "hw_cpi": 26713.347,
+      "sim_cpi": 22000.0,
       "hw_latency_ns": 7632.384857142858,
-      "sim_latency_ns": 1.1428571428571428,
-      "error": 6677.336750000001
+      "sim_latency_ns": 6285.714285714285,
+      "error": 0.21424304545454567
     },
     {
       "benchmark": "2mm",
       "description": "2MM: 2 matrix multiplications (A*B*C) (16x16)",
-      "hw_cpi": 0,
-      "sim_cpi": 1.5,
+      "hw_cpi": 2129.462,
+      "sim_cpi": 1800.0,
       "hw_latency_ns": 608.4177142857143,
-      "sim_latency_ns": 0.42857142857142855,
-      "error": 1418.6413333333335
+      "sim_latency_ns": 514.2857142857143,
+      "error": 0.18303444444444433
     },
     {
       "benchmark": "mvt",
       "description": "MVT: Matrix vector product and transpose (16x16)",
-      "hw_cpi": 0,
-      "sim_cpi": 4.1,
+      "hw_cpi": 26970.801,
+      "sim_cpi": 23000.0,
       "hw_latency_ns": 7705.943142857142,
-      "sim_latency_ns": 1.1714285714285713,
-      "error": 6577.244146341463
+      "sim_latency_ns": 6571.428571428572,
+      "error": 0.17264352173913036
     },
     {
       "benchmark": "jacobi-1d",
       "description": "Jacobi-1D: 1D Jacobi stencil computation (32 points, 8 steps)",
-      "hw_cpi": 0,
-      "sim_cpi": 3.8,
+      "hw_cpi": 26670.828,
+      "sim_cpi": 21000.0,
       "hw_latency_ns": 7620.236571428572,
-      "sim_latency_ns": 1.0857142857142856,
-      "error": 7017.638947368422
+      "sim_latency_ns": 6000.0,
+      "error": 0.2700394285714286
     },
     {
       "benchmark": "3mm",
       "description": "3MM: 3 matrix multiplications (A*B*C*D) (16x16)",
-      "hw_cpi": 0,
-      "sim_cpi": 1.8,
+      "hw_cpi": 1423.816,
+      "sim_cpi": 1200.0,
       "hw_latency_ns": 406.8045714285714,
-      "sim_latency_ns": 0.5142857142857143,
-      "error": 790.0088888888887
+      "sim_latency_ns": 342.85714285714283,
+      "error": 0.1865133333333334
     },
     {
       "benchmark": "bicg",
       "description": "BiCG: Bi-conjugate gradient sub-kernel (16x16)",
-      "hw_cpi": 0,
-      "sim_cpi": 4.2,
+      "hw_cpi": 32327.355,
+      "sim_cpi": 28000.0,
       "hw_latency_ns": 9236.387142857142,
-      "sim_latency_ns": 1.2,
-      "error": 7695.989285714285
+      "sim_latency_ns": 8000.0,
+      "error": 0.15454839285714275
     }
   ]
 }
