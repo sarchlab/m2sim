@@ -4,20 +4,20 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/sarchlab/m2sim)](https://goreportcard.com/report/github.com/sarchlab/m2sim)
 [![License](https://img.shields.io/github/license/sarchlab/m2sim.svg)](LICENSE)
 
-**M2Sim** is a cycle-accurate simulator for the Apple M2 CPU that achieves **16.9% average timing error** across 18 benchmarks. Built on the [Akita simulation framework](https://github.com/sarchlab/akita), M2Sim enables detailed performance analysis of ARM64 workloads on Apple Silicon architectures.
+**M2Sim** is a cycle-accurate simulator for the Apple M2 CPU, built on the [Akita simulation framework](https://github.com/sarchlab/akita). M2Sim enables detailed performance analysis of ARM64 workloads on Apple Silicon architectures.
 
-## 🎯 Project Status: **COMPLETED** ✅
+## Project Status: In Progress
 
-**Final Achievement:** 16.9% average timing accuracy across 18 benchmarks, meeting all success criteria.
+The simulator is functional with emulation and timing simulation modes. Accuracy validation is ongoing via CI benchmarks.
 
-| Success Criterion | Target | Achieved | Status |
-|------------------|---------|----------|--------|
-| **Functional Emulation** | ARM64 user-space execution | ✅ Complete | ✅ |
-| **Timing Accuracy** | <20% average error | 16.9% achieved | ✅ |
-| **Modular Design** | Separate functional/timing | ✅ Implemented | ✅ |
-| **Benchmark Coverage** | μs to ms range | 18 benchmarks validated | ✅ |
+| Component | Status |
+|-----------|--------|
+| **Functional Emulation** | ARM64 user-space execution working |
+| **Timing Model** | Configurable pipeline with cache hierarchy |
+| **Modular Design** | Separate functional/timing layers |
+| **Benchmark Suite** | 18 benchmarks (accuracy under verification) |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Go 1.21 or later
@@ -64,24 +64,11 @@ python3 paper/generate_figures.py
 cd paper && pdflatex m2sim_micro2026.tex
 ```
 
-## 📊 Performance Results
+## Performance Results
 
-### Timing Accuracy Summary
+Accuracy validation is in progress. Results will be published once CI-based benchmark runs are verified end-to-end. See `.github/workflows/polybench-segmented.yml` for the benchmark CI configuration.
 
-| **Benchmark Category** | **Count** | **Average Error** | **Range** |
-|----------------------|-----------|------------------|-----------|
-| **Microbenchmarks** | 11 | 14.4% | 1.3% - 47.4% |
-| **PolyBench** | 7 | 20.8% | 11.1% - 33.6% |
-| **Overall** | **18** | **16.9%** | **1.3% - 47.4%** |
-
-### Key Architectural Insights
-
-- **Branch Prediction:** 1.3% error - validates M2's exceptional prediction accuracy
-- **Cache Hierarchy:** 3-11% error range - efficient L1I/L1D/L2 hierarchy modeling
-- **Memory Bandwidth:** High bandwidth utilization confirmed through concurrent operations
-- **SIMD Performance:** 24-30% error indicates complex vector unit timing (improvement area)
-
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ### Simulator Components
 
@@ -92,19 +79,20 @@ M2Sim Architecture
 │   ├── Register File              # ARM64 register state
 │   └── Syscall Interface          # Linux syscall emulation
 ├── Timing Model (timing/)         # Cycle-accurate performance
-│   ├── Pipeline                   # 8-wide superscalar, 5-stage
-│   ├── Cache Hierarchy            # L1I/L1D (32KB), L2 (256KB)
-│   └── Branch Prediction          # Two-level adaptive predictor
+│   ├── Pipeline                   # Configurable superscalar, 5-stage
+│   ├── Cache Hierarchy            # L1I (192KB), L1D (128KB), L2 (24MB)
+│   └── Branch Prediction          # Tournament predictor (bimodal + gshare)
 └── Integration Layer              # ELF loading, measurement framework
 ```
 
-### Pipeline Configuration
-- **Architecture:** 8-wide superscalar, in-order execution
+### Pipeline Configuration (Defaults)
+- **Architecture:** Configurable superscalar (default 1-wide, up to 8-wide), in-order execution
 - **Stages:** Fetch → Decode → Execute → Memory → Writeback
-- **Branch Predictor:** Two-level adaptive with 12-cycle misprediction penalty
-- **Cache Hierarchy:** L1I/L1D (32KB each, 1-cycle), L2 (256KB, 10-cycle)
+- **Branch Predictor:** Tournament (bimodal + gshare), 12-cycle misprediction penalty
+- **Cache Hierarchy:** L1I (192KB, 6-way, 1-cycle hit), L1D (128KB, 8-way, 4-cycle hit), L2 (24MB, 16-way, 12-cycle hit)
+- **Execution Constraints:** Up to 6 ALU ports, 3 load ports, 2 store ports, 4 register write ports (M2 Avalanche modeling)
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 m2sim/
@@ -129,7 +117,7 @@ m2sim/
 └── reproduce_experiments.py   # Complete reproducibility script
 ```
 
-## 🔬 Research Usage
+## Research Usage
 
 ### Adding New Benchmarks
 
@@ -162,7 +150,7 @@ m2sim/
 **Out-of-Order:** Register renaming for arithmetic co-issue
 **Power Modeling:** Leverage M2's efficiency characteristics
 
-## 📋 Validation Methodology
+## Validation Methodology
 
 ### Hardware Baseline Collection
 - **Platform:** Apple M2 MacBook Air (2022)
@@ -180,7 +168,7 @@ m2sim/
 - **Target:** <20% average error across benchmark suite
 - **Categories:** Excellent (<10%), Good (10-20%), Acceptable (20-30%)
 
-## 📖 Documentation
+## Documentation
 
 ### Core References
 - **[Architecture Guide](docs/reference/architecture.md)** - M2 microarchitecture research
@@ -197,22 +185,15 @@ m2sim/
 - **[Development Docs](docs/development/)** - Research and analysis from development
 - **[Historical Reports](results/archive/)** - Evolution of accuracy and methodology
 
-## 🏆 Achievements
+## Milestones
 
-### Technical Milestones
-- ✅ **H1:** Core simulator with pipeline timing and cache hierarchy
-- ✅ **H2:** SPEC benchmark enablement with syscall coverage
-- ✅ **H3:** Microbenchmark calibration achieving 14.1% accuracy
-- ✅ **H4:** Multi-core analysis framework (statistical foundation complete)
-- ✅ **H5:** 15+ intermediate benchmarks with 16.9% average accuracy
+- **H1:** Core simulator with pipeline timing and cache hierarchy
+- **H2:** SPEC benchmark enablement with syscall coverage
+- **H3:** Microbenchmark calibration
+- **H4:** Multi-core analysis framework
+- **H5:** Intermediate benchmarks (PolyBench suite)
 
-### Research Contributions
-1. **First Open-Source M2 Simulator:** Enables reproducible Apple Silicon research
-2. **Validated Methodology:** Multi-scale regression baseline collection
-3. **Architectural Insights:** Quantified M2 performance characteristics
-4. **Production Accuracy:** 16.9% error suitable for research conclusions
-
-## 🔧 Development
+## Development
 
 ### Building from Source
 ```bash
@@ -232,13 +213,13 @@ go build -o profile ./cmd/profile
 3. **Document:** Update relevant documentation for changes
 4. **Validate:** Verify accuracy on affected benchmarks
 
-## 📄 Citation
+## Citation
 
 If you use M2Sim in your research, please cite:
 
 ```bibtex
 @inproceedings{m2sim2026,
-  title={M2Sim: Cycle-Accurate Apple M2 CPU Simulation with 16.9\% Average Timing Error},
+  title={M2Sim: Cycle-Accurate Apple M2 CPU Simulation},
   author={M2Sim Team},
   booktitle={Proceedings of the 59th IEEE/ACM International Symposium on Microarchitecture},
   year={2026},
@@ -246,19 +227,19 @@ If you use M2Sim in your research, please cite:
 }
 ```
 
-## 🤝 Related Projects
+## Related Projects
 
 - **[Akita](https://github.com/sarchlab/akita)** - Underlying simulation framework
 - **[MGPUSim](https://github.com/sarchlab/mgpusim)** - GPU simulator using Akita
 - **[SARCH Lab](https://github.com/sarchlab)** - Computer architecture research
 
-## 📞 Support
+## Support
 
 - **Issues:** [GitHub Issues](https://github.com/sarchlab/m2sim/issues)
 - **Documentation:** [Project Wiki](https://github.com/sarchlab/m2sim/wiki)
 - **Research:** Contact [SARCH Lab](https://github.com/sarchlab)
 
-## 📜 License
+## License
 
 This project is developed by the [SARCH Lab](https://github.com/sarchlab) at [University/Institution].
 
@@ -266,4 +247,4 @@ This project is developed by the [SARCH Lab](https://github.com/sarchlab) at [Un
 
 **M2Sim** - Enabling Apple Silicon research through cycle-accurate simulation.
 
-*Generated: February 12, 2026 | Status: Project Complete ✅*
+*Last updated: February 2026*
