@@ -1,3 +1,6 @@
 # Build artifacts (ELFs are committed for CI)
 *.o
 *.dis
+# Native calibration binaries (built on-the-fly)
+*_native_*
+_calib_*
