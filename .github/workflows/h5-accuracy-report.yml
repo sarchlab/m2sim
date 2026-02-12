@@ -99,17 +99,13 @@ jobs:
             H5_STATUS=$(python3 -c "import json; d=json.load(open('h5_accuracy_results.json')); print(d['h5_milestone']['status'])" 2>/dev/null || echo "unknown")
 
             COMMENT_BODY="# [CI] H5 Accuracy Framework Results
-
-## 📊 H5 Milestone Validation Complete
-
-**Status**: ${H5_STATUS}
-- **Total Benchmarks**: ${TOTAL_BENCHMARKS} (Target: 15+)
-- **Overall Average Error**: ${OVERALL_ERROR} (Target: <20%)
-
-**Commit**: ${GITHUB_SHA:0:8}
-**Workflow Run**: [View Details]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)
-
-[Download H5 Accuracy Report Artifacts]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+            ## H5 Milestone Validation Complete
+            **Status**: ${H5_STATUS}
+            - **Total Benchmarks**: ${TOTAL_BENCHMARKS} (Target: 15+)
+            - **Overall Average Error**: ${OVERALL_ERROR} (Target: <20%)
+            **Commit**: ${GITHUB_SHA:0:8}
+            **Workflow Run**: [View Details]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)
+            [Download H5 Accuracy Report Artifacts]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
 
             gh issue comment 460 --body "$COMMENT_BODY" || echo "Failed to comment on issue #460"
           fi
