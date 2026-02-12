@@ -9,7 +9,7 @@ jobs:
   accuracy-report:
     name: Generate Accuracy Report
     runs-on: macos-14  # Apple Silicon runner
-    timeout-minutes: 45  # Prevent indefinite hanging
+    timeout-minutes: 60  # Extended timeout for PolyBench simulations (increased for CI reliability)
     
     steps:
       - name: Checkout code
