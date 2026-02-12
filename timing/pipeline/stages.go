@@ -677,6 +677,40 @@ func (s *WritebackStage) WritebackSlot(slot WritebackSlot) bool {
 	return true
 }
 
+// WritebackSlots performs batched writeback for multiple MEMWB slots.
+// Returns the total number of instructions retired.
+// This optimization reduces function call overhead in tickOctupleIssue.
+func (s *WritebackStage) WritebackSlots(slots []WritebackSlot) uint64 {
+	retired := uint64(0)
+
+	// Batch process all slots to reduce function call overhead
+	for _, slot := range slots {
+		if !slot.IsValid() {
+			continue
+		}
+
+		retired++
+
+		// Skip register write operations
+		if !slot.GetRegWrite() || slot.GetRd() == 31 {
+			continue
+		}
+
+		// Select value source
+		var value uint64
+		if slot.GetMemToReg() {
+			value = slot.GetMemData()
+		} else {
+			value = slot.GetALUResult()
+		}
+
+		// Write to register file
+		s.regFile.WriteReg(slot.GetRd(), value)
+	}
+
+	return retired
+}
+
 // IsCMP returns true if the instruction is a CMP (compare) operation.
 // CMP is encoded as SUB/SUBS with Rd=31 (XZR) and SetFlags=true.
 func IsCMP(inst *insts.Instruction) bool {

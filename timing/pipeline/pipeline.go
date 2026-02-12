@@ -3913,49 +3913,17 @@ func (p *Pipeline) BranchPredictorStats() BranchPredictorStats {
 // tickOctupleIssue executes one cycle with 8-wide superscalar support.
 // This extends 6-wide to match the Apple M2's 8-wide decode bandwidth.
 func (p *Pipeline) tickOctupleIssue() {
-	// Stage 5: Writeback (all 8 slots using WritebackSlot helper)
+	// Stage 5: Writeback (batched processing for all 8 slots)
 	savedMEMWB := p.memwb
-	if p.writebackStage.WritebackSlot(&p.memwb) {
-		p.stats.Instructions++
-		// Fused CMP+B.cond counts as 2 instructions
-		if p.memwb.IsFused {
-			p.stats.Instructions++
-		}
-	}
 
-	// Writeback secondary slot
-	if p.writebackStage.WritebackSlot(&p.memwb2) {
-		p.stats.Instructions++
-	}
+	// Batch writeback all 8 slots to reduce function call overhead
+	slots := []WritebackSlot{&p.memwb, &p.memwb2, &p.memwb3, &p.memwb4, &p.memwb5, &p.memwb6, &p.memwb7, &p.memwb8}
+	retired := p.writebackStage.WritebackSlots(slots)
+	p.stats.Instructions += retired
 
-	// Writeback tertiary slot (using WritebackSlot helper)
-	if p.writebackStage.WritebackSlot(&p.memwb3) {
-		p.stats.Instructions++
-	}
-
-	// Writeback quaternary slot (using WritebackSlot helper)
-	if p.writebackStage.WritebackSlot(&p.memwb4) {
-		p.stats.Instructions++
-	}
-
-	// Writeback quinary slot (using WritebackSlot helper)
-	if p.writebackStage.WritebackSlot(&p.memwb5) {
-		p.stats.Instructions++
-	}
-
-	// Writeback senary slot (using WritebackSlot helper)
-	if p.writebackStage.WritebackSlot(&p.memwb6) {
-		p.stats.Instructions++
-	}
-
-	// Writeback septenary slot (using WritebackSlot helper)
-	if p.writebackStage.WritebackSlot(&p.memwb7) {
-		p.stats.Instructions++
-	}
-
-	// Writeback octonary slot (using WritebackSlot helper)
-	if p.writebackStage.WritebackSlot(&p.memwb8) {
-		p.stats.Instructions++
+	// Handle fused instruction special case for primary slot
+	if p.memwb.Valid && p.memwb.IsFused {
+		p.stats.Instructions++ // Fused CMP+B.cond counts as 2 instructions
 	}
 
 	// Stage 4: Memory (primary slot only - single memory port)
