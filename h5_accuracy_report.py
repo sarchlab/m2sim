@@ -13,6 +13,7 @@ Generates comprehensive accuracy analysis for H5 completion verification.
 """
 
 import json
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -57,30 +58,69 @@ def load_calibration_results(path: Path) -> dict:
         return json.load(f)
 
 
-def get_polybench_simulator_cpis() -> dict:
-    """Get CPI values for PolyBench benchmarks from simulator.
+def get_polybench_simulator_cpis(repo_root: Path) -> dict:
+    """Get CPI values for PolyBench benchmarks by running timing simulations.
+
+    Runs each PolyBench test individually and parses CPI from output.
+    Falls back to conservative estimates only if tests fail.
 
     Returns dict mapping benchmark name to CPI.
     """
-    # These CPIs are extracted from the PolyBench test output or estimated
-    # based on the architectural characteristics of each benchmark
-    polybench_cpis = {
-        'atax': 0.5,     # Matrix transpose + vector multiply
-        'bicg': 0.6,     # BiCG solver
-        'gemm': 0.4,     # General matrix multiply
-        'mvt': 0.5,      # Matrix-vector operations
-        'jacobi-1d': 0.7, # 1D Jacobi stencil
-        '2mm': 0.4,      # Two matrix multiplies
-        '3mm': 0.35,     # Three matrix multiplies
+    # Fallback CPI values — only used if go test fails
+    fallback_cpis = {
+        'atax': 5.0,
+        'bicg': 5.0,
+        'gemm': 1.0,
+        'mvt': 5.0,
+        'jacobi-1d': 5.0,
+        '2mm': 1.0,
+        '3mm': 1.0,
     }
 
-    # Try to get actual CPI values from running PolyBench tests
-    # Note: This would require implementing PolyBench timing tests
-    # For now, use analytical estimates based on benchmark characteristics
+    polybench_tests = [
+        ("TestPolybenchATAX", "atax"),
+        ("TestPolybenchBiCG", "bicg"),
+        ("TestPolybenchMVT", "mvt"),
+        ("TestPolybenchJacobi1D", "jacobi-1d"),
+        ("TestPolybenchGEMM", "gemm"),
+        ("TestPolybench2MM", "2mm"),
+        ("TestPolybench3MM", "3mm"),
+    ]
 
-    print("Using analytical CPI estimates for PolyBench benchmarks:")
-    for name, cpi in polybench_cpis.items():
-        print(f"  {name}: {cpi} CPI (estimated)")
+    polybench_cpis = {}
+
+    print("Running PolyBench timing simulations to get actual CPI values...")
+    for test_name, bench_name in polybench_tests:
+        cmd = ["go", "test", "-v", "-run", test_name, "-count=1",
+               "-timeout", "5m", "./benchmarks/"]
+        try:
+            output = subprocess.check_output(
+                cmd, cwd=str(repo_root), stderr=subprocess.STDOUT,
+                text=True, timeout=300,
+            )
+            # Parse CPI from output: "polybench_X: cycles=N, insts=N, CPI=N.NNN, ..."
+            for line in output.split('\n'):
+                if 'CPI=' not in line:
+                    continue
+                match = re.search(r'CPI=([\d.]+)', line)
+                if match and bench_name.replace('-', '') in line.lower():
+                    cpi = float(match.group(1))
+                    polybench_cpis[bench_name] = cpi
+                    print(f"  {bench_name}: CPI={cpi:.3f} (measured)")
+                    break
+        except subprocess.TimeoutExpired:
+            print(f"  {bench_name}: TIMEOUT — using fallback CPI={fallback_cpis[bench_name]}")
+            polybench_cpis[bench_name] = fallback_cpis[bench_name]
+        except subprocess.CalledProcessError as e:
+            print(f"  {bench_name}: FAILED (exit {e.returncode}) — using fallback CPI={fallback_cpis[bench_name]}")
+            polybench_cpis[bench_name] = fallback_cpis[bench_name]
+        except Exception as e:
+            print(f"  {bench_name}: ERROR ({e}) — using fallback CPI={fallback_cpis[bench_name]}")
+            polybench_cpis[bench_name] = fallback_cpis[bench_name]
+
+    measured = sum(1 for b in polybench_tests if polybench_cpis.get(b[1], 0) != fallback_cpis.get(b[1], 0))
+    print(f"\nPolyBench CPI summary: {measured}/{len(polybench_tests)} measured, "
+          f"{len(polybench_tests) - measured} fallback")
 
     return polybench_cpis
 
@@ -344,7 +384,7 @@ def main():
     micro_cpis = get_microbench_simulator_cpis(repo_root)
 
     print("\nPolyBench:")
-    polybench_cpis = get_polybench_simulator_cpis()
+    polybench_cpis = get_polybench_simulator_cpis(repo_root)
 
     # Compare all benchmarks
     print("\nComparing simulator vs hardware for all benchmarks...")
