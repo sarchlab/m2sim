@@ -5,11 +5,15 @@ on:
     branches: [main]
   workflow_dispatch:  # Allow manual triggering
 
+concurrency:
+  group: accuracy-report-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   accuracy-report:
     name: Generate Accuracy Report
     runs-on: macos-14  # Apple Silicon runner
-    timeout-minutes: 60  # Extended timeout for PolyBench simulations (increased for CI reliability)
+    timeout-minutes: 120  # Extended timeout for PolyBench + EmBench simulations
     
     steps:
       - name: Checkout code

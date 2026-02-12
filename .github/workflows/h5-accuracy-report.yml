@@ -9,11 +9,15 @@ on:
       - 'h5_accuracy_report.py'
       - 'timing/**'
 
+concurrency:
+  group: h5-accuracy-report-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   h5-accuracy-report:
     name: Generate H5 Milestone Accuracy Report
     runs-on: macos-14  # Apple Silicon runner for native M2 matching
-    timeout-minutes: 90  # Extended timeout for comprehensive accuracy testing - Phase 1 CI hardening
+    timeout-minutes: 120  # Extended timeout for comprehensive accuracy testing
 
     steps:
       - name: Checkout code
