@@ -8,6 +8,10 @@ import (
 )
 
 func TestHarnessRunsAllBenchmarks(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping all benchmarks test in short mode")
+	}
+
 	config := DefaultConfig()
 	config.Output = &bytes.Buffer{}
 	config.Verbose = false

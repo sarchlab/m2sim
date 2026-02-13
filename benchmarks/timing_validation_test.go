@@ -215,6 +215,10 @@ func TestTimingPredictions_FunctionCallOverhead(t *testing.T) {
 // TestTimingPredictions_CPIBounds validates that CPI is within reasonable bounds
 // for all benchmarks.
 func TestTimingPredictions_CPIBounds(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping CPI bounds test in short mode")
+	}
+
 	config := DefaultConfig()
 	config.Output = &bytes.Buffer{}
 	config.EnableICache = false
@@ -325,6 +329,10 @@ func TestTimingPredictions_CacheEffect(t *testing.T) {
 // TestTimingPredictions_StallAccounting validates that total stalls
 // equal the sum of stall types.
 func TestTimingPredictions_StallAccounting(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping stall accounting test in short mode")
+	}
+
 	config := DefaultConfig()
 	config.Output = &bytes.Buffer{}
 	config.EnableICache = false
@@ -355,6 +363,10 @@ func TestTimingPredictions_StallAccounting(t *testing.T) {
 // With 8-wide superscalar, we can retire up to 8 instructions per cycle,
 // so Cycles >= Instructions/8 (theoretically).
 func TestTimingPredictions_CycleEquation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping cycle equation test in short mode")
+	}
+
 	config := DefaultConfig()
 	config.Output = &bytes.Buffer{}
 	config.EnableICache = false
