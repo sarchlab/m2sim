@@ -216,6 +216,10 @@ func TestAccuracyAgainstBaseline(t *testing.T) {
 // TestAccuracyDependencyChain specifically tests the dependency chain accuracy.
 // This is critical because it measures the simulator's handling of RAW hazards.
 func TestAccuracyDependencyChain(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping accuracy test in short mode")
+	}
+
 	baseline := loadBaseline(t)
 	baselineEntry := findBaseline(baseline, "dependency")
 	if baselineEntry == nil {
@@ -253,6 +257,10 @@ func TestAccuracyDependencyChain(t *testing.T) {
 
 // TestAccuracyArithmetic tests ALU throughput accuracy.
 func TestAccuracyArithmetic(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping accuracy test in short mode")
+	}
+
 	baseline := loadBaseline(t)
 	baselineEntry := findBaseline(baseline, "arithmetic")
 	if baselineEntry == nil {
@@ -284,6 +292,10 @@ func TestAccuracyArithmetic(t *testing.T) {
 // TestAccuracyBranch tests branch handling accuracy using conditional branches.
 // Uses branchTakenConditional to match native benchmark pattern (CMP + B.GE).
 func TestAccuracyBranch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping accuracy test in short mode")
+	}
+
 	baseline := loadBaseline(t)
 	baselineEntry := findBaseline(baseline, "branch")
 	if baselineEntry == nil {
