@@ -377,6 +377,10 @@ func GenerateAccuracyReport(t *testing.T) AccuracyReport {
 
 // TestGenerateAccuracyReport tests the report generation and outputs JSON.
 func TestGenerateAccuracyReport(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping long-running accuracy report generation in short mode")
+	}
+
 	report := GenerateAccuracyReport(t)
 
 	reportJSON, err := json.MarshalIndent(report, "", "  ")
