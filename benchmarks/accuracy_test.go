@@ -137,6 +137,10 @@ func calculateError(simCPI, baselineCPI float64) float64 {
 // TestAccuracyAgainstBaseline compares simulator results against M2 baseline.
 // This is the main accuracy validation test for M2Sim.
 func TestAccuracyAgainstBaseline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping long-running accuracy test in short mode")
+	}
+
 	// Load baseline data
 	baseline := loadBaseline(t)
 
