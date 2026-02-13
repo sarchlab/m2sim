@@ -3,22 +3,22 @@
 M2Sim Reproducible Experiments Script
 
 This script reproduces all experiments from the M2Sim paper, including:
-1. Building the simulator and benchmarks
-2. Running accuracy validation experiments
+1. Building the simulator
+2. Running accuracy validation experiments (via accuracy_report.py)
 3. Generating figures and analysis
 4. Creating the final paper
 
+The accuracy experiments delegate to benchmarks/native/accuracy_report.py,
+which runs actual Go test-based timing simulations and compares CPI values
+against real M2 hardware calibration baselines.
+
 Usage:
-    python3 reproduce_experiments.py [--skip-build] [--skip-experiments] [--skip-figures]
+    python3 reproduce_experiments.py [--skip-build] [--skip-experiments] [--skip-figures] [--skip-paper]
 
 Requirements:
     - Go 1.21 or later
     - Python 3.8+ with matplotlib, seaborn, pandas, numpy
     - LaTeX distribution (for paper compilation)
-    - aarch64-linux-musl-gcc (for ARM64 cross-compilation)
-
-Authors: M2Sim Agent Team
-Date: February 12, 2026
 """
 
 import os
@@ -28,7 +28,12 @@ import time
 import json
 import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict
+
+
+# Resolve repo root (directory containing this script)
+REPO_ROOT = Path(__file__).resolve().parent
+
 
 class Colors:
     """ANSI color codes for terminal output"""
@@ -39,6 +44,7 @@ class Colors:
     BOLD = '\033[1m'
     END = '\033[0m'
 
+
 def log(message: str, level: str = "INFO"):
     """Print colored log message"""
     color_map = {
@@ -48,365 +54,283 @@ def log(message: str, level: str = "INFO"):
         "ERROR": Colors.RED,
         "HEADER": Colors.BOLD
     }
-
     color = color_map.get(level, Colors.END)
     timestamp = time.strftime("%H:%M:%S")
     print(f"{color}[{timestamp}] {level}: {message}{Colors.END}")
 
-def run_command(cmd: str, cwd: Path = None, check: bool = True) -> subprocess.CompletedProcess:
-    """Run shell command with logging"""
-    log(f"Running: {cmd}")
 
+def run_command(cmd, cwd=None, check=True, timeout=600):
+    """Run a command with logging.
+
+    Args:
+        cmd: Either a list of arguments or a string (run via shell).
+        cwd: Working directory.
+        check: Raise on non-zero exit.
+        timeout: Seconds before killing the process.
+    """
+    if isinstance(cmd, str):
+        display = cmd
+    else:
+        display = " ".join(str(c) for c in cmd)
+    log(f"Running: {display}")
     if cwd:
-        log(f"Working directory: {cwd}")
+        log(f"  cwd: {cwd}")
 
+    use_shell = isinstance(cmd, str)
     try:
         result = subprocess.run(
-            cmd.split(),
+            cmd,
             cwd=cwd,
             capture_output=True,
             text=True,
-            check=check
+            check=check,
+            shell=use_shell,
+            timeout=timeout,
         )
-
         if result.stdout.strip():
-            for line in result.stdout.strip().split('\n'):
+            for line in result.stdout.strip().split('\n')[:50]:
                 log(f"  {line}")
-
+            total_lines = result.stdout.strip().count('\n') + 1
+            if total_lines > 50:
+                log(f"  ... ({total_lines - 50} more lines)")
         return result
-
     except subprocess.CalledProcessError as e:
         log(f"Command failed with exit code {e.returncode}", "ERROR")
-        log(f"Stderr: {e.stderr}", "ERROR")
+        if e.stderr:
+            for line in e.stderr.strip().split('\n')[:20]:
+                log(f"  {line}", "ERROR")
         raise
+
 
 def check_dependencies():
     """Check required dependencies"""
     log("Checking dependencies...", "HEADER")
 
-    deps = {
-        "go": "go version",
-        "python3": "python3 --version",
-        "aarch64-linux-musl-gcc": "aarch64-linux-musl-gcc --version"
-    }
+    deps = [
+        ("go", ["go", "version"]),
+        ("python3", ["python3", "--version"]),
+    ]
 
     missing = []
-    for dep, cmd in deps.items():
+    for dep, cmd in deps:
         try:
-            run_command(cmd, check=False)
-            log(f"✓ {dep} found", "SUCCESS")
+            subprocess.run(cmd, capture_output=True, check=True)
+            log(f"  {dep} found", "SUCCESS")
         except (subprocess.CalledProcessError, FileNotFoundError):
-            log(f"✗ {dep} not found", "ERROR")
+            log(f"  {dep} not found", "ERROR")
             missing.append(dep)
 
     if missing:
         log(f"Missing dependencies: {', '.join(missing)}", "ERROR")
-        log("Please install missing dependencies and retry", "ERROR")
         return False
-
     return True
 
+
 def build_simulator():
-    """Build M2Sim and all components"""
+    """Build M2Sim and run short tests to verify."""
     log("Building M2Sim simulator...", "HEADER")
 
-    # Build all packages
-    run_command("go build ./...")
-    log("✓ All packages built", "SUCCESS")
+    run_command(["go", "build", "./..."], cwd=REPO_ROOT)
+    log("All packages built", "SUCCESS")
 
-    # Build main simulator binary
-    run_command("go build -o m2sim ./cmd/m2sim")
-    log("✓ M2Sim binary built", "SUCCESS")
-
-    # Run tests to verify build
-    log("Running tests to verify build...")
+    log("Running short tests to verify build...")
     try:
-        run_command("go test ./... -short")
-        log("✓ Tests passed", "SUCCESS")
+        run_command(["go", "test", "./...", "-short", "-count=1"],
+                    cwd=REPO_ROOT, timeout=300)
+        log("Tests passed", "SUCCESS")
     except subprocess.CalledProcessError:
         log("Some tests failed - continuing anyway", "WARNING")
 
-def build_benchmarks():
-    """Build ARM64 benchmark binaries"""
-    log("Building ARM64 benchmarks...", "HEADER")
-
-    benchmark_dirs = [
-        "benchmarks/microbenchmarks",
-        "benchmarks/polybench"
-    ]
-
-    for bench_dir in benchmark_dirs:
-        bench_path = Path(bench_dir)
-        if not bench_path.exists():
-            log(f"Benchmark directory {bench_dir} not found - skipping", "WARNING")
-            continue
-
-        log(f"Building benchmarks in {bench_dir}...")
-
-        # Find C source files
-        c_files = list(bench_path.glob("*.c"))
-        if not c_files:
-            log(f"No C files found in {bench_dir}", "WARNING")
-            continue
-
-        for c_file in c_files:
-            elf_file = c_file.with_suffix(".elf")
-            cmd = f"aarch64-linux-musl-gcc -static -O2 -o {elf_file} {c_file}"
-
-            try:
-                run_command(cmd, check=False)
-                log(f"✓ Built {elf_file.name}", "SUCCESS")
-            except subprocess.CalledProcessError:
-                log(f"✗ Failed to build {c_file.name}", "WARNING")
 
 def run_accuracy_experiments() -> Dict:
-    """Run accuracy validation experiments"""
+    """Run accuracy experiments by delegating to accuracy_report.py.
+
+    accuracy_report.py:
+      - Runs Go test-based timing simulations for all benchmarks
+      - Compares simulated CPI against real M2 hardware calibration baselines
+      - Generates accuracy_results.json, accuracy_report.md, accuracy_figure.png
+
+    Returns a results dict with 'summary' and 'benchmarks' keys.
+    """
     log("Running accuracy validation experiments...", "HEADER")
+    log("Delegating to benchmarks/native/accuracy_report.py (runs real simulations)")
 
-    # Define benchmark suite
-    microbenchmarks = [
-        "arithmetic", "dependency", "branch", "memorystrided",
-        "loadheavy", "storeheavy", "branchheavy", "vectorsum",
-        "vectoradd", "reductiontree", "strideindirect"
-    ]
+    accuracy_script = REPO_ROOT / "benchmarks" / "native" / "accuracy_report.py"
+    if not accuracy_script.exists():
+        log(f"accuracy_report.py not found at {accuracy_script}", "ERROR")
+        sys.exit(1)
 
-    polybench = [
-        "atax", "bicg", "gemm", "mvt", "jacobi-1d", "2mm", "3mm"
-    ]
+    # Run accuracy_report.py — it produces accuracy_results.json
+    # Allow long timeout since each benchmark may take minutes
+    try:
+        run_command(
+            [sys.executable, str(accuracy_script)],
+            cwd=REPO_ROOT,
+            check=False,
+            timeout=3600,  # 1 hour for full benchmark suite
+        )
+    except subprocess.TimeoutExpired:
+        log("Accuracy experiments timed out after 1 hour", "ERROR")
+        sys.exit(1)
 
-    results = {"benchmarks": [], "summary": {}}
+    # Read the JSON results produced by accuracy_report.py
+    json_path = REPO_ROOT / "benchmarks" / "native" / "accuracy_results.json"
+    if not json_path.exists():
+        log(f"accuracy_results.json not found at {json_path}", "ERROR")
+        log("accuracy_report.py may have failed to produce results", "ERROR")
+        sys.exit(1)
 
-    # Run microbenchmarks
-    log("Running microbenchmarks...")
-    for bench in microbenchmarks:
-        elf_path = Path(f"benchmarks/microbenchmarks/{bench}.elf")
-        if elf_path.exists():
-            result = run_benchmark_timing(bench, elf_path)
-            if result:
-                results["benchmarks"].append(result)
-        else:
-            log(f"Benchmark {bench}.elf not found - using cached results", "WARNING")
+    with open(json_path) as f:
+        accuracy_data = json.load(f)
 
-    # Run PolyBench
-    log("Running PolyBench suite...")
-    for bench in polybench:
-        elf_path = Path(f"benchmarks/polybench/{bench}.elf")
-        if elf_path.exists():
-            result = run_benchmark_timing(bench, elf_path)
-            if result:
-                results["benchmarks"].append(result)
-        else:
-            log(f"Benchmark {bench}.elf not found - using cached results", "WARNING")
+    # Convert to the results format used by this script
+    benchmarks = []
+    for bench in accuracy_data.get("benchmarks", []):
+        benchmarks.append({
+            "name": bench["name"],
+            "error": bench["error"],
+            "sim_cpi": bench.get("sim_cpi", 0),
+            "sim_latency_ns": bench.get("sim_latency_ns", 0),
+            "real_latency_ns": bench.get("real_latency_ns", 0),
+            "calibrated": bench.get("calibrated", True),
+            "status": "completed",
+        })
 
-    # Calculate summary statistics
-    if results["benchmarks"]:
-        errors = [b["error"] for b in results["benchmarks"]]
-        results["summary"] = {
-            "total_benchmarks": len(errors),
-            "average_error": sum(errors) / len(errors),
-            "max_error": max(errors),
-            "min_error": min(errors)
+    summary = accuracy_data.get("summary", {})
+    errors = [b["error"] for b in benchmarks]
+
+    results = {
+        "benchmarks": benchmarks,
+        "summary": {
+            "total_benchmarks": summary.get("benchmark_count", len(benchmarks)),
+            "calibrated_benchmarks": summary.get("calibrated_count", len(benchmarks)),
+            "average_error": summary.get("average_error", sum(errors) / len(errors) if errors else 0),
+            "max_error": summary.get("max_error", max(errors) if errors else 0),
+            "min_error": min(errors) if errors else 0,
         }
+    }
 
-        log(f"Accuracy validation complete: {results['summary']['average_error']:.3f} average error", "SUCCESS")
-    else:
-        # Use cached results if no experiments ran
-        log("Using cached accuracy results", "WARNING")
-        results = load_cached_results()
+    log(f"Accuracy validation complete: {len(benchmarks)} benchmarks, "
+        f"{results['summary']['average_error'] * 100:.1f}% average error", "SUCCESS")
 
-    # Save results
-    with open("accuracy_results.json", "w") as f:
+    # Copy results to repo root for convenience
+    with open(REPO_ROOT / "accuracy_results.json", "w") as f:
         json.dump(results, f, indent=2)
 
     return results
 
-def run_benchmark_timing(name: str, elf_path: Path) -> Dict:
-    """Run timing experiment for a single benchmark"""
-    log(f"Running {name}...")
-
-    try:
-        # Run with timing simulation (fast timing mode for speed)
-        cmd = f"./m2sim -elf {elf_path} -fasttiming -limit 100000"
-        result = run_command(cmd, check=False)
-
-        if result.returncode == 0:
-            # Parse timing output (simplified - would need actual parser)
-            # For demo purposes, use synthetic data
-            simulated_error = generate_synthetic_error(name)
-
-            return {
-                "name": name,
-                "error": simulated_error,
-                "status": "completed"
-            }
-        else:
-            log(f"Simulation failed for {name}", "WARNING")
-            return None
-
-    except Exception as e:
-        log(f"Error running {name}: {e}", "ERROR")
-        return None
-
-def generate_synthetic_error(name: str) -> float:
-    """Generate synthetic error data for demonstration"""
-    # This would be replaced with actual simulation output parsing
-    error_map = {
-        "arithmetic": 0.0955,
-        "dependency": 0.0666,
-        "branch": 0.0127,
-        "memorystrided": 0.1077,
-        "loadheavy": 0.0342,
-        "storeheavy": 0.4743,
-        "branchheavy": 0.1613,
-        "vectorsum": 0.296,
-        "vectoradd": 0.2429,
-        "reductiontree": 0.061,
-        "strideindirect": 0.0312,
-        "atax": 0.3357,
-        "bicg": 0.2931,
-        "gemm": 0.1947,
-        "mvt": 0.2259,
-        "jacobi-1d": 0.1113,
-        "2mm": 0.1740,
-        "3mm": 0.1237
-    }
-
-    return error_map.get(name, 0.15)  # Default to 15% error
-
-def load_cached_results() -> Dict:
-    """Load cached accuracy results"""
-    try:
-        with open("h5_accuracy_results.json", "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # Return minimal results structure
-        return {
-            "summary": {
-                "total_benchmarks": 18,
-                "average_error": 0.169,
-                "max_error": 0.4743,
-                "min_error": 0.0127
-            },
-            "benchmarks": []
-        }
 
 def generate_figures():
-    """Generate paper figures"""
+    """Generate paper figures using paper/generate_figures.py."""
     log("Generating paper figures...", "HEADER")
 
-    figure_script = Path("paper/generate_figures.py")
+    figure_script = REPO_ROOT / "paper" / "generate_figures.py"
     if figure_script.exists():
         try:
-            run_command(f"python3 {figure_script}", cwd=Path("paper"))
-            log("✓ Paper figures generated", "SUCCESS")
+            run_command([sys.executable, str(figure_script)],
+                        cwd=REPO_ROOT / "paper", timeout=120)
+            log("Paper figures generated", "SUCCESS")
         except subprocess.CalledProcessError:
             log("Figure generation failed", "ERROR")
             raise
     else:
-        log("Figure generation script not found", "WARNING")
+        log("Figure generation script not found at paper/generate_figures.py", "WARNING")
+
 
 def compile_paper():
-    """Compile LaTeX paper"""
+    """Compile LaTeX paper with bibtex."""
     log("Compiling LaTeX paper...", "HEADER")
 
-    paper_tex = Path("paper/m2sim_micro2026.tex")
-    if paper_tex.exists():
-        try:
-            # Run pdflatex multiple times for references
-            for i in range(3):
-                run_command(f"pdflatex m2sim_micro2026.tex", cwd=Path("paper"))
+    paper_dir = REPO_ROOT / "paper"
+    paper_tex = paper_dir / "m2sim_micro2026.tex"
+    if not paper_tex.exists():
+        log("LaTeX source not found at paper/m2sim_micro2026.tex", "WARNING")
+        return
 
-            # Check if PDF was generated
-            pdf_path = Path("paper/m2sim_micro2026.pdf")
-            if pdf_path.exists():
-                log("✓ Paper compiled successfully", "SUCCESS")
-                log(f"PDF available at: {pdf_path.absolute()}", "SUCCESS")
-            else:
-                log("PDF compilation failed", "ERROR")
+    try:
+        # pdflatex → bibtex → pdflatex × 2 (standard LaTeX build)
+        run_command(["pdflatex", "-interaction=nonstopmode", "m2sim_micro2026.tex"],
+                    cwd=paper_dir, check=False)
+        run_command(["bibtex", "m2sim_micro2026"],
+                    cwd=paper_dir, check=False)
+        run_command(["pdflatex", "-interaction=nonstopmode", "m2sim_micro2026.tex"],
+                    cwd=paper_dir, check=False)
+        run_command(["pdflatex", "-interaction=nonstopmode", "m2sim_micro2026.tex"],
+                    cwd=paper_dir, check=False)
 
-        except subprocess.CalledProcessError:
-            log("LaTeX compilation failed - check for LaTeX installation", "WARNING")
-    else:
-        log("LaTeX source not found", "WARNING")
+        pdf_path = paper_dir / "m2sim_micro2026.pdf"
+        if pdf_path.exists():
+            log(f"Paper compiled: {pdf_path}", "SUCCESS")
+        else:
+            log("PDF not produced — check LaTeX logs", "ERROR")
+    except subprocess.CalledProcessError:
+        log("LaTeX compilation failed — is a TeX distribution installed?", "WARNING")
+
 
 def generate_experiment_report(results: Dict):
-    """Generate comprehensive experiment report"""
+    """Generate a human-readable experiment report from real results."""
     log("Generating experiment report...", "HEADER")
 
-    report_content = f"""# M2Sim Experiment Report
+    summary = results["summary"]
+    benchmarks = results["benchmarks"]
+    avg_error = summary["average_error"]
 
-**Generated:** {time.strftime("%Y-%m-%d %H:%M:%S")}
-**Reproducibility Script Version:** 1.0
+    # Determine target achievement
+    target_met = avg_error < 0.2
+    target_line = (f"{'PASS' if target_met else 'FAIL'}: "
+                   f"Average error {avg_error * 100:.1f}% {'<' if target_met else '>='} 20% target")
 
-## Summary
+    report_lines = [
+        "# M2Sim Experiment Report",
+        "",
+        f"**Generated:** {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        "",
+        "## Summary",
+        "",
+        f"- **Total Benchmarks:** {summary['total_benchmarks']}",
+        f"- **Average Error:** {avg_error:.3f} ({avg_error * 100:.1f}%)",
+        f"- **Maximum Error:** {summary['max_error']:.3f} ({summary['max_error'] * 100:.1f}%)",
+        f"- **Minimum Error:** {summary['min_error']:.3f} ({summary['min_error'] * 100:.1f}%)",
+        "",
+        f"## Target: {target_line}",
+        "",
+        "## Detailed Results",
+        "",
+        "| Benchmark | Sim CPI | Sim (ns/inst) | Real (ns/inst) | Error | Calibrated |",
+        "|-----------|---------|---------------|----------------|-------|------------|",
+    ]
 
-- **Total Benchmarks:** {results['summary']['total_benchmarks']}
-- **Average Error:** {results['summary']['average_error']:.3f} ({results['summary']['average_error']*100:.1f}%)
-- **Maximum Error:** {results['summary']['max_error']:.3f} ({results['summary']['max_error']*100:.1f}%)
-- **Minimum Error:** {results['summary']['min_error']:.3f} ({results['summary']['min_error']*100:.1f}%)
+    for bench in sorted(benchmarks, key=lambda b: b["name"]):
+        cal = "yes" if bench.get("calibrated", True) else "no"
+        report_lines.append(
+            f"| {bench['name']} | {bench.get('sim_cpi', 0):.3f} | "
+            f"{bench.get('sim_latency_ns', 0):.4f} | "
+            f"{bench.get('real_latency_ns', 0):.4f} | "
+            f"{bench['error'] * 100:.1f}% | {cal} |"
+        )
 
-## Target Achievement
+    report_lines.extend([
+        "",
+        "## Reproduction Environment",
+        "",
+        f"- **OS:** {os.uname().sysname} {os.uname().release}",
+        f"- **Arch:** {os.uname().machine}",
+        f"- **Directory:** {REPO_ROOT}",
+        "",
+        "## How Results Were Obtained",
+        "",
+        "Accuracy experiments were run by `benchmarks/native/accuracy_report.py`, which:",
+        "1. Runs `go test` timing simulations for each benchmark",
+        "2. Extracts simulated CPI from test output",
+        "3. Compares against real M2 hardware calibration baselines",
+        "4. Computes error = abs(t_sim - t_real) / min(t_sim, t_real)",
+        "",
+    ])
 
-✅ **H5 Target Met**: Average error {results['summary']['average_error']*100:.1f}% < 20% target
+    report_path = REPO_ROOT / "experiment_report.md"
+    report_path.write_text('\n'.join(report_lines))
+    log(f"Experiment report: {report_path}", "SUCCESS")
 
-## Detailed Results
-
-| Benchmark | Error | Category |
-|-----------|--------|----------|
-"""
-
-    for bench in results['benchmarks']:
-        category = "Microbenchmark" if bench['name'] in [
-            "arithmetic", "dependency", "branch", "memorystrided",
-            "loadheavy", "storeheavy", "branchheavy", "vectorsum",
-            "vectoradd", "reductiontree", "strideindirect"
-        ] else "PolyBench"
-
-        report_content += f"| {bench['name']} | {bench['error']:.3f} ({bench['error']*100:.1f}%) | {category} |\n"
-
-    report_content += f"""
-
-## Reproduction Environment
-
-- **Operating System:** {os.uname().sysname} {os.uname().release}
-- **Architecture:** {os.uname().machine}
-- **Working Directory:** {Path.cwd().absolute()}
-- **Timestamp:** {time.strftime("%Y-%m-%d %H:%M:%S")}
-
-## Files Generated
-
-- `accuracy_results.json` - Raw experimental data
-- `paper/accuracy_overview.pdf` - Accuracy distribution figures
-- `paper/performance_characteristics.pdf` - Performance analysis figures
-- `paper/validation_methodology.pdf` - Methodology validation figures
-- `paper/simulation_architecture.pdf` - Architecture diagrams
-- `paper/m2sim_micro2026.pdf` - Complete research paper
-- `experiment_report.md` - This report
-
-## Reproducibility Notes
-
-This experiment reproduces the accuracy validation results from the M2Sim paper.
-All benchmarks were executed using the exact configuration described in the methodology.
-Results may vary slightly due to system differences but should remain within 1-2% of reported values.
-
-## Citation
-
-If you use M2Sim in your research, please cite:
-
-```
-@inproceedings{{m2sim2026,
-  title={{M2Sim: Cycle-Accurate Apple M2 CPU Simulation with 16.9\% Average Timing Error}},
-  author={{M2Sim Team}},
-  booktitle={{Proceedings of the 59th IEEE/ACM International Symposium on Microarchitecture}},
-  year={{2026}}
-}}
-```
-"""
-
-    with open("experiment_report.md", "w") as f:
-        f.write(report_content)
-
-    log("✓ Experiment report generated: experiment_report.md", "SUCCESS")
 
 def main():
     """Main experiment reproduction workflow"""
@@ -415,58 +339,65 @@ def main():
     parser.add_argument("--skip-experiments", action="store_true", help="Skip experiment execution")
     parser.add_argument("--skip-figures", action="store_true", help="Skip figure generation")
     parser.add_argument("--skip-paper", action="store_true", help="Skip paper compilation")
-
     args = parser.parse_args()
 
     log("M2Sim Reproducible Experiments", "HEADER")
-    log("==============================", "HEADER")
+    log("=" * 40, "HEADER")
 
     start_time = time.time()
 
     try:
-        # Check dependencies
         if not check_dependencies():
             sys.exit(1)
 
-        # Build phase
+        # Build
         if not args.skip_build:
             build_simulator()
-            build_benchmarks()
         else:
             log("Skipping build phase", "WARNING")
 
-        # Experiment execution phase
+        # Experiments
         if not args.skip_experiments:
             results = run_accuracy_experiments()
         else:
-            log("Skipping experiments, loading cached results", "WARNING")
-            results = load_cached_results()
+            log("Skipping experiments", "WARNING")
+            # Try to load previously generated results
+            cached = REPO_ROOT / "accuracy_results.json"
+            if cached.exists():
+                with open(cached) as f:
+                    results = json.load(f)
+                log(f"Loaded cached results from {cached}")
+            else:
+                log("No cached results found — run without --skip-experiments first", "ERROR")
+                sys.exit(1)
 
-        # Figure generation phase
+        # Figures
         if not args.skip_figures:
             generate_figures()
         else:
             log("Skipping figure generation", "WARNING")
 
-        # Paper compilation phase
+        # Paper
         if not args.skip_paper:
             compile_paper()
         else:
             log("Skipping paper compilation", "WARNING")
 
-        # Generate final report
+        # Report
         generate_experiment_report(results)
 
-        # Summary
+        # Done
         duration = time.time() - start_time
-        log("==============================", "HEADER")
-        log(f"Experiment reproduction completed in {duration:.1f} seconds", "SUCCESS")
-        log(f"Average accuracy: {results['summary']['average_error']*100:.1f}%", "SUCCESS")
-        log("All outputs generated successfully", "SUCCESS")
+        log("=" * 40, "HEADER")
+        log(f"Completed in {duration:.1f}s", "SUCCESS")
+        log(f"Average accuracy error: {results['summary']['average_error'] * 100:.1f}%", "SUCCESS")
 
     except Exception as e:
         log(f"Experiment reproduction failed: {e}", "ERROR")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
